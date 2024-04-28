@@ -4,6 +4,7 @@ import static devkor.com.teamcback.global.jwt.JwtUtil.ACCESS_TOKEN_HEADER;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.redis.RedisUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final RedisUtil redisUtil;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -68,6 +70,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private void authenticateRefreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
         log.info("Refresh Token: {}", refreshToken);
+
+        // 로그아웃된 refresh token 인지 확인
+        if(redisUtil.hasKey(refreshToken)) {
+            log.info("로그아웃 된 Refresh Token");
+            throw new GlobalException(LOG_IN_REQUIRED);
+        }
 
         if(refreshToken == null) throw new GlobalException(REFRESH_TOKEN_REQUIRED); // refresh token 요청
 

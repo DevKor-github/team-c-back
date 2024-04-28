@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.oauth2.service.OAuth2Service;
 import devkor.com.teamcback.global.exception.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
 import devkor.com.teamcback.global.jwt.JwtUtil;
+import devkor.com.teamcback.global.redis.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -18,15 +19,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtUtil jwtUtil;
+    private final RedisUtil redisUtil;
     private final UserDetailsService userDetailsService;
     private final OAuth2Service oAuth2Service;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final LogoutHandler logoutHandler;
+    private final LogoutSuccessHandler logoutSuccessHandler;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -35,7 +41,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthorizationFilter jwtAuthorizationFilter() {
-        return new JwtAuthorizationFilter(jwtUtil, userDetailsService);
+        return new JwtAuthorizationFilter(jwtUtil, redisUtil, userDetailsService);
     }
 
     @Bean
@@ -65,6 +71,13 @@ public class SecurityConfig {
                     .userInfoEndpoint(
                         userInfoEndpointConfig -> userInfoEndpointConfig.userService(oAuth2Service))
                     .successHandler(oAuth2LoginSuccessHandler));
+
+        http.logout(
+            logout -> {
+                logout.logoutUrl("/api/users/logout");
+                logout.addLogoutHandler(logoutHandler);
+                logout.logoutSuccessHandler(logoutSuccessHandler);
+            });
 
         // 필터 관리
         http.addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);

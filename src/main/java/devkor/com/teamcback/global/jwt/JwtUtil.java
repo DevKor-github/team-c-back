@@ -42,15 +42,15 @@ public class JwtUtil {
 
     /**
      * Access Token 생성
-     * @param userId 사용자 id
+     * @param email 사용자 email
      * @param role 사용자 권한(USER, ADMIN)
      * @return "bearer%20" + Access Token
      */
-    public String createAccessToken(String userId, String role) {
+    public String createAccessToken(String email, String role) {
         Date now = new Date();
 
         return BEARER_PREFIX + Jwts.builder()
-            .setSubject(userId)
+            .setSubject(email)
             .claim(AUTHORIZATION_KEY, role)
             .setExpiration(new Date(now.getTime() + ACCESS_TOKEN_TIME))
             .setIssuedAt(now)
@@ -62,11 +62,11 @@ public class JwtUtil {
      * Refresh Token 생성
      * @return "bearer%20 + Refresh Token
      */
-    public String createRefreshToken(String userId, String role) {
+    public String createRefreshToken(String email, String role) {
         Date now = new Date();
 
         return BEARER_PREFIX + Jwts.builder()
-            .setSubject(userId)
+            .setSubject(email)
             .claim(AUTHORIZATION_KEY, role)
             .setExpiration(new Date(now.getTime() + REFRESH_TOKEN_TIME))
             .setIssuedAt(now)
@@ -122,10 +122,10 @@ public class JwtUtil {
     }
 
     /**
-     * 토큰에서 사용자 id를 가져오기
-     * @return (String) userId
+     * 토큰에서 사용자 email 가져오기
+     * @return email
      */
-    public String getUserIdFromToken (String token) {
+    public String getUserEmailFromToken (String token) {
         return jwtParser.parseClaimsJws(token).getBody().getSubject();
     }
 

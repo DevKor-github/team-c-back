@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.building.entity;
+package devkor.com.teamcback.domain.classroom.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
 import jakarta.persistence.Column;
@@ -13,22 +13,22 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "tb_building_nickname")
+@Table(name = "tb_classroom_nickname")
 @NoArgsConstructor
-public class BuildingNickname extends BaseEntity {
+public class ClassroomNickname extends BaseEntity {
     @Id
     @GeneratedValue
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "building_id")
-    private Building building;
+    @JoinColumn(name = "classroom_id")
+    private Classroom classroom;
 
     @Column(nullable = false)
     private String nickname;
 
-    public BuildingNickname(Building building, String nickname) {
-        this.building = building;
+    public ClassroomNickname(Classroom classroom, String nickname) {
+        this.classroom = classroom;
         this.nickname = nickname;
     }
 }

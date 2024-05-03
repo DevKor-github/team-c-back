@@ -71,13 +71,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
         log.info("Refresh Token: {}", refreshToken);
 
+        if(refreshToken == null) throw new GlobalException(REFRESH_TOKEN_REQUIRED); // refresh token 요청
+
         // 로그아웃된 refresh token 인지 확인
         if(redisUtil.hasKey(refreshToken)) {
             log.info("로그아웃 된 Refresh Token");
             throw new GlobalException(LOG_IN_REQUIRED);
         }
-
-        if(refreshToken == null) throw new GlobalException(REFRESH_TOKEN_REQUIRED); // refresh token 요청
 
         switch(jwtUtil.validateToken(refreshToken)) {
             case VALID -> renewAccessToken(response, refreshToken);

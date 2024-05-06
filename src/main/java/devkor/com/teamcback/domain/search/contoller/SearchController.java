@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.search.contoller;
 
 import devkor.com.teamcback.domain.search.dto.response.AutoCompleteRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
+import devkor.com.teamcback.global.response.CommonResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +18,9 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping( )
-    public List<AutoCompleteRes> autoComplete(@RequestParam(name = "building_id", required = false) Long buildingId,
+    public CommonResponse<List<AutoCompleteRes>> autoComplete(@RequestParam(name = "building_id", required = false) Long buildingId,
         @RequestParam(name = "word") String word) {
-        return searchService.autoComplete(buildingId, word);
+        return CommonResponse.success(searchService.autoComplete(buildingId, word));
     }
 
 }

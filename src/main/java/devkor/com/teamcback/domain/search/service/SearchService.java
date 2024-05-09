@@ -9,11 +9,14 @@ import devkor.com.teamcback.domain.classroom.entity.ClassroomNickname;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomNicknameRepository;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
+import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
+import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +32,7 @@ public class SearchService {
     private final ClassroomNicknameRepository classroomNicknameRepository;
     private final UserRepository userRepository;
     private final FacilityRepository facilityRepository;
-    private final RedisTemplate<String, SearchLog> SearchLogRedis;
+    private final RedisTemplate<String, SearchLog> searchLogRedis;
 
     @Transactional(readOnly = true)
     public List<GlobalSearchRes> globalSearch(Long buildingId, String word) {
@@ -95,19 +98,33 @@ public class SearchService {
         return facilityRepository.findByNameContaining(word);
     }
 
-//    public List<SearchLog> getSearchLog(Long userId) {
-//        return SearchLogRedis.opsForList().range(String.valueOf(userId), 0, 5);
-//    }
-//
-//    public void saveSearchLog(Long userId, SaveSearchLogReq req) {
-//
-//    }
+    public List<GetSearchLogRes> getSearchLog(Long userId) {
+        List<SearchLog> searchLogs = searchLogRedis.opsForList().range(String.valueOf(userId), 0, 10);
+        List<GetSearchLogRes> resList = new ArrayList<>();
+        if(searchLogs != null) {
+            for (SearchLog searchLog : searchLogs) {
+                resList.add(new GetSearchLogRes(searchLog));
+            }
+        }
+        return resList;
+    }
+
+    public void saveSearchLog(Long userId, SaveSearchLogReq req) {
+        String searchedAt = LocalDate.now().toString();
+        SearchLog searchLog = new SearchLog(req.getId(), req.getName(), req.getType(), searchedAt);
+        String key = String.valueOf(userId);
+
+        Long size = searchLogRedis.opsForList().size(key);
+
+        if(size != null && size.equals(10L)) {
+            searchLogRedis.opsForList().rightPop(key);
+        }
+
+        searchLogRedis.opsForList().leftPush(key, searchLog);
+    }
 
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow();
     }
 
-    private User findUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow();
-    }
 }

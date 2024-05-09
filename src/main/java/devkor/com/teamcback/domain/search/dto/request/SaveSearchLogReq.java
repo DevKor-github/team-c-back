@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 public class SaveSearchLogReq {
-    private String name;
     private Long id;
+    private String name;
     private PlaceType type;
 }

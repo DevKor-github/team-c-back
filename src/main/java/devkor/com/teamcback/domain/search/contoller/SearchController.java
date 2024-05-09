@@ -1,11 +1,20 @@
 package devkor.com.teamcback.domain.search.contoller;
 
+import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
+import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
+import devkor.com.teamcback.domain.search.dto.response.SaveSearchLogRes;
+import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
+import devkor.com.teamcback.global.security.UserDetailsImpl;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,27 +37,27 @@ public class SearchController {
         return CommonResponse.success(searchService.globalSearch(buildingId, keyword));
     }
 
-//    /**
-//     * 검색 기록 조회
-//     * @param userDetail 사용자 정보
-//     * @return 사용자가 최근에 검색한 장소명 10개
-//     */
-//    @GetMapping("/log")
-//    public CommonResponse<List<SearchLog>> getSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail) {
-//        List<SearchLog> resList = new ArrayList<>();
-//        if(userDetail != null) resList = searchService.getSearchLog(userDetail.getUser().getUserId());
-//        return CommonResponse.success(resList);
-//    }
-//
-//    /**
-//     * 검색 기록 저장
-//     * @param userDetail 사용자 정보
-//     * @param req 검색한 내용 정보
-//     */
-//    @PostMapping("/log")
-//    public CommonResponse<SaveSearchLogRes> saveSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail, @RequestBody SaveSearchLogReq req) {
-//        searchService.saveSearchLog(userDetail.getUser().getUserId(), req);
-//        return CommonResponse.success(new SaveSearchLogRes());
-//    }
+    /**
+     * 검색 기록 조회
+     * @param userDetail 사용자 정보
+     * @return 사용자가 최근에 검색한 장소명 10개
+     */
+    @GetMapping("/log")
+    public CommonResponse<List<GetSearchLogRes>> getSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail) {
+        List<GetSearchLogRes> resList = new ArrayList<>();
+        if(userDetail != null) resList = searchService.getSearchLog(userDetail.getUser().getUserId());
+        return CommonResponse.success(resList);
+    }
+
+    /**
+     * 검색 기록 저장
+     * @param userDetail 사용자 정보
+     * @param req 검색한 내용 정보
+     */
+    @PostMapping("/log")
+    public CommonResponse<SaveSearchLogRes> saveSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail, @RequestBody SaveSearchLogReq req) {
+        searchService.saveSearchLog(userDetail.getUser().getUserId(), req);
+        return CommonResponse.success(new SaveSearchLogRes());
+    }
 
 }

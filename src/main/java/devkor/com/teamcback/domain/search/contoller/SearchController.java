@@ -42,7 +42,7 @@ public class SearchController {
      * @param userDetail 사용자 정보
      * @return 사용자가 최근에 검색한 장소명 10개
      */
-    @GetMapping("/log")
+    @GetMapping("/logs")
     public CommonResponse<List<GetSearchLogRes>> getSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail) {
         List<GetSearchLogRes> resList = new ArrayList<>();
         if(userDetail != null) resList = searchService.getSearchLog(userDetail.getUser().getUserId());
@@ -54,7 +54,7 @@ public class SearchController {
      * @param userDetail 사용자 정보
      * @param req 검색한 내용 정보
      */
-    @PostMapping("/log")
+    @PostMapping("/logs")
     public CommonResponse<SaveSearchLogRes> saveSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail, @RequestBody SaveSearchLogReq req) {
         searchService.saveSearchLog(userDetail.getUser().getUserId(), req);
         return CommonResponse.success(new SaveSearchLogRes());

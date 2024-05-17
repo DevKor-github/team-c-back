@@ -14,14 +14,16 @@ import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import devkor.com.teamcback.domain.user.repository.UserRepository;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +39,6 @@ public class SearchService {
         List<GlobalSearchRes> resList = new ArrayList<>();
 
         List<Classroom> classrooms = getClassrooms(word);
-
         List<Facility> facilities = getFacilities(word);
 
         // 먼저 검색한 건물이 있을 때
@@ -70,8 +71,7 @@ public class SearchService {
 
     private List<Building> getBuildings(String word) {
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByNicknameContaining(
-            word);
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByNicknameContaining(word);
 
         // 중복을 제거하여 List에 저장
         return buildingNicknames.stream()
@@ -93,7 +93,13 @@ public class SearchService {
 
     private List<Facility> getFacilities(String word) {
         // 편의시설 조회
-        return facilityRepository.findByNameContaining(word);
+        List<Facility> facilities = facilityRepository.findByNameContaining(word);
+
+        // 중복을 제거하여 List에 저장 (building & name(종류)이 모두 겹치는 경우를 제거)
+        Set<String> seen = new HashSet<>();
+        return facilities.stream()
+            .filter(facility -> seen.add(facility.getName() + "-" + facility.getBuilding().getId()))
+            .toList();
     }
 
     public List<GetSearchLogRes> getSearchLog(Long userId) {

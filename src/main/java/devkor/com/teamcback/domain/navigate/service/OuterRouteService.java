@@ -1,11 +1,10 @@
 package devkor.com.teamcback.domain.navigate.service;
 
-import devkor.com.teamcback.domain.navigate.dto.OuterRouteResponseDto;
+import devkor.com.teamcback.domain.navigate.dto.OuterRouteRes;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -16,13 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-@RequiredArgsConstructor
 public class OuterRouteService {
-    public OuterRouteResponseDto getOuterRoute(String stLong, String stLat, String edLong, String edLat)
+    public OuterRouteRes getOuterRoute(String startLong, String startLat, String endLong, String endLat)
         throws ParseException {
 
         //네이버 도보 길찾기 결과 문자열로 불러오기
-        String url = String.format("https://map.naver.com/p/api/directions/walk?o=reco,wide,flat&l=%s,%s;%s,%s",stLong, stLat, edLong, edLat);
+        String url = String.format("https://map.naver.com/p/api/directions/walk?o=reco,wide,flat&l=%s,%s;%s,%s",startLong, startLat, endLong, endLat);
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
@@ -58,6 +56,6 @@ public class OuterRouteService {
                 }
             }
         }
-        return new OuterRouteResponseDto(String.valueOf(duration), routeList);
+        return new OuterRouteRes(String.valueOf(duration), routeList);
     }
 }

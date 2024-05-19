@@ -7,7 +7,7 @@ import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.entity.ClassroomNickname;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomNicknameRepository;
-import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
@@ -21,9 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +37,7 @@ public class SearchService {
         List<GlobalSearchRes> resList = new ArrayList<>();
 
         List<Classroom> classrooms = getClassrooms(word);
-        List<Facility> facilities = getFacilities(word);
+        List<FacilityType> facilities = getFacilities(word);
 
         // 먼저 검색한 건물이 있을 때
         if(buildingId != null) {
@@ -47,8 +45,9 @@ public class SearchService {
             for(Classroom classroom : classrooms) {
                 if(classroom.getBuilding().equals(building)) resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
-            for(Facility facility : facilities) {
-                if(facility.getBuilding().equals(building)) resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+            for(FacilityType facilityType : facilities) {
+                // 편의시설의 종류가 해당 건물에 있는지 확인
+                if(facilityRepository.existsByBuildingAndType(building, facilityType)) resList.add(new GlobalSearchRes(facilityType, PlaceType.FACILITY));
             }
         }
 
@@ -61,8 +60,8 @@ public class SearchService {
             for(Classroom classroom : classrooms) {
                 resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
-            for(Facility facility : facilities) {
-                resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+            for(FacilityType facilityType : facilities) {
+                resList.add(new GlobalSearchRes(facilityType, PlaceType.FACILITY));
             }
         }
 
@@ -91,15 +90,25 @@ public class SearchService {
             .toList();
     }
 
-    private List<Facility> getFacilities(String word) {
-        // 편의시설 조회
-        List<Facility> facilities = facilityRepository.findByNameContaining(word);
+    // 검색어를 포함하는 편의시설의 종류 리스트를 반환
+    private List<FacilityType> getFacilities(String word) {
+//        // 편의시설 조회
+//        List<Facility> facilities = facilityRepository.findByNameContaining(word);
+//
+//        // 중복을 제거하여 List에 저장 (building & name(종류)이 모두 겹치는 경우를 제거)
+//        Set<String> seen = new HashSet<>();
+//        return facilities.stream()
+//            .filter(facility -> seen.add(facility.getName() + "-" + facility.getBuilding().getId()))
+//            .toList();
+        List<FacilityType> result = new ArrayList<>();
 
-        // 중복을 제거하여 List에 저장 (building & name(종류)이 모두 겹치는 경우를 제거)
-        Set<String> seen = new HashSet<>();
-        return facilities.stream()
-            .filter(facility -> seen.add(facility.getName() + "-" + facility.getBuilding().getId()))
-            .toList();
+        for (FacilityType facilityType : FacilityType.values()) {
+            if (facilityType.getName().contains(word)) {
+                result.add(facilityType);
+            }
+        }
+
+        return result;
     }
 
     public List<GetSearchLogRes> getSearchLog(Long userId) {

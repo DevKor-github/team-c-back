@@ -1,10 +1,12 @@
 package devkor.com.teamcback.domain.facility.repository;
 
+import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FacilityRepository extends JpaRepository<Facility, Long> {
 
-    List<Facility> findByNameContaining(String word);
+    boolean existsByBuildingAndType(Building building, FacilityType type);
 }

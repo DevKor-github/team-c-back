@@ -21,6 +21,8 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    private String imageUrl;
+
     @Column(nullable = false)
     private String detail;
 
@@ -38,9 +40,10 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private Double latitude;
 
-    public Building(String name, String detail, String address, String operatingTime,
+    public Building(String name, String imageUrl, String detail, String address, String operatingTime,
         Boolean needStudentCard, Double longitude, Double latitude) {
         this.name = name;
+        this.imageUrl = imageUrl;
         this.detail = detail;
         this.address = address;
         this.operatingTime = operatingTime;

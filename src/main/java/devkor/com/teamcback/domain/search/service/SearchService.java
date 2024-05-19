@@ -7,14 +7,24 @@ import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.entity.ClassroomNickname;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomNicknameRepository;
+import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
+import devkor.com.teamcback.domain.search.dto.request.SearchFacilityReq;
+import devkor.com.teamcback.domain.search.dto.request.SearchPlaceReq;
+import devkor.com.teamcback.domain.search.dto.response.GetFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.info.ProjectInfoProperties.Build;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +38,7 @@ import java.util.List;
 public class SearchService {
     private final BuildingRepository buildingRepository;
     private final BuildingNicknameRepository buildingNicknameRepository;
+    private final ClassroomRepository classroomRepository;
     private final ClassroomNicknameRepository classroomNicknameRepository;
     private final FacilityRepository facilityRepository;
     private final RedisTemplate<String, SearchLog> searchLogRedis;
@@ -66,6 +77,38 @@ public class SearchService {
         }
 
         return resList;
+    }
+
+    @Transactional(readOnly = true)
+    public SearchPlaceRes searchPlace(SearchPlaceReq searchReq) {
+        SearchPlaceRes res = new SearchPlaceRes();
+        switch (searchReq.getPlaceType()) {
+            case BUILDING -> {
+                res = new SearchPlaceRes(buildingRepository.findBuildingById(searchReq.getId()));
+            }
+            case CLASSROOM -> {
+                res =  new SearchPlaceRes(classroomRepository.findClassroomById(searchReq.getId()));
+            }
+        }
+
+        return res;
+    }
+
+    @Transactional(readOnly = true)
+    public SearchFacilityRes searchFacility(SearchFacilityReq req) {
+        Building building = findBuilding(req.getBuildingId());
+        SearchFacilityRes res = new SearchFacilityRes(building, req.getFacilityType());
+
+        List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, req.getFacilityType());
+        Map<Integer, List<GetFacilityRes>> map = new HashMap<>();
+        for(Facility facility : facilities) {
+            if(!map.containsKey(facility.getFloor())) map.put(facility.getFloor(), new ArrayList<>());
+            map.get(facility.getFloor()).add(new GetFacilityRes(facility));
+        }
+
+        res.setFacilities(map);
+
+        return res;
     }
 
     private List<Building> getBuildings(String word) {
@@ -140,5 +183,4 @@ public class SearchService {
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow();
     }
-
 }

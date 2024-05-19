@@ -1,10 +1,13 @@
 package devkor.com.teamcback.domain.search.contoller;
 
+import devkor.com.teamcback.domain.search.dto.request.SearchFacilityReq;
+import devkor.com.teamcback.domain.search.dto.request.SearchPlaceReq;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SaveSearchLogRes;
-import devkor.com.teamcback.domain.search.entity.SearchLog;
+import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -35,6 +38,24 @@ public class SearchController {
     public CommonResponse<List<GlobalSearchRes>> globalSearch(@RequestParam(name = "building_id", required = false) Long buildingId,
         @RequestParam(name = "keyword") String keyword) {
         return CommonResponse.success(searchService.globalSearch(buildingId, keyword));
+    }
+
+    /**
+     * 건물, 강의실 검색
+     * @param searchReq 장소 종류, id
+     */
+    @GetMapping("/place")
+    public CommonResponse<SearchPlaceRes> searchPlace(@RequestBody SearchPlaceReq searchReq) {
+        return CommonResponse.success(searchService.searchPlace(searchReq));
+    }
+
+    /**
+     * 편의시설 검색
+     * @param searchFacilityReq 건물 id, 편의시설 종류
+     */
+    @GetMapping("/facilities")
+    public CommonResponse<SearchFacilityRes> searchFacility(@RequestBody SearchFacilityReq searchFacilityReq) {
+        return CommonResponse.success(searchService.searchFacility(searchFacilityReq));
     }
 
     /**

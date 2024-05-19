@@ -1,13 +1,13 @@
 package devkor.com.teamcback.domain.search.contoller;
 
-import devkor.com.teamcback.domain.search.dto.request.SearchFacilityReq;
-import devkor.com.teamcback.domain.search.dto.request.SearchPlaceReq;
+import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SaveSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
+import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -42,20 +42,22 @@ public class SearchController {
 
     /**
      * 건물, 강의실 검색
-     * @param searchReq 장소 종류, id
+     * @param placeType 장소 종류
+     * @param id 장소 id
      */
     @GetMapping("/place")
-    public CommonResponse<SearchPlaceRes> searchPlace(@RequestBody SearchPlaceReq searchReq) {
-        return CommonResponse.success(searchService.searchPlace(searchReq));
+    public CommonResponse<SearchPlaceRes> searchPlace(@RequestParam PlaceType placeType, @RequestParam Long id) {
+        return CommonResponse.success(searchService.searchPlace(placeType, id));
     }
 
     /**
      * 편의시설 검색
-     * @param searchFacilityReq 건물 id, 편의시설 종류
+     * @param buildingId 건물 id
+     * @param facilityType 편의시설 종류
      */
     @GetMapping("/facilities")
-    public CommonResponse<SearchFacilityRes> searchFacility(@RequestBody SearchFacilityReq searchFacilityReq) {
-        return CommonResponse.success(searchService.searchFacility(searchFacilityReq));
+    public CommonResponse<SearchFacilityRes> searchFacility(@RequestParam(name = "building_id") Long buildingId, @RequestParam FacilityType facilityType) {
+        return CommonResponse.success(searchService.searchFacility(buildingId, facilityType));
     }
 
     /**

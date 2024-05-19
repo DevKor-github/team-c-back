@@ -80,14 +80,14 @@ public class SearchService {
     }
 
     @Transactional(readOnly = true)
-    public SearchPlaceRes searchPlace(SearchPlaceReq searchReq) {
+    public SearchPlaceRes searchPlace(PlaceType type, Long id) {
         SearchPlaceRes res = new SearchPlaceRes();
-        switch (searchReq.getPlaceType()) {
+        switch (type) {
             case BUILDING -> {
-                res = new SearchPlaceRes(buildingRepository.findBuildingById(searchReq.getId()));
+                res = new SearchPlaceRes(buildingRepository.findBuildingById(id));
             }
             case CLASSROOM -> {
-                res =  new SearchPlaceRes(classroomRepository.findClassroomById(searchReq.getId()));
+                res =  new SearchPlaceRes(classroomRepository.findClassroomById(id));
             }
         }
 
@@ -95,11 +95,11 @@ public class SearchService {
     }
 
     @Transactional(readOnly = true)
-    public SearchFacilityRes searchFacility(SearchFacilityReq req) {
-        Building building = findBuilding(req.getBuildingId());
-        SearchFacilityRes res = new SearchFacilityRes(building, req.getFacilityType());
+    public SearchFacilityRes searchFacility(Long buildingId, FacilityType facilityType) {
+        Building building = findBuilding(buildingId);
+        SearchFacilityRes res = new SearchFacilityRes(building, facilityType);
 
-        List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, req.getFacilityType());
+        List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
         Map<Integer, List<GetFacilityRes>> map = new HashMap<>();
         for(Facility facility : facilities) {
             if(!map.containsKey(facility.getFloor())) map.put(facility.getFloor(), new ArrayList<>());

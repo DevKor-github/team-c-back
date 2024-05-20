@@ -7,9 +7,9 @@ import lombok.Getter;
 public class OuterRouteRes {
 
     private String duration;
-    private List<String> route;
+    private List<String[]> route;
 
-    public OuterRouteRes(String duration, List<String> route){
+    public OuterRouteRes(String duration, List<String[]> route){
         this.duration = duration;
         this.route = route;
     }

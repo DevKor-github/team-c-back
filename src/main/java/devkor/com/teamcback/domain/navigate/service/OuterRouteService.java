@@ -48,8 +48,7 @@ public class OuterRouteService {
                 String unparsedPath = (String) pathInfo.get("path");
                 String[] parsedPath = unparsedPath.split(" ");
                 for (int j = 0; j<parsedPath.length; j++){
-                    if ((LastIndex == -1) ||(!Objects.equals(routeList.get(LastIndex),
-                        parsedPath[j]))) {
+                    if ((LastIndex == -1) ||(!Objects.equals(routeList.get(LastIndex)[1]+","+routeList.get(LastIndex)[0],parsedPath[j]))) {
                         String[] splitPath = parsedPath[j].split(",");
                         String[] returnPath = {splitPath[1],splitPath[0]};
                         routeList.add(returnPath);

@@ -40,7 +40,7 @@ public class OuterRouteService {
         JSONArray routeBody = (JSONArray) mainBody.get("legs");
         JSONObject route = (JSONObject) routeBody.get(0);
         JSONArray steps = (JSONArray) route.get("steps");
-        List<String> routeList = new ArrayList<String>();
+        List<String[]> routeList = new ArrayList<>();
         int LastIndex = -1;
         for (int i = 0; i<steps.size(); i++){
             JSONObject pathInfo = (JSONObject) steps.get(i);
@@ -48,9 +48,10 @@ public class OuterRouteService {
                 String unparsedPath = (String) pathInfo.get("path");
                 String[] parsedPath = unparsedPath.split(" ");
                 for (int j = 0; j<parsedPath.length; j++){
-                    if ((LastIndex == -1) ||(!Objects.equals(routeList.get(LastIndex),
-                        parsedPath[j]))) {
-                        routeList.add(parsedPath[j]);
+                    if ((LastIndex == -1) ||(!Objects.equals(routeList.get(LastIndex)[1]+","+routeList.get(LastIndex)[0],parsedPath[j]))) {
+                        String[] splitPath = parsedPath[j].split(",");
+                        String[] returnPath = {splitPath[1],splitPath[0]};
+                        routeList.add(returnPath);
                         LastIndex++;
                     }
                 }

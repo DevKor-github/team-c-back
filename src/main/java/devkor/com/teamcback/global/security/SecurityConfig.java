@@ -63,7 +63,8 @@ public class SecurityConfig {
             authorizeHttpRequests
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
                 .requestMatchers("/api/search/**").permitAll()
-                .requestMatchers("/api/outer-route").permitAll()
+                .requestMatchers("/api/routes").permitAll()
+                .requestMatchers("/api/routes/**").permitAll()
                 .anyRequest().authenticated() // 그 외 모든 요청 인증처리
         );
 

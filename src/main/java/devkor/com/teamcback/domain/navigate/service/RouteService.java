@@ -70,8 +70,10 @@ public class RouteService {
     // 2-2. 다른 건물의 강의실인 경우 : 강의실과 가장 가까운 건물의 출입구 사이의 거리
 
     // 3. 건물 <-> 건물
-    // 3-1. 같은 건물인 경우 -> TODO: 어떻게 처리할 것인지 논의 필요
+    // 3-1. 같은 건물인 경우 -> 예외 처리
     // 3-2. 다른 건물인 경우 : 건물 간 가장 가까운 출입구 찾기
+
+    // TODO: 현재 위치를 입력으로 받는 경우 고려?
 
     @Transactional(readOnly = true)
     public GetRouteRes findRoute(Long startBuildingId, Long startRoomId, PlaceType startType,

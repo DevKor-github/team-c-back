@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3307/teamc?serverTimezone=Asia/Seoul
-    username: root
-    password: Qwer!234
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     open-in-view: false
@@ -70,9 +70,9 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST}
       port: 6379
-      password: Qwer!234
+      password: ${REDIS_PASSWORD}
 
 logging:
   level:
@@ -80,7 +80,7 @@ logging:
 
 jwt:
   secret:
-    key: KoreaUnivDevKorTeamCrheofhKoreaUnivDevKorTeamCrheofh
+    key: ${JWT_SECRET_KEY}
 
 springdoc:
   api-docs:

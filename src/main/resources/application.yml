@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3307/teamc?serverTimezone=Asia/Seoul
+    username: root
+    password: Qwer!234
 
   jpa:
     open-in-view: false
@@ -70,9 +70,9 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
+      host: localhost
       port: 6379
-      password: ${REDIS_PASSWORD}
+      password: Qwer!234
 
 logging:
   level:
@@ -80,7 +80,21 @@ logging:
 
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: KoreaUnivDevKorTeamCrheofhKoreaUnivDevKorTeamCrheofh
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+    path: /swagger-ui.html
+    display-query-params-without-oauth2: true
+    doc-expansion: none
+  paths-to-match:
+    - /api/**
 
 default:
   image:

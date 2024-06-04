@@ -1,15 +1,19 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import lombok.Getter;
 
 @Getter
-public class GetFacilityDetailRes {
-    private Long facilityId;
-    private FacilityType type;
+@JsonInclude(Include.NON_NULL)
+public class GetRoomDetailRes {
+    private String type;
+    private Long id;
+    private FacilityType facilityType;
     private String name;
-    private int floor;
     private String detail;
     private boolean availability;
     private boolean plugAvailability;
@@ -20,11 +24,24 @@ public class GetFacilityDetailRes {
     private double xCoord;
     private double yCoord;
 
-    public GetFacilityDetailRes(Facility facility) {
-        this.facilityId = facility.getId();
-        this.type = facility.getType();
+    public GetRoomDetailRes(Classroom classroom) {
+        this.type = "CLASSROOM";
+        this.id = classroom.getId();
+        this.name = classroom.getName();
+        this.detail = classroom.getDetail();
+        this.plugAvailability = classroom.isPlugAvailability();
+        this.imageUrl = classroom.getImageUrl();
+        this.longitude = classroom.getLongitude();
+        this.latitude = classroom.getLatitude();
+        this.xCoord = classroom.getNode().getXCoord();
+        this.yCoord = classroom.getNode().getYCoord();
+    }
+
+    public GetRoomDetailRes(Facility facility) {
+        this.type = "FACILITY";
+        this.id = facility.getId();
+        this.facilityType = facility.getType();
         this.name = facility.getName();
-        this.floor = facility.getFloor();
         this.detail = facility.getDetail();
         this.availability = facility.isAvailability();
         this.plugAvailability = facility.isPlugAvailability();

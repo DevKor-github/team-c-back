@@ -13,9 +13,8 @@ import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.GetBuildingDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetClassroomDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetFacilityDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.GetFacilityRes;
+import devkor.com.teamcback.domain.search.dto.response.GetRoomDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
@@ -27,7 +26,6 @@ import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -183,10 +181,11 @@ public class SearchService {
          List<Classroom> classroomList = classroomRepository.findAllByBuildingAndFloor(building, floor);
          List<Facility> facilityList = facilityRepository.findAllByBuildingAndFloor(building, floor);
 
-         List<GetClassroomDetailRes> classroomDetailRes = classroomList.stream().map(GetClassroomDetailRes::new).toList();
-         List<GetFacilityDetailRes> facilityDetailRes = facilityList.stream().map(GetFacilityDetailRes::new).toList();
+         List<GetRoomDetailRes> roomDetailRes = new ArrayList<>(
+             classroomList.stream().map(GetRoomDetailRes::new).toList());
+         roomDetailRes.addAll(facilityList.stream().map(GetRoomDetailRes::new).toList());
 
-         return new SearchRoomRes(classroomDetailRes, facilityDetailRes);
+         return new SearchRoomRes(roomDetailRes);
     }
 
     /**

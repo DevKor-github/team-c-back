@@ -21,8 +21,8 @@ public class GetFacilityRes {
         this.name = facility.getName();
         this.availability = facility.isAvailability();
         this.imageUrl = facility.getImageUrl();
-//        this.xCoord = facility.getNode().getXCoord();
-//        this.yCoord = facility.getNode().getYCoord();
+        this.xCoord = facility.getNode().getXCoord();
+        this.yCoord = facility.getNode().getYCoord();
         this.longitude = facility.getLongitude();
         this.latitude = facility.getLatitude();
     }

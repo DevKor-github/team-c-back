@@ -5,8 +5,11 @@ import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SaveSearchLogRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchFacilityTypeRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchRoomRes;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -16,6 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,13 +55,41 @@ public class SearchController {
     }
 
     /**
-     * 편의시설 검색
+     * 건물에 있는 특정 종류의 편의시설 검색
      * @param buildingId 건물 id
      * @param facilityType 편의시설 종류
      */
+    @GetMapping("/buildings/{buildingId}/facilities")
+    public CommonResponse<SearchFacilityRes> searchBuildingFacilityByType(@PathVariable Long buildingId, @RequestParam(name = "type") FacilityType facilityType) {
+        return CommonResponse.success(searchService.searchBuildingFacilityByType(buildingId, facilityType));
+    }
+
+    /**
+     * 건물에 있는 편의시설 종류
+     * @param buildingId 건물 id
+     */
+    @GetMapping("/buildings/{buildingId}/facilities/type")
+    public CommonResponse<SearchFacilityTypeRes> searchFacilityTypeByBuilding(@PathVariable Long buildingId) {
+        return CommonResponse.success(searchService.searchFacilityTypeByBuilding(buildingId));
+    }
+
+    /**
+     * 건물 특정 층에 있는 강의실과 편의시설
+     * @param buildingId 건물 id
+     * @param floor 층
+     */
+    @GetMapping("/buildings/{buildingId}/floor/{floor}/rooms")
+    public CommonResponse<SearchRoomRes> searchRoomByBuildingFloor(@PathVariable Long buildingId, @PathVariable int floor) {
+        return CommonResponse.success(searchService.searchRoomByBuildingFloor(buildingId, floor));
+    }
+
+    /**
+     * 편의시설이 있는 건물
+     * @param facilityType 편의시설 종류
+     */
     @GetMapping("/facilities")
-    public CommonResponse<SearchFacilityRes> searchFacility(@RequestParam(name = "building_id") Long buildingId, @RequestParam FacilityType facilityType) {
-        return CommonResponse.success(searchService.searchFacility(buildingId, facilityType));
+    public CommonResponse<SearchBuildingRes> searchBuildingWithFacilityType(@RequestParam(name = "type") FacilityType facilityType) {
+        return CommonResponse.success(searchService.searchBuildingWithFacilityType(facilityType));
     }
 
     /**

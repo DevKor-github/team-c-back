@@ -49,8 +49,8 @@ public class SearchPlaceRes {
         this.plugAvailability = classroom.isPlugAvailability();
         this.longitude = classroom.getLongitude();
         this.latitude = classroom.getLatitude();
-//        this.xCoord = classroom.getNode().getXCoord();
-//        this.yCoord = classroom.getNode().getYCoord();
+        this.xCoord = classroom.getNode().getXCoord();
+        this.yCoord = classroom.getNode().getYCoord();
         this.placeType = PlaceType.CLASSROOM;
     }
 }

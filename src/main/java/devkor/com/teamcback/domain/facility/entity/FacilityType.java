@@ -25,7 +25,8 @@ public enum FacilityType {
     LOCKER("사물함"),
     BANK("은행"),
     TRASH_CAN("쓰레기통"),
-    GYM("헬스장");
+    GYM("헬스장"),
+    TOILET("화장실");
 
     private final String name;
 }

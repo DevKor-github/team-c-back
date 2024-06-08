@@ -31,8 +31,8 @@ public class GetRoomDetailRes {
         this.detail = classroom.getDetail();
         this.plugAvailability = classroom.isPlugAvailability();
         this.imageUrl = classroom.getImageUrl();
-        this.longitude = classroom.getLongitude();
-        this.latitude = classroom.getLatitude();
+        this.longitude = classroom.getNode().getLongitude();
+        this.latitude = classroom.getNode().getLatitude();
         this.xCoord = classroom.getNode().getXCoord();
         this.yCoord = classroom.getNode().getYCoord();
     }
@@ -47,8 +47,8 @@ public class GetRoomDetailRes {
         this.plugAvailability = facility.isPlugAvailability();
         this.imageUrl = facility.getImageUrl();
         this.operatingTime = facility.getImageUrl();
-        this.longitude = facility.getLongitude();
-        this.latitude = facility.getLatitude();
+        this.longitude = facility.getNode().getLongitude();
+        this.latitude = facility.getNode().getLatitude();
         this.xCoord = facility.getNode().getXCoord();
         this.yCoord = facility.getNode().getYCoord();
     }

@@ -24,8 +24,8 @@ public class GetBuildingDetailRes {
         this.address = building.getAddress();
         this.operatingTime = building.getOperatingTime();
         this.needStudentCard = building.getNeedStudentCard();
-        this.longitude = building.getLongitude();
-        this.latitude = building.getLatitude();
+        this.longitude = building.getNode().getLongitude();
+        this.latitude = building.getNode().getLatitude();
         this.floor = building.getFloor();
     }
 }

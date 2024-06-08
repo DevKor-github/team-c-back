@@ -21,13 +21,16 @@ public class Node extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    @Column(nullable = false)
+    private NodeType type;
+
     private double xCoord;
 
-    @Column(nullable = false)
     private double yCoord;
 
-    @Column(nullable = false)
+    private double latitude;
+
+    private double longitude;
+
     private int floor;
 
     @Column(nullable = false)

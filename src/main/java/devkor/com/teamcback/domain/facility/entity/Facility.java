@@ -48,12 +48,6 @@ public class Facility extends BaseEntity {
 
     private String operatingTime;
 
-    @Column(nullable = false)
-    private Double longitude;
-
-    @Column(nullable = false)
-    private Double latitude;
-
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;

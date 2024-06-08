@@ -37,12 +37,6 @@ public class Classroom extends BaseEntity {
     @Column(nullable = false)
     private int floor;
 
-    @Column(nullable = false)
-    private Double longitude;
-
-    @Column(nullable = false)
-    private Double latitude;
-
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
@@ -52,14 +46,12 @@ public class Classroom extends BaseEntity {
     private Node node;
 
     public Classroom(String name, String detail, boolean plugAvailability, String imageUrl,
-        int floor, double longitude, double latitude, Building building) {
+        int floor, Building building) {
         this.name = name;
         this.detail = detail;
         this.plugAvailability = plugAvailability;
         this.imageUrl = imageUrl;
         this.floor = floor;
-        this.longitude = longitude;
-        this.latitude = latitude;
         this.building = building;
     }
 }

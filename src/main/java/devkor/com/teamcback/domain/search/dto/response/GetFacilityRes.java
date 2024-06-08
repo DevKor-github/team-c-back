@@ -33,7 +33,7 @@ public class GetFacilityRes {
         this.imageUrl = facility.getImageUrl();
         this.xCoord = facility.getNode().getXCoord();
         this.yCoord = facility.getNode().getYCoord();
-        this.longitude = facility.getLongitude();
-        this.latitude = facility.getLatitude();
+        this.longitude = facility.getNode().getLongitude();
+        this.latitude = facility.getNode().getLatitude();
     }
 }

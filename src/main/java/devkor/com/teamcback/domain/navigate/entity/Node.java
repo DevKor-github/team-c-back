@@ -4,6 +4,8 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -21,17 +23,18 @@ public class Node extends BaseEntity {
     @GeneratedValue
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     private NodeType type;
 
-    private double xCoord;
+    private Double xCoord;
 
-    private double yCoord;
+    private Double yCoord;
 
-    private double latitude;
+    private Double latitude;
 
-    private double longitude;
+    private Double longitude;
 
-    private int floor;
+    private Integer floor;
 
     @Column(nullable = false)
     private boolean routing;

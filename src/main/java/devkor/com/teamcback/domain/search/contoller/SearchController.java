@@ -81,6 +81,20 @@ public class SearchController {
     }
 
     /**
+     * 모든 건물 검색
+     */
+    @GetMapping("/buildings")
+    @Operation(summary = "모든 건물 조회 결과", description = "모든 건물의 상세 정보 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<SearchBuildingRes> searchAllBuildings() {
+        return CommonResponse.success(searchService.searchAllBuildings());
+    }
+
+    /**
      * 건물에 있는 특정 종류의 편의시설 검색
      * @param buildingId 건물 id
      * @param facilityType 편의시설 종류

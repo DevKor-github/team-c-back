@@ -40,6 +40,9 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private Double latitude;
 
+    @Column(nullable = false)
+    private int floor; // 건물 최대 층수
+
     public Building(String name, String imageUrl, String detail, String address, String operatingTime,
         Boolean needStudentCard, Double longitude, Double latitude) {
         this.name = name;

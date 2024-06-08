@@ -103,6 +103,14 @@ public class SearchService {
     }
 
     /**
+     * 모든 건물 검색
+     */
+    @Transactional(readOnly = true)
+    public SearchBuildingRes searchAllBuildings() {
+        return new SearchBuildingRes(buildingRepository.findAll().stream().map(GetBuildingDetailRes::new).toList());
+    }
+
+    /**
      * 건물 내 특정 종류의 편의시설 검색
      */
     @Transactional(readOnly = true)
@@ -143,8 +151,8 @@ public class SearchService {
             .distinct()
             .toList();
     }
-
     // 검색어를 포함하는 편의시설의 종류 리스트를 반환
+
     private List<FacilityType> getFacilities(String word) {
         List<FacilityType> result = new ArrayList<>();
 

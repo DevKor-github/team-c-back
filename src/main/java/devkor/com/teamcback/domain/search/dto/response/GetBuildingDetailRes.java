@@ -14,6 +14,7 @@ public class GetBuildingDetailRes {
     private Boolean needStudentCard;
     private Double longitude;
     private Double latitude;
+    private int floor;
 
     public GetBuildingDetailRes(Building building) {
         this.buildingId = building.getId();
@@ -25,5 +26,6 @@ public class GetBuildingDetailRes {
         this.needStudentCard = building.getNeedStudentCard();
         this.longitude = building.getLongitude();
         this.latitude = building.getLatitude();
+        this.floor = building.getFloor();
     }
 }

@@ -51,8 +51,8 @@ public class SearchPlaceRes {
         this.address = building.getAddress();
         this.operatingTime = building.getOperatingTime();
         this.needStudentCard = building.getNeedStudentCard();
-        this.longitude = building.getLongitude();
-        this.latitude = building.getLatitude();
+        this.longitude = building.getNode().getLongitude();
+        this.latitude = building.getNode().getLatitude();
         this.placeType = PlaceType.BUILDING;
     }
 
@@ -63,10 +63,10 @@ public class SearchPlaceRes {
         this.detail = classroom.getDetail();
         this.floor = classroom.getFloor();
         this.plugAvailability = classroom.isPlugAvailability();
-        this.longitude = classroom.getLongitude();
-        this.latitude = classroom.getLatitude();
-//        this.xCoord = classroom.getNode().getXCoord();
-//        this.yCoord = classroom.getNode().getYCoord();
+        this.longitude = classroom.getNode().getLongitude();
+        this.latitude = classroom.getNode().getLatitude();
+        this.xCoord = classroom.getNode().getXCoord();
+        this.yCoord = classroom.getNode().getYCoord();
         this.placeType = PlaceType.CLASSROOM;
     }
 }

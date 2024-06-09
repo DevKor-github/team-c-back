@@ -10,4 +10,10 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
     boolean existsByBuildingAndType(Building building, FacilityType type);
 
     List<Facility> findAllByBuildingAndType(Building building, FacilityType type);
+
+    List<Facility> findAllByBuilding(Building building);
+
+    List<Facility> findAllByBuildingAndFloor(Building building, int floor);
+
+    List<Facility> findAllByType(FacilityType facilityType);
 }

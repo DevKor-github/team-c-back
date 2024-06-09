@@ -12,11 +12,16 @@ import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
+import devkor.com.teamcback.domain.search.dto.response.GetBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.GetFacilityRes;
+import devkor.com.teamcback.domain.search.dto.response.GetRoomDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchFacilityTypeRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
+import devkor.com.teamcback.domain.search.dto.response.SearchRoomRes;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import java.util.HashMap;
@@ -40,6 +45,9 @@ public class SearchService {
     private final FacilityRepository facilityRepository;
     private final RedisTemplate<String, SearchLog> searchLogRedis;
 
+    /**
+     * 검색어 자동 완성
+     */
     @Transactional(readOnly = true)
     public List<GlobalSearchRes> globalSearch(Long buildingId, String word) {
         List<GlobalSearchRes> resList = new ArrayList<>();
@@ -76,6 +84,9 @@ public class SearchService {
         return resList;
     }
 
+    /**
+     * 건물 또는 강의실 검색
+     */
     @Transactional(readOnly = true)
     public SearchPlaceRes searchPlace(PlaceType type, Long id) {
         SearchPlaceRes res = new SearchPlaceRes();
@@ -91,8 +102,19 @@ public class SearchService {
         return res;
     }
 
+    /**
+     * 모든 건물 검색
+     */
     @Transactional(readOnly = true)
-    public SearchFacilityRes searchFacility(Long buildingId, FacilityType facilityType) {
+    public SearchBuildingRes searchAllBuildings() {
+        return new SearchBuildingRes(buildingRepository.findAll().stream().map(GetBuildingDetailRes::new).toList());
+    }
+
+    /**
+     * 건물 내 특정 종류의 편의시설 검색
+     */
+    @Transactional(readOnly = true)
+    public SearchFacilityRes searchBuildingFacilityByType(Long buildingId, FacilityType facilityType) {
         Building building = findBuilding(buildingId);
         SearchFacilityRes res = new SearchFacilityRes(building, facilityType);
 
@@ -129,17 +151,9 @@ public class SearchService {
             .distinct()
             .toList();
     }
-
     // 검색어를 포함하는 편의시설의 종류 리스트를 반환
+
     private List<FacilityType> getFacilities(String word) {
-//        // 편의시설 조회
-//        List<Facility> facilities = facilityRepository.findByNameContaining(word);
-//
-//        // 중복을 제거하여 List에 저장 (building & name(종류)이 모두 겹치는 경우를 제거)
-//        Set<String> seen = new HashSet<>();
-//        return facilities.stream()
-//            .filter(facility -> seen.add(facility.getName() + "-" + facility.getBuilding().getId()))
-//            .toList();
         List<FacilityType> result = new ArrayList<>();
 
         for (FacilityType facilityType : FacilityType.values()) {
@@ -151,6 +165,54 @@ public class SearchService {
         return result;
     }
 
+    /**
+     * 건물에 있는 편의시설 종류 검색
+     */
+    @Transactional(readOnly = true)
+    public SearchFacilityTypeRes searchFacilityTypeByBuilding(Long buildingId) {
+        Building building = findBuilding(buildingId);
+        List<Facility> facilities = facilityRepository.findAllByBuilding(building);
+        List<FacilityType> facilityTypeList = facilities.stream()
+            .map(Facility::getType)
+            .distinct()
+            .toList();
+
+        return new SearchFacilityTypeRes(facilityTypeList);
+    }
+
+    /**
+     * 건물 특정 층에 있는 강의실과 편의시설 검색
+     */
+    @Transactional(readOnly = true)
+    public SearchRoomRes searchRoomByBuildingFloor(Long buildingId, int floor) {
+         Building building = findBuilding(buildingId);
+         List<Classroom> classroomList = classroomRepository.findAllByBuildingAndFloor(building, floor);
+         List<Facility> facilityList = facilityRepository.findAllByBuildingAndFloor(building, floor);
+
+         List<GetRoomDetailRes> roomDetailRes = new ArrayList<>(
+             classroomList.stream().map(GetRoomDetailRes::new).toList());
+         roomDetailRes.addAll(facilityList.stream().map(GetRoomDetailRes::new).toList());
+
+         return new SearchRoomRes(roomDetailRes);
+    }
+
+    /**
+     * 편의시설이 있는 건물
+     */
+    public SearchBuildingRes searchBuildingWithFacilityType(FacilityType facilityType) {
+        List<Facility> facilityList = facilityRepository.findAllByType(facilityType);
+        List<Building> buildingList = facilityList.stream()
+            .map(Facility::getBuilding)
+            .distinct()
+            .toList();
+
+        List<GetBuildingDetailRes> buildingDetailRes = buildingList.stream().map(GetBuildingDetailRes::new).toList();
+        return new SearchBuildingRes(buildingDetailRes);
+    }
+
+    /**
+     * 검색 기록 조회
+     */
     public List<GetSearchLogRes> getSearchLog(Long userId) {
         List<SearchLog> searchLogs = searchLogRedis.opsForList().range(String.valueOf(userId), 0, 10);
         List<GetSearchLogRes> resList = new ArrayList<>();
@@ -162,6 +224,9 @@ public class SearchService {
         return resList;
     }
 
+    /**
+     * 검색 기록 저장
+     */
     public void saveSearchLog(Long userId, SaveSearchLogReq req) {
         String searchedAt = LocalDate.now().toString();
         SearchLog searchLog = new SearchLog(req.getId(), req.getName(), req.getType(), searchedAt);

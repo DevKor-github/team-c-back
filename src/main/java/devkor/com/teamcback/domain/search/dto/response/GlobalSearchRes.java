@@ -31,8 +31,8 @@ public class GlobalSearchRes {
         this.id = building.getId();
         this.name = building.getName();
         this.address = building.getAddress();
-        this.longitude = building.getLongitude();
-        this.latitude = building.getLatitude();
+        this.longitude = building.getNode().getLongitude();
+        this.latitude = building.getNode().getLatitude();
         this.placeType = placeType;
     }
 
@@ -40,8 +40,8 @@ public class GlobalSearchRes {
         this.id = classroom.getId();
         this.name = classroom.getBuilding().getName() + " " + classroom.getName();
         this.floor = classroom.getFloor();
-        this.longitude = classroom.getLongitude();
-        this.latitude = classroom.getLatitude();
+        this.longitude = classroom.getNode().getLongitude();
+        this.latitude = classroom.getNode().getLatitude();
         this.placeType = placeType;
     }
 

@@ -63,7 +63,8 @@ public class SecurityConfig {
             authorizeHttpRequests
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
                 .requestMatchers("/api/search/**").permitAll()
-                .requestMatchers("/api/outer-route").permitAll()
+                .requestMatchers("/api/routes").permitAll()
+                .requestMatchers("/api/routes/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()
                 .requestMatchers("/api-docs/**").permitAll()

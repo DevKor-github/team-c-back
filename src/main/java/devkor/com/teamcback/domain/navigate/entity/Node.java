@@ -42,4 +42,6 @@ public class Node extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
+
+
 }

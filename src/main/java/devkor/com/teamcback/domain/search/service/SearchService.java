@@ -107,7 +107,8 @@ public class SearchService {
      */
     @Transactional(readOnly = true)
     public SearchBuildingRes searchAllBuildings() {
-        return new SearchBuildingRes(buildingRepository.findAll().stream().map(GetBuildingDetailRes::new).toList());
+        List<Building> buildingList = buildingRepository.findAll();
+        return new SearchBuildingRes(buildingList.stream().filter(building -> building.getId() != 0).map(GetBuildingDetailRes::new).toList());
     }
 
     /**

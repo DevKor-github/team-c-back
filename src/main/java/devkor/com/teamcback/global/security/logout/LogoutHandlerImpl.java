@@ -22,7 +22,7 @@ public class LogoutHandlerImpl implements LogoutHandler {
     public void logout(HttpServletRequest request, HttpServletResponse response,
         Authentication authentication) {
 
-        String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
+        String refreshToken = jwtUtil.getRefreshTokenFromHeader(request);
         log.info("refreshToken: {}", refreshToken);
 
         // 블랙리스트 처리: Redis에 저장

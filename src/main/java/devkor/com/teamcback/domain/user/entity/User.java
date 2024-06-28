@@ -3,6 +3,8 @@ package devkor.com.teamcback.domain.user.entity;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,6 +34,7 @@ public class User extends BaseEntity {
     private Role role;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Provider provider;
 
     public User(String username, String email, String profileUrl, Role role, Provider provider) {

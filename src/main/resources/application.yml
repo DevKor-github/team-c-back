@@ -82,6 +82,16 @@ jwt:
   secret:
     key: ${JWT_SECRET_KEY}
 
+cloud:
+  aws:
+    s3:
+      bucket: ${BUCKET_NAME}
+    credentials:
+      access-key: ${BUCKET_ACCESS_KEY}
+      secret-key: ${BUCKET_SECRET_KEY}
+    region:
+      static: ap-northeast-2
+
 springdoc:
   api-docs:
     path: /api-docs
@@ -98,4 +108,4 @@ springdoc:
 
 default:
   image:
-    url:
+    url: https://kodaero.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg

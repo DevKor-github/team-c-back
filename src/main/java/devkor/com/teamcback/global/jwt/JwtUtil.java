@@ -16,6 +16,7 @@ import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j(topic = "JwtUtil")
 @Component
@@ -75,28 +76,25 @@ public class JwtUtil {
     }
 
     /**
-     * Cookie 에서 Access Token 가져오기
-     * @return Access Token 혹은 null
+     * Header 에서 Access Token 가져오기
+     * @return Bearer%20을 제거한 Access Token 혹은 null
      */
-    public String getAccessTokenFromCookie(HttpServletRequest request) {
-        return findValueInCookie(request, ACCESS_TOKEN_HEADER);
+    public String getAccessTokenFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader(ACCESS_TOKEN_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(9);
+        }
+        return null;
     }
 
     /**
-     * Cookie 에서 Refresh Token 가져오기
-     * @return Refresh Token 혹은 null
+     * Header 에서 Refresh Token 가져오기
+     * @return Bearer%20을 제거한 Refresh Token 혹은 null
      */
-    public String getRefreshTokenFromCookie(HttpServletRequest request) {
-        return findValueInCookie(request, REFRESH_TOKEN_HEADER);
-    }
-
-    private String findValueInCookie(HttpServletRequest request, String key) {
-        Cookie[] list = request.getCookies();
-        if(list != null) {
-            for (Cookie cookie : list) {
-                if (cookie.getName().equals(key))
-                    return cookie.getValue().substring(9);
-            }
+    public String getRefreshTokenFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader(REFRESH_TOKEN_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(9);
         }
         return null;
     }

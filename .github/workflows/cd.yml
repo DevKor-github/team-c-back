@@ -59,7 +59,7 @@ jobs:
 
       - name: Setting environment variables
         run: |
-          echo "AWS_DEFAULT_REGION=ap-northeast-2c" >> $GITHUB_ENV
+          echo "AWS_DEFAULT_REGION=ap-northeast-2" >> $GITHUB_ENV
           echo "AWS_SG_NAME=launch-wizard-8" >> $GITHUB_ENV
 
       - name: Configure AWS credentials

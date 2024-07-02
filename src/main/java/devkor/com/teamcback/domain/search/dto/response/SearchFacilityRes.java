@@ -20,7 +20,7 @@ public class SearchFacilityRes {
     private FacilityType type;
     @Schema(description = "각 층별 편의시설 조회 결과")
     @Setter
-    private Map<Integer, List<GetFacilityRes>> facilities = new HashMap<>();
+    private Map<Double, List<GetFacilityRes>> facilities = new HashMap<>();
 
     public SearchFacilityRes(Building building, FacilityType type) {
         this.buildingId = building.getId();

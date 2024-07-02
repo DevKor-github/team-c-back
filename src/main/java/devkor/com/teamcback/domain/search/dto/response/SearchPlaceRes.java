@@ -23,7 +23,7 @@ public class SearchPlaceRes {
     @Schema(description = "건물 또는 강의실 설명", example = "설명")
     private String detail;
     @Schema(description = "강의실 층수", example = "3")
-    private Integer floor;
+    private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
     @Schema(description = "건물 운영 시간", example = "00:00~00:00")

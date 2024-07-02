@@ -17,7 +17,7 @@ public class GlobalSearchRes {
     @Schema(description = "건물 또는 시설 이름", example = "애기능생활관")
     private String name;
     @Schema(description = "강의실 층수", example = "3")
-    private Integer floor;
+    private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
     @Schema(description = "건물 또는 시설 경도", example = "127.0274309")

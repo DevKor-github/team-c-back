@@ -2,15 +2,20 @@ package devkor.com.teamcback.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@Schema(description = "status 포함 common response")
 @Getter
 @AllArgsConstructor
 public class CommonResponse<T> {
+    @Schema(description = "http Status code")
     private final Integer statusCode;
+    @Schema(description = "http status 메시지")
     private final String message;
 
+    @Schema(description = "데이터")
     @JsonInclude(Include.NON_EMPTY)
     private T data;
 

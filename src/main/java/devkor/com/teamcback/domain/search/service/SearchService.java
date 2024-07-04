@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +54,7 @@ public class SearchService {
         List<GlobalSearchRes> resList = new ArrayList<>();
 
         List<Classroom> classrooms = getClassrooms(word);
-        List<FacilityType> facilities = getFacilities(word);
+        List<Facility> facilities = getFacilities(word);
 
         // 먼저 검색한 건물이 있을 때
         if(buildingId != null) {
@@ -61,9 +62,8 @@ public class SearchService {
             for(Classroom classroom : classrooms) {
                 if(classroom.getBuilding().equals(building)) resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
-            for(FacilityType facilityType : facilities) {
-                // 편의시설의 종류가 해당 건물에 있는지 확인
-                if(facilityRepository.existsByBuildingAndType(building, facilityType)) resList.add(new GlobalSearchRes(facilityType, PlaceType.FACILITY));
+            for(Facility facility : facilities) {
+                if(facility.getBuilding().equals(building)) resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
             }
         }
 
@@ -76,8 +76,8 @@ public class SearchService {
             for(Classroom classroom : classrooms) {
                 resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
-            for(FacilityType facilityType : facilities) {
-                resList.add(new GlobalSearchRes(facilityType, PlaceType.FACILITY));
+            for(Facility facility : facilities) {
+                resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
             }
         }
 
@@ -152,18 +152,16 @@ public class SearchService {
             .distinct()
             .toList();
     }
-    // 검색어를 포함하는 편의시설의 종류 리스트를 반환
 
-    private List<FacilityType> getFacilities(String word) {
-        List<FacilityType> result = new ArrayList<>();
+    // 검색어를 포함하는 편의시설의 리스트를 반환 (편의시설의 name을 반환)
+    private List<Facility> getFacilities(String word) {
+        List<Facility> facilities = facilityRepository.findByNameContaining(word);
 
-        for (FacilityType facilityType : FacilityType.values()) {
-            if (facilityType.getName().contains(word)) {
-                result.add(facilityType);
-            }
-        }
-
-        return result;
+        return facilities.stream()
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(Facility::getName, f -> f, (existing, replacement) -> existing),
+                map -> new ArrayList<>(map.values())
+            ));
     }
 
     /**

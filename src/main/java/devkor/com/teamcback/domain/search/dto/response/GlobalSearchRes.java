@@ -41,7 +41,11 @@ public class GlobalSearchRes {
 
     public GlobalSearchRes(Classroom classroom, PlaceType placeType) {
         this.id = classroom.getId();
-        this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        if (classroom.getBuilding().getId() == 0) {
+            this.name = classroom.getName();
+        } else {
+            this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        }
         this.floor = classroom.getFloor();
         this.detail = classroom.getDetail();
         this.longitude = classroom.getNode().getLongitude();
@@ -50,7 +54,7 @@ public class GlobalSearchRes {
     }
 
     public GlobalSearchRes(Facility facility, PlaceType placeType) {
-        if (facility.getType().getName().equals(facility.getName())) {
+        if (facility.getBuilding().getId() == 0 || facility.getType().getName().equals(facility.getName())) {
             this.name = facility.getName();
         } else {
             this.name = facility.getBuilding().getName() + " " + facility.getName();

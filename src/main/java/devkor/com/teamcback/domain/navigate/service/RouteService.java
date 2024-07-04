@@ -76,7 +76,7 @@ public class RouteService {
             List<Node> thisPath = path.get(i);
             List<List<Double>> partialRoute = new ArrayList<>();
             Long buildingId = thisPath.get(0).getBuilding().getId();
-            int floor = thisPath.get(0).getFloor();
+            double floor = thisPath.get(0).getFloor();
             if (buildingId == 0L){
                 for (Node j: thisPath){
                     //디버깅 위해 route에 죄다 id넣어놓음. 나중에는 사라질 거기도 하고 마지막 index라 프론트쪽에서도 신경 안 써도 될듯.
@@ -223,7 +223,7 @@ public class RouteService {
 
         Building prevNodeBuilding = prevNode.getBuilding();
         Building nextNodeBuilding = nextNode.getBuilding();
-        Integer nextNodeFloor = nextNode.getFloor();
+        Double nextNodeFloor = nextNode.getFloor();
 
         //건물이 같은 경우는 층 이동의 경우밖에 없음
         if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){

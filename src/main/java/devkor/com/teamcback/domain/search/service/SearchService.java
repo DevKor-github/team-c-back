@@ -120,7 +120,7 @@ public class SearchService {
         SearchFacilityRes res = new SearchFacilityRes(building, facilityType);
 
         List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
-        Map<Integer, List<GetFacilityRes>> map = new HashMap<>();
+        Map<Double, List<GetFacilityRes>> map = new HashMap<>();
         for(Facility facility : facilities) {
             if(!map.containsKey(facility.getFloor())) map.put(facility.getFloor(), new ArrayList<>());
             map.get(facility.getFloor()).add(new GetFacilityRes(facility));

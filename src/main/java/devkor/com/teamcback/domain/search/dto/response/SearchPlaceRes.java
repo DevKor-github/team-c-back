@@ -16,6 +16,10 @@ import lombok.NoArgsConstructor;
 public class SearchPlaceRes {
     @Schema(description = "건물 또는 강의실 id", example = "1")
     private Long id;
+    @Schema(description = "건물 id", example = "1")
+    private Long buildingId;
+    @Schema(description = "건물명", example = "애기능생활관")
+    private String buildingName;
     @Schema(description = "건물 또는 강의실 이름", example = "애기능생활관")
     private String name;
     @Schema(description = "건물 또는 강의실 image url", example = "주소")
@@ -23,7 +27,7 @@ public class SearchPlaceRes {
     @Schema(description = "건물 또는 강의실 설명", example = "설명")
     private String detail;
     @Schema(description = "강의실 층수", example = "3")
-    private Integer floor;
+    private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
     @Schema(description = "건물 운영 시간", example = "00:00~00:00")
@@ -45,6 +49,8 @@ public class SearchPlaceRes {
 
     public SearchPlaceRes(Building building) {
         this.id = building.getId();
+        this.buildingId = building.getId();
+        this.buildingName = building.getName();
         this.name = building.getName();
         this.imageUrl = building.getImageUrl();
         this.detail = building.getDetail();
@@ -58,6 +64,8 @@ public class SearchPlaceRes {
 
     public SearchPlaceRes(Classroom classroom) {
         this.id = classroom.getId();
+        this.buildingId = classroom.getBuilding().getId();
+        this.buildingName = classroom.getBuilding().getName();
         this.name = classroom.getName();
         this.imageUrl = classroom.getImageUrl();
         this.detail = classroom.getDetail();

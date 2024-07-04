@@ -35,7 +35,7 @@ public class Classroom extends BaseEntity {
     private String imageUrl;
 
     @Column(nullable = false)
-    private int floor;
+    private Double floor;
 
     @ManyToOne
     @JoinColumn(name = "building_id")
@@ -46,7 +46,7 @@ public class Classroom extends BaseEntity {
     private Node node;
 
     public Classroom(String name, String detail, boolean plugAvailability, String imageUrl,
-        int floor, Building building) {
+        double floor, Building building) {
         this.name = name;
         this.detail = detail;
         this.plugAvailability = plugAvailability;

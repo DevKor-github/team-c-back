@@ -17,9 +17,11 @@ public class GlobalSearchRes {
     @Schema(description = "건물 또는 시설 이름", example = "애기능생활관")
     private String name;
     @Schema(description = "강의실 층수", example = "3")
-    private Integer floor;
+    private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
+    @Schema(description = "설명", example = "프리액션 밸브실")
+    private String detail;
     @Schema(description = "건물 또는 시설 경도", example = "127.0274309")
     private Double longitude;
     @Schema(description = "건물 또는 시설 위도", example = "37.5844829")
@@ -40,6 +42,7 @@ public class GlobalSearchRes {
         this.id = classroom.getId();
         this.name = classroom.getBuilding().getName() + " " + classroom.getName();
         this.floor = classroom.getFloor();
+        this.detail = classroom.getDetail();
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.placeType = placeType;

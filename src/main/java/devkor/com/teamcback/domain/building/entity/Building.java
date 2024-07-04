@@ -38,10 +38,10 @@ public class Building extends BaseEntity {
     private Boolean needStudentCard;
 
     @Column(nullable = false)
-    private Integer floor; // 건물 최대 층수
+    private Double floor; // 건물 최대 층수
 
     @Column(nullable = false)
-    private Integer underFloor;
+    private Double underFloor;
 
     @OneToOne
     @JoinColumn(name = "node_id")

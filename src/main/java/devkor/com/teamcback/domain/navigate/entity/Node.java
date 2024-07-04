@@ -34,7 +34,7 @@ public class Node extends BaseEntity {
 
     private Double longitude;
 
-    private Integer floor;
+    private Double floor;
 
     @Column(nullable = false)
     private boolean routing;

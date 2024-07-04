@@ -34,7 +34,12 @@ public enum ResultCode {
 
     // 길찾기 6000번대
     NOT_FOUND_NODE(HttpStatus.NOT_FOUND, 6000, "노드를 찾을 수 없습니다."),
-    NOT_FOUND_ROUTE(HttpStatus.BAD_REQUEST, 6001, "경로를 찾을 수 없습니다.");
+    NOT_FOUND_ROUTE(HttpStatus.BAD_REQUEST, 6001, "경로를 찾을 수 없습니다."),
+
+    // 즐겨찾기 7000번대
+    INCORRECT_COLOR(HttpStatus.BAD_REQUEST, 7000, "정해진 색상 내에서 선택해주세요."),
+    NOT_FOUND_CATEGORY(HttpStatus.NOT_FOUND, 7001, "카테고리를 찾을 수 없습니다.")
+    ;
 
     private final HttpStatus status;
     private final int code;

@@ -47,7 +47,9 @@ public class GlobalSearchRes {
             this.name = classroom.getBuilding().getName() + " " + classroom.getName();
         }
         this.floor = classroom.getFloor();
-        this.detail = classroom.getDetail();
+        if (!classroom.getDetail().equals(".")) {
+            this.detail = classroom.getDetail();
+        }
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.placeType = placeType;

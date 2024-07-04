@@ -7,6 +7,7 @@ import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.CreateCategoryRes;
 import devkor.com.teamcback.domain.bookmark.dto.response.DeleteCategoryRes;
+import devkor.com.teamcback.domain.bookmark.dto.response.ModifyCategoryRes;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.user.entity.User;
@@ -50,6 +51,22 @@ public class CategoryService {
         categoryRepository.delete(category);
 
         return new DeleteCategoryRes();
+    }
+
+    /**
+     * 카테고리 수정
+     */
+    @Transactional
+    public ModifyCategoryRes modifyCategory(Long userId, Long categoryId, CreateCategoryReq req) {
+        User user = findUser(userId);
+        Category category = findCategory(categoryId);
+
+        // 카테고리 소유자인지 확인
+        checkAuthority(user, category.getUser());
+
+        category.update(req);
+
+        return new ModifyCategoryRes();
     }
 
     private User findUser(Long userId) {

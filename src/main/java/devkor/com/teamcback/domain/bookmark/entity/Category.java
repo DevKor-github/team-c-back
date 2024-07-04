@@ -44,4 +44,10 @@ public class Category extends BaseEntity {
         this.memo = req.getMemo();
         this.user = user;
     }
+
+    public void update(CreateCategoryReq req) {
+        this.category = req.getCategory();
+        this.color = req.getColor();
+        this.memo = req.getMemo();
+    }
 }

@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.search.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,16 +41,26 @@ public class GlobalSearchRes {
 
     public GlobalSearchRes(Classroom classroom, PlaceType placeType) {
         this.id = classroom.getId();
-        this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        if (classroom.getBuilding().getId() == 0) {
+            this.name = classroom.getName();
+        } else {
+            this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        }
         this.floor = classroom.getFloor();
-        this.detail = classroom.getDetail();
+        if (!classroom.getDetail().equals(".")) {
+            this.detail = classroom.getDetail();
+        }
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.placeType = placeType;
     }
 
-    public GlobalSearchRes(FacilityType facilityType, PlaceType placeType) {
-        this.name = facilityType.getName();
+    public GlobalSearchRes(Facility facility, PlaceType placeType) {
+        if (facility.getBuilding().getId() == 0 || facility.getType().getName().equals(facility.getName())) {
+            this.name = facility.getName();
+        } else {
+            this.name = facility.getBuilding().getName() + " " + facility.getName();
+        }
         this.placeType = placeType;
     }
 }

@@ -34,7 +34,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
         throws ServletException, IOException {
 
-        String accessToken = jwtUtil.getAccessTokenFromCookie(request);
+        String accessToken = jwtUtil.getAccessTokenFromHeader(request);
         log.info("Access Token: {}", accessToken);
 
         // access token 비어있으면 인증 미처리
@@ -68,7 +68,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
      * Refresh token 검증 (access token이 만료된 경우)
      */
     private void authenticateRefreshToken(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = jwtUtil.getRefreshTokenFromCookie(request);
+        String refreshToken = jwtUtil.getRefreshTokenFromHeader(request);
         log.info("Refresh Token: {}", refreshToken);
 
         if(refreshToken == null) throw new GlobalException(REFRESH_TOKEN_REQUIRED); // refresh token 요청

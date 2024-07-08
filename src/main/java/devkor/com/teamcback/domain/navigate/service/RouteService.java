@@ -126,7 +126,7 @@ public class RouteService {
             boolean isOutside = thisPath.get(0).getBuilding().getId() == 0L;
             List<List<Double>> partialRoute = convertNodesToCoordinates(thisPath, isOutside);
             Long buildingId = isOutside ? 0L : thisPath.get(0).getBuilding().getId();
-            int floor = thisPath.get(0).getFloor();
+            Double floor = thisPath.get(0).getFloor();
 
             PartialRouteRes partialRouteRes = isOutside
                 ? new PartialRouteRes(partialRoute)
@@ -295,7 +295,7 @@ public class RouteService {
 
         Building prevNodeBuilding = prevNode.getBuilding();
         Building nextNodeBuilding = nextNode.getBuilding();
-        Integer nextNodeFloor = nextNode.getFloor();
+        Double nextNodeFloor = nextNode.getFloor();
 
         //건물이 같은 경우는 층 이동의 경우밖에 없음
         if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){

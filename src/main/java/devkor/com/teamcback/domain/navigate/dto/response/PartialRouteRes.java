@@ -13,7 +13,7 @@ public class PartialRouteRes {
     @Schema(description = "건물 id, 실내일 경우에만 제공", example = "1")
     public Long buildingId;
     @Schema(description = "건물 층, 실내일 경우에만 제공", example = "3")
-    public Integer floor;
+    public Double floor;
     //경로 리스트
     @Schema(description = "상세 경로. 실내의 경우 x좌표-y좌표-id, 실외의 경우 위도-경도-id로 제공", example =
         """
@@ -61,7 +61,7 @@ public class PartialRouteRes {
     @Schema(description = "경로 대략적 설명", example = "도착")
     public String info;
 
-    public PartialRouteRes(Long buildingId, Integer floor, List<List<Double>> route){
+    public PartialRouteRes(Long buildingId, Double floor, List<List<Double>> route){
         this.inOut = true;
         this.buildingId = buildingId;
         this.floor = floor;

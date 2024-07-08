@@ -29,9 +29,6 @@ public class LogoutSuccessHandlerImpl implements LogoutSuccessHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(CommonResponse.success(new UserLogoutRes())));
-
-        deleteCookie(response, JwtUtil.ACCESS_TOKEN_HEADER);
-        deleteCookie(response, JwtUtil.REFRESH_TOKEN_HEADER);
     }
 
     private void deleteCookie(HttpServletResponse response, String header) {

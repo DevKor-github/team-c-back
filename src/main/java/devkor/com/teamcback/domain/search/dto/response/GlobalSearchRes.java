@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.search.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,9 +18,11 @@ public class GlobalSearchRes {
     @Schema(description = "건물 또는 시설 이름", example = "애기능생활관")
     private String name;
     @Schema(description = "강의실 층수", example = "3")
-    private Integer floor;
+    private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
+    @Schema(description = "설명", example = "프리액션 밸브실")
+    private String detail;
     @Schema(description = "건물 또는 시설 경도", example = "127.0274309")
     private Double longitude;
     @Schema(description = "건물 또는 시설 위도", example = "37.5844829")
@@ -38,15 +41,26 @@ public class GlobalSearchRes {
 
     public GlobalSearchRes(Classroom classroom, PlaceType placeType) {
         this.id = classroom.getId();
-        this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        if (classroom.getBuilding().getId() == 0) {
+            this.name = classroom.getName();
+        } else {
+            this.name = classroom.getBuilding().getName() + " " + classroom.getName();
+        }
         this.floor = classroom.getFloor();
+        if (!classroom.getDetail().equals(".")) {
+            this.detail = classroom.getDetail();
+        }
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.placeType = placeType;
     }
 
-    public GlobalSearchRes(FacilityType facilityType, PlaceType placeType) {
-        this.name = facilityType.getName();
+    public GlobalSearchRes(Facility facility, PlaceType placeType) {
+        if (facility.getBuilding().getId() == 0 || facility.getType().getName().equals(facility.getName())) {
+            this.name = facility.getName();
+        } else {
+            this.name = facility.getBuilding().getName() + " " + facility.getName();
+        }
         this.placeType = placeType;
     }
 }

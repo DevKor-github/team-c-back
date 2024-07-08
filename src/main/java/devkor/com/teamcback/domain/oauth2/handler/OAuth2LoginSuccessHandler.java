@@ -44,17 +44,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtUtil.createAccessToken(email, String.valueOf(role));
         String refreshToken = jwtUtil.createRefreshToken(email, String.valueOf(role));
 
-        addCookie(accessToken, JwtUtil.ACCESS_TOKEN_HEADER, response);
-        addCookie(refreshToken, JwtUtil.REFRESH_TOKEN_HEADER, response);
-
-        setResponse(response, new OAuth2LoginRes());
-    }
-
-    private void addCookie(String cookieValue, String header, HttpServletResponse res) {
-        Cookie cookie = new Cookie(header, cookieValue); // Name-Value
-        cookie.setPath("/");
-        cookie.setMaxAge(2 * 60 * 60); //쿠키 유효 기간(s) 2시간
-        res.addCookie(cookie);
+        setResponse(response, new OAuth2LoginRes(accessToken, refreshToken));
     }
 
     private void setResponse(HttpServletResponse response, Object data) throws IOException {

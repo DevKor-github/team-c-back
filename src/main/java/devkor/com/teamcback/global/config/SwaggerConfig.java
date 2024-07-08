@@ -27,7 +27,7 @@ public class SwaggerConfig {
             .addSecuritySchemes(securityJwtName, new SecurityScheme()
                 .name(securityJwtName)
                 .type(SecurityScheme.Type.APIKEY)
-                .in(SecurityScheme.In.COOKIE)
+                .in(SecurityScheme.In.HEADER)
                 .scheme(BEARER_TOKEN_PREFIX)
                 .bearerFormat(securityJwtName)
                 .name("AccessToken"));

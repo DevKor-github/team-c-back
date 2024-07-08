@@ -70,6 +70,7 @@ public class PartialRouteRes {
 
     public PartialRouteRes(List<List<Double>> route){
         this.inOut = false;
+		this.buildingId = 0L;
         this.route = route;
     }
 

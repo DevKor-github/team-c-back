@@ -31,7 +31,8 @@ public enum ResultCode {
 
     // 길찾기 6000번대
     NOT_FOUND_NODE(HttpStatus.NOT_FOUND, 6000, "노드를 찾을 수 없습니다."),
-    NOT_FOUND_ROUTE(HttpStatus.BAD_REQUEST, 6001, "경로를 찾을 수 없습니다.");
+    NOT_FOUND_ROUTE(HttpStatus.BAD_REQUEST, 6001, "경로를 찾을 수 없습니다."),
+    NOT_PROVIDED_ROUTE(HttpStatus.BAD_REQUEST, 6002, "해당 경로는 제공되지 않습니다.");
 
     private final HttpStatus status;
     private final int code;

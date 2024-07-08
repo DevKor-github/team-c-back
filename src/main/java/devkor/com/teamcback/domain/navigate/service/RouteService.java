@@ -13,6 +13,7 @@ import devkor.com.teamcback.domain.navigate.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.navigate.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.navigate.entity.Edge;
+import devkor.com.teamcback.domain.navigate.entity.LinkedBuildingData;
 import devkor.com.teamcback.domain.navigate.entity.LocationType;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.entity.NodeType;
@@ -25,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,60 +46,117 @@ public class RouteService {
     private final ClassroomRepository classroomRepository;
     private final FacilityRepository facilityRepository;
 
+    /**
+     * 메인 경로탐색 메서드
+     */
     @Transactional(readOnly = true)
     public GetRouteRes findRoute(List<Double> startPosition, LocationType startType,
         List<Double> endPosition, LocationType endType, NodeType barrierFree) throws ParseException {
-        List<Building> buildingList = new ArrayList<>();
-        //무슨 경로를 탐색하든 외부 경로는 항상 추가(같은 건물 탐색도 나갔다와야하는 경우가 있을 수 있음)
-        buildingList.add(findBuilding(0L));
 
         Node startNode = getNodeByType(startPosition, startType);
         Node endNode = getNodeByType(endPosition, endType);
 
-        //묶여있는 건물 탐색 및 추가 기능 여기에 필요
-        buildingList.add(startNode.getBuilding());
-        buildingList.add(endNode.getBuilding());
+        boolean isStartBuilding = startType == LocationType.BUILDING;
+        boolean isEndBuilding = endType == LocationType.BUILDING;
 
-        //barrierFree 없는 경우 null로 들어옴, 있는 경우 계단 or 엘리베이터 들어옴.
-        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
-
-        DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-        Long duration = route.getDistance();
-
-        List<List<Node>> path = cutRoute(route.getPath());
-
-        List<PartialRouteRes> totalRoute = new ArrayList<>();
-
-        int pathSize = path.size();
-
-        for (int i = 0; i < pathSize; i++) {
-            List<Node> thisPath = path.get(i);
-            List<List<Double>> partialRoute = new ArrayList<>();
-            Long buildingId = thisPath.get(0).getBuilding().getId();
-            int floor = thisPath.get(0).getFloor();
-            if (buildingId == 0L){
-                for (Node j: thisPath){
-                    //디버깅 위해 route에 죄다 id넣어놓음. 나중에는 사라질 거기도 하고 마지막 index라 프론트쪽에서도 신경 안 써도 될듯.
-                    partialRoute.add(Arrays.asList(j.getLatitude(), j.getLongitude(), j.getId().doubleValue()));
-                }
-                totalRoute.add(new PartialRouteRes(partialRoute));
-            }
-            else {
-                for (Node j: thisPath){
-                    partialRoute.add(Arrays.asList(j.getXCoord(), j.getYCoord(), j.getId().doubleValue()));
-                }
-                totalRoute.add(new PartialRouteRes(buildingId, floor, partialRoute));
-            }
-
-            if (i + 1 == pathSize) {
-                totalRoute.get(i).setInfo(makeInfo(path.get(i).get(0), null));
-            }
-            else{
-                totalRoute.get(i).setInfo(makeInfo(path.get(i).get(0), path.get(i+1).get(0)));
+        // 에러 조건 확인
+        if (isStartBuilding && isEndBuilding) {
+            if (startPosition.get(0).longValue() == endPosition.get(0).longValue()) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
 
+        if (isStartBuilding && (endType == LocationType.CLASSROOM || endType == LocationType.FACILITY)) {
+            if (startNode.getBuilding().getId().equals(endNode.getBuilding().getId())) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
+            }
+        }
+
+        if (isEndBuilding && (startType == LocationType.CLASSROOM || startType == LocationType.FACILITY)) {
+            if (startNode.getBuilding().getId().equals(endNode.getBuilding().getId())) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
+            }
+        }
+
+        List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
+        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
+        DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
+
+        return buildRouteResponse(route, isStartBuilding, isEndBuilding);
+    }
+
+    /**
+     * 탐색 알고리즘의 효율성을 위해 이동할 만한 건물들만 추리는 메서드
+     */
+    private List<Building> getBuildingsForRoute(Node startNode, Node endNode) {
+        List<Building> buildingList = new ArrayList<>();
+        buildingList.add(findBuilding(0L)); // 외부 경로 추가
+        buildingList.add(startNode.getBuilding());
+        buildingList.add(endNode.getBuilding());
+
+        addLinkedBuildings(startNode.getBuilding(), buildingList);
+        addLinkedBuildings(endNode.getBuilding(), buildingList);
+
+        return buildingList;
+    }
+
+    /**
+     * 출발/도착지에 직접적으로 연결된 건물들이 있는 경우 buildingList에 추가하는 메서드
+     */
+    private void addLinkedBuildings(Building building, List<Building> buildingList) {
+        List<Long> linkedBuildingIds = LinkedBuildingData.getLinkedBuildings(building.getId());
+        for (Long linkedBuildingId : linkedBuildingIds) {
+            Building linkedBuilding = findBuilding(linkedBuildingId);
+            if (!buildingList.contains(linkedBuilding)) {
+                buildingList.add(linkedBuilding);
+            }
+        }
+    }
+
+    /**
+     * 경로 생성 메서드
+     */
+    private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding) {
+        Long duration = route.getDistance();
+        List<List<Node>> path = cutRoute(route.getPath(), isStartBuilding, isEndBuilding);
+        List<PartialRouteRes> totalRoute = new ArrayList<>();
+
+        for (int i = 0; i < path.size(); i++) {
+            List<Node> thisPath = path.get(i);
+            boolean isOutside = thisPath.get(0).getBuilding().getId() == 0L;
+            List<List<Double>> partialRoute = convertNodesToCoordinates(thisPath, isOutside);
+            Long buildingId = isOutside ? 0L : thisPath.get(0).getBuilding().getId();
+            int floor = thisPath.get(0).getFloor();
+
+            PartialRouteRes partialRouteRes = isOutside
+                ? new PartialRouteRes(partialRoute)
+                : new PartialRouteRes(buildingId, floor, partialRoute);
+
+            if (i + 1 == path.size()) {
+                partialRouteRes.setInfo(makeInfo(thisPath.get(0), null));
+            } else {
+                partialRouteRes.setInfo(makeInfo(thisPath.get(0), path.get(i + 1).get(0)));
+            }
+
+            totalRoute.add(partialRouteRes);
+        }
+
         return new GetRouteRes(duration, totalRoute);
+    }
+
+    /**
+     * 좌표 정보를 제공하는 형식에 맞게 x,y 또는 lat,long 좌표로 바꿔 주는 메서드
+     */
+    private List<List<Double>> convertNodesToCoordinates(List<Node> nodes, boolean isOutside) {
+        List<List<Double>> coordinates = new ArrayList<>();
+        for (Node node : nodes) {
+            if (isOutside) {
+                coordinates.add(Arrays.asList(node.getLatitude(), node.getLongitude(), node.getId().doubleValue()));
+            } else {
+                coordinates.add(Arrays.asList(node.getXCoord(), node.getYCoord(), node.getId().doubleValue()));
+            }
+        }
+        return coordinates;
     }
 
     /**
@@ -142,6 +199,7 @@ public class RouteService {
         }
         return new GetGraphRes(graphNode, graphEdge);
     }
+
     /**
      * 주어진 좌표값에서 가장 가까운 외부 노드 찾기
      */
@@ -162,10 +220,14 @@ public class RouteService {
         return nearestNode;
     }
 
+    private double getEuclidDistance(double startX, double startY, double endX, double endY) {
+        return Math.pow((startX - endX), 2) + Math.pow((startY - endY), 2);
+    }
+
     /**
      * 전체 경로 리스트를 받아 층별, 건물별로 끊기
      */
-    private List<List<Node>> cutRoute(List<Node> route) {
+    private List<List<Node>> cutRoute(List<Node> route, boolean isStartBuilding, boolean isEndBuilding) {
         if (route.isEmpty()) throw new Error("파싱할 리스트가 비었습니다.");
 
         List<List<Node>> returnRoute = new ArrayList<>();
@@ -173,6 +235,11 @@ public class RouteService {
         int count = 0;
         Node thisNode;
         Node nextNode = null;
+
+        // 출발지가 building인 경우 첫 번째 경로를 제거
+        if (isStartBuilding && route.size() > 1) {
+            route.remove(0);
+        }
 
         while (count < route.size() - 1) {
             thisNode = route.get(count);
@@ -195,10 +262,11 @@ public class RouteService {
                 }
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
-                partialRoute.add(thisNode);//층이 같아지는 시점부터 다음 경로에 넣기
+                partialRoute.add(thisNode);  // 끝 층의 시작 노드를 새 경로로 추가
             } else {
                 partialRoute.add(thisNode);
             }
+
             count++;
         }
 
@@ -210,6 +278,10 @@ public class RouteService {
             returnRoute.add(new ArrayList<>(partialRoute));
         }
 
+        // 도착지가 building인 경우 마지막 경로를 제거
+        if (isEndBuilding && returnRoute.size() > 1) {
+            returnRoute.remove(returnRoute.size() - 1);
+        }
         return returnRoute;
     }
 
@@ -270,12 +342,8 @@ public class RouteService {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
     }
 
-    private double getEuclidDistance(double startX, double startY, double endX, double endY) {
-        return Math.pow((startX - endX), 2) + Math.pow((startY - endY), 2);
-    }
-
     //다익스트라용 메서드
-    public static class NodeDistancePair implements Comparable<NodeDistancePair> {
+    private static class NodeDistancePair implements Comparable<NodeDistancePair> {
         Node node;
         Long distance;
 
@@ -289,7 +357,7 @@ public class RouteService {
             return Long.compare(this.distance, other.distance);
         }
     }
-    public static DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
+    private static DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
         Map<Node, Long> distances = new HashMap<>();
         Map<Node, Node> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();

@@ -43,5 +43,8 @@ public class Node extends BaseEntity {
     @JoinColumn(name = "building_id")
     private Building building;
 
+    private String adjacentNode;
+
+    private String distance;
 
 }

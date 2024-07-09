@@ -11,7 +11,6 @@ import devkor.com.teamcback.domain.navigate.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.navigate.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.navigate.entity.*;
-import devkor.com.teamcback.domain.navigate.repository.EdgeRepository;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,6 @@ import static devkor.com.teamcback.global.response.ResultCode.*;
 @RequiredArgsConstructor
 public class RouteService {
     private final NodeRepository nodeRepository;
-    private final EdgeRepository edgeRepository;
     private final BuildingRepository buildingRepository;
     private final ClassroomRepository classroomRepository;
     private final FacilityRepository facilityRepository;
@@ -165,7 +163,7 @@ public class RouteService {
      */
     private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, NodeType nodeToBan){
         List<Node> graphNode = new ArrayList<>();
-        List<EdgeDto> graphEdge = new ArrayList<>();
+        List<Edge> graphEdge = new ArrayList<>();
         if (nodeToBan == null){
             for (Building i : buildingList){
                 graphNode.addAll(findAllNode(i));
@@ -188,7 +186,7 @@ public class RouteService {
 
             for (int i = 0; i < endNodeId.length; i++) {
                 // 시작끝 모두 Long으로 써서 경로 찾은 후, 해당 경로 대해서만 node 찾기
-                graphEdge.add(new EdgeDto(Integer.parseInt(distance[i]), node.getId(), Long.parseLong(endNodeId[i])));
+                graphEdge.add(new Edge(Integer.parseInt(distance[i]), node.getId(), Long.parseLong(endNodeId[i])));
             }
         }
         return new GetGraphRes(graphNode, graphEdge);
@@ -320,10 +318,6 @@ public class RouteService {
         return nodeRepository.findByBuildingAndRoutingAndTypeNot(building, true, nodeToBan);
     }
 
-    private List<Edge> findEdge(Node startNode){
-        return edgeRepository.findByStartNode(startNode);
-    }
-
     private Classroom findClassroom(Long classroomId) {
         return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
     }
@@ -351,7 +345,7 @@ public class RouteService {
             return Long.compare(this.distance, other.distance);
         }
     }
-    private DijkstraRes dijkstra(List<Node> nodes, List<EdgeDto> edges, Node startNode, Node endNode) {
+    private DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
         Map<Long, Long> distances = new HashMap<>();
         Map<Long, Long> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
@@ -380,7 +374,7 @@ public class RouteService {
                 break;
             }
 
-            for (EdgeDto edge : edges) {
+            for (Edge edge : edges) {
                 if (edge.getStartNode().equals(currentNode)) {
                     Long neighbor = edge.getEndNode();
                     Long currentDistance = distances.get(currentNode);

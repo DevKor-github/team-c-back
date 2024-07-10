@@ -13,8 +13,6 @@ public class GetCategoryRes {
     private String category;
     @Schema(description = "카테고리 색상", example = "red")
     private String color;
-    @Schema(description = "카테고리 색상 코드", example = "#ED1C24")
-    private String colorCode;
     @Schema(description = "카테고리 메모", example = "자주 찾는 장소 모음")
     private String memo;
 
@@ -22,7 +20,6 @@ public class GetCategoryRes {
         this.categoryId = category.getId();
         this.category = category.getCategory();
         this.color = category.getColor().getName();
-        this.colorCode = category.getColor().getCode();
         this.memo = category.getMemo();
     }
 }

@@ -1,27 +1,18 @@
 package devkor.com.teamcback.domain.oauth2.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import devkor.com.teamcback.domain.oauth2.dto.OAuth2LoginRes;
-import devkor.com.teamcback.global.exception.GlobalException;
+import static devkor.com.teamcback.global.jwt.JwtUtil.ACCESS_TOKEN_HEADER;
+import static devkor.com.teamcback.global.jwt.JwtUtil.REFRESH_TOKEN_HEADER;
+
 import devkor.com.teamcback.global.jwt.JwtUtil;
-import devkor.com.teamcback.global.response.CommonResponse;
-import devkor.com.teamcback.global.response.ResultCode;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -33,8 +24,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-        throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         String email = userDetails.getUser().getEmail();
 
@@ -44,14 +34,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtUtil.createAccessToken(email, String.valueOf(role));
         String refreshToken = jwtUtil.createRefreshToken(email, String.valueOf(role));
 
-        setResponse(response, new OAuth2LoginRes(accessToken, refreshToken));
-    }
-
-    private void setResponse(HttpServletResponse response, Object data) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(objectMapper.writeValueAsString(
-            CommonResponse.success(data)));
+        response.setHeader(ACCESS_TOKEN_HEADER, accessToken);
+        response.setHeader(REFRESH_TOKEN_HEADER, refreshToken);
     }
 }

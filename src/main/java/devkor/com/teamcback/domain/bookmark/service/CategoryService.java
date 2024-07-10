@@ -33,9 +33,9 @@ public class CategoryService {
     public CreateCategoryRes createCategory(Long userId, CreateCategoryReq req) {
         User user = findUser(userId);
 
-        categoryRepository.save(new Category(req, user));
+        Category category = categoryRepository.save(new Category(req, user));
 
-        return new CreateCategoryRes();
+        return new CreateCategoryRes(category);
     }
 
     /**

@@ -1,7 +1,5 @@
 package devkor.com.teamcback.domain.navigate.service;
 
-import static devkor.com.teamcback.global.response.ResultCode.*;
-
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
@@ -12,36 +10,24 @@ import devkor.com.teamcback.domain.navigate.dto.response.DijkstraRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.navigate.dto.response.PartialRouteRes;
-import devkor.com.teamcback.domain.navigate.entity.Edge;
-import devkor.com.teamcback.domain.navigate.entity.LinkedBuildingData;
-import devkor.com.teamcback.domain.navigate.entity.LocationType;
-import devkor.com.teamcback.domain.navigate.entity.Node;
-import devkor.com.teamcback.domain.navigate.entity.NodeType;
-import devkor.com.teamcback.domain.navigate.repository.EdgeRepository;
+import devkor.com.teamcback.domain.navigate.entity.*;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.PriorityQueue;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.text.ParseException;
+import java.util.*;
+
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RouteService {
     private final NodeRepository nodeRepository;
-    private final EdgeRepository edgeRepository;
     private final BuildingRepository buildingRepository;
     private final ClassroomRepository classroomRepository;
     private final FacilityRepository facilityRepository;
@@ -194,8 +180,14 @@ public class RouteService {
         if (!graphNode.contains(endNode)){
             graphNode.add(endNode);
         }
-        for (Node i: graphNode){
-            graphEdge.addAll(findEdge(i));
+        for (Node node: graphNode){
+            String[] endNodeId = node.getAdjacentNode().split(",");
+            String[] distance = node.getDistance().split(",");
+
+            for (int i = 0; i < endNodeId.length; i++) {
+                // 시작끝 모두 Long으로 써서 경로 찾은 후, 해당 경로 대해서만 node 찾기
+                graphEdge.add(new Edge(Integer.parseInt(distance[i]), node.getId(), Long.parseLong(endNodeId[i])));
+            }
         }
         return new GetGraphRes(graphNode, graphEdge);
     }
@@ -326,10 +318,6 @@ public class RouteService {
         return nodeRepository.findByBuildingAndRoutingAndTypeNot(building, true, nodeToBan);
     }
 
-    private List<Edge> findEdge(Node startNode){
-        return edgeRepository.findByStartNode(startNode);
-    }
-
     private Classroom findClassroom(Long classroomId) {
         return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
     }
@@ -344,10 +332,10 @@ public class RouteService {
 
     //다익스트라용 메서드
     private static class NodeDistancePair implements Comparable<NodeDistancePair> {
-        Node node;
+        Long node;
         Long distance;
 
-        public NodeDistancePair(Node node, Long distance) {
+        public NodeDistancePair(Long node, Long distance) {
             this.node = node;
             this.distance = distance;
         }
@@ -357,38 +345,38 @@ public class RouteService {
             return Long.compare(this.distance, other.distance);
         }
     }
-    private static DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
-        Map<Node, Long> distances = new HashMap<>();
-        Map<Node, Node> previousNodes = new HashMap<>();
+    private DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
+        Map<Long, Long> distances = new HashMap<>();
+        Map<Long, Long> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
-        Set<Node> visitedNodes = new HashSet<>();
+        Set<Long> visitedNodes = new HashSet<>();
 
         // 모든 노드를 초기화합니다.
         for (Node node : nodes) {
             if (node.equals(startNode)) {
-                distances.put(node, 0L);
-                priorityQueue.add(new NodeDistancePair(node, 0L));
+                distances.put(node.getId(), 0L);
+                priorityQueue.add(new NodeDistancePair(node.getId(), 0L));
             } else {
-                distances.put(node, Long.MAX_VALUE);
+                distances.put(node.getId(), Long.MAX_VALUE);
             }
-            previousNodes.put(node, null);
+            previousNodes.put(node.getId(), null);
         }
 
         while (!priorityQueue.isEmpty()) {
             NodeDistancePair currentPair = priorityQueue.poll();
-            Node currentNode = currentPair.node;
+            Long currentNode = currentPair.node;
 
             if (!visitedNodes.add(currentNode)) {
                 continue;
             }
 
-            if (currentNode.equals(endNode)) {
+            if (currentNode.equals(endNode.getId())) {
                 break;
             }
 
             for (Edge edge : edges) {
                 if (edge.getStartNode().equals(currentNode)) {
-                    Node neighbor = edge.getEndNode();
+                    Long neighbor = edge.getEndNode();
                     Long currentDistance = distances.get(currentNode);
                     if (currentDistance == null) {
                         continue; // currentNode가 distances에 존재하지 않는 경우를 대비
@@ -406,13 +394,14 @@ public class RouteService {
         }
 
         List<Node> path = new ArrayList<>();
-        Long finalDistance = distances.get(endNode);
+        Long finalDistance = distances.get(endNode.getId());
         if (finalDistance == Long.MAX_VALUE) {
             return new DijkstraRes(-1L, Collections.emptyList()); // 경로가 존재하지 않을 때
         }
 
-        for (Node at = endNode; at != null; at = previousNodes.get(at)) {
-            path.add(at);
+        for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
+            Optional<Node> node = nodeRepository.findById(at);
+            node.ifPresent(path::add);
         }
         Collections.reverse(path);
 

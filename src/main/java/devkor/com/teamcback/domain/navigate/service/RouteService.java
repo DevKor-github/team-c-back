@@ -53,13 +53,13 @@ public class RouteService {
         }
 
         if (isStartBuilding && (endType == LocationType.CLASSROOM || endType == LocationType.FACILITY)) {
-            if (startNode.getBuilding().getId().equals(endNode.getBuilding().getId())) {
+            if (startPosition.get(0).longValue() == endNode.getBuilding().getId()) {
                 throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
 
         if (isEndBuilding && (startType == LocationType.CLASSROOM || startType == LocationType.FACILITY)) {
-            if (startNode.getBuilding().getId().equals(endNode.getBuilding().getId())) {
+            if (startNode.getBuilding().getId() == endPosition.get(0).longValue()) {
                 throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
@@ -228,10 +228,6 @@ public class RouteService {
         Node thisNode;
         Node nextNode = null;
 
-        // 출발지가 building인 경우 첫 번째 경로를 제거
-        if (isStartBuilding && route.size() > 1) {
-            route.remove(0);
-        }
 
         while (count < route.size() - 1) {
             thisNode = route.get(count);
@@ -270,10 +266,6 @@ public class RouteService {
             returnRoute.add(new ArrayList<>(partialRoute));
         }
 
-        // 도착지가 building인 경우 마지막 경로를 제거
-        if (isEndBuilding && returnRoute.size() > 1) {
-            returnRoute.remove(returnRoute.size() - 1);
-        }
         return returnRoute;
     }
 

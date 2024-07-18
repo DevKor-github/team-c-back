@@ -2,6 +2,7 @@ package devkor.com.teamcback.global.security;
 
 import devkor.com.teamcback.domain.oauth2.handler.OAuth2LoginSuccessHandler;
 import devkor.com.teamcback.domain.oauth2.service.OAuth2Service;
+import devkor.com.teamcback.global.exception.CustomAccessDeniedHandler;
 import devkor.com.teamcback.global.exception.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
 import devkor.com.teamcback.global.jwt.JwtUtil;
@@ -50,6 +51,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CustomAccessDeniedHandler customAccessDeniedHandler() {
+        return new CustomAccessDeniedHandler();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // CSRF 설정
         http.csrf(AbstractHttpConfigurer::disable);
@@ -65,10 +71,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/search/**").permitAll()
                 .requestMatchers("/api/routes").permitAll()
                 .requestMatchers("/api/routes/**").permitAll()
+                .requestMatchers("/api/admin/**").permitAll() // TODO: 이후 아래로 변경
+//                .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()
                 .requestMatchers("/api-docs/**").permitAll()
                 .anyRequest().authenticated() // 그 외 모든 요청 인증처리
+        ).exceptionHandling((exceptionHandling) -> exceptionHandling
+            .accessDeniedHandler(customAccessDeniedHandler())
         );
 
         http.oauth2Login(

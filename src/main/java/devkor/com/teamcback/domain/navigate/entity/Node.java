@@ -34,7 +34,7 @@ public class Node extends BaseEntity {
 
     private Double longitude;
 
-    private Integer floor;
+    private Double floor;
 
     @Column(nullable = false)
     private boolean routing;
@@ -43,5 +43,8 @@ public class Node extends BaseEntity {
     @JoinColumn(name = "building_id")
     private Building building;
 
+    private String adjacentNode;
+
+    private String distance;
 
 }

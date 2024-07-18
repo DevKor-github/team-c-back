@@ -14,8 +14,8 @@ public class GetBuildingDetailRes {
     private Boolean needStudentCard;
     private Double longitude;
     private Double latitude;
-    private int floor;
-    private int underFloor;
+    private Double floor;
+    private Double underFloor;
 
     public GetBuildingDetailRes(Building building) {
         this.buildingId = building.getId();

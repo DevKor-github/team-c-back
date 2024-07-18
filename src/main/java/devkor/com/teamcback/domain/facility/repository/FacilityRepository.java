@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface FacilityRepository extends JpaRepository<Facility, Long> {
     boolean existsByBuildingAndType(Building building, FacilityType type);
 
+    List<Facility> findByNameContaining(String word);
+
     List<Facility> findAllByBuildingAndType(Building building, FacilityType type);
 
     List<Facility> findAllByBuilding(Building building);

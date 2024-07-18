@@ -1,10 +1,15 @@
 package devkor.com.teamcback.domain.bookmark.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import devkor.com.teamcback.domain.bookmark.entity.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(description = "카테고리 생성 완료")
-@JsonIgnoreProperties
+@Getter
 public class CreateCategoryRes {
+    private Long categoryId;
 
+    public CreateCategoryRes(Category category) {
+        this.categoryId = category.getId();
+    }
 }

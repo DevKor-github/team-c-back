@@ -33,7 +33,7 @@ public class Facility extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private int floor;
+    private Double floor;
 
     @Column(nullable = false)
     private String detail;

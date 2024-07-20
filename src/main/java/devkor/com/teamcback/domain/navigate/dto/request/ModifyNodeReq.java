@@ -1,13 +1,13 @@
 package devkor.com.teamcback.domain.navigate.dto.request;
 
-import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.navigate.entity.NodeType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
-@Schema(description = "저장할 노드 정보")
+@Schema(description = "수정할 노드 정보")
 @Getter
-public class CreateNodeReq {
+public class ModifyNodeReq {
     @Schema(description = "노드 타입", example = "NORMAL")
     private NodeType type;
     @Schema(description = "x좌표", example = "0.0")

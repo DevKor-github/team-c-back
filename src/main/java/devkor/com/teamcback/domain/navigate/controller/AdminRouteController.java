@@ -1,8 +1,10 @@
 package devkor.com.teamcback.domain.navigate.controller;
 
 import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
+import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
+import devkor.com.teamcback.domain.navigate.dto.response.ModifyNodeRes;
 import devkor.com.teamcback.domain.navigate.service.AdminRouteService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,5 +57,13 @@ public class AdminRouteController {
     public CommonResponse<CreateNodeRes> createNode(
         @Parameter(description = "노드 생성 요청 dto") @RequestBody CreateNodeReq req) {
         return CommonResponse.success(adminRouteService.createNode(req));
+    }
+
+    @PutMapping("/{nodeId}")
+    public CommonResponse<ModifyNodeRes> modifyNodeRes(
+        @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId,
+        @Parameter(description = "노드 수정 요청 dto") @RequestBody ModifyNodeReq req
+    ) {
+        return CommonResponse.success(adminRouteService.modifyNode(nodeId, req));
     }
 }

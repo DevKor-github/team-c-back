@@ -25,6 +25,8 @@ public enum ResultCode {
     // 건물 3000번대
     NOT_FOUND_BUILDING(HttpStatus.NOT_FOUND, 3000, "건물을 찾을 수 없습니다."),
     NOT_FOUND_ENTRANCE(HttpStatus.NOT_FOUND, 3001, "건물 출입구를 찾을 수 없습니다."),
+    DUPLICATED_BUILDING_IMAGE(HttpStatus.CONFLICT, 3002, "해당 건물의 층의 이미지가 이미 존재합니다."),
+    INCORRECT_FLOOR(HttpStatus.BAD_REQUEST, 3003, "건물에 존재하지 않는 층입니다."),
 
     // 강의실 4000번대
     NOT_FOUND_CLASSROOM(HttpStatus.NOT_FOUND, 4000, "강의실을 찾을 수 없습니다."),

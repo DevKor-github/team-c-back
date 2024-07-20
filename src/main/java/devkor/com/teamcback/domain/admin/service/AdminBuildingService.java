@@ -5,6 +5,7 @@ import static devkor.com.teamcback.global.response.ResultCode.INCORRECT_FLOOR;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_IMAGE;
 
+import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -12,6 +13,7 @@ import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class AdminBuildingService {
     private final BuildingImageRepository buildingImageRepository;
     private final S3Util s3Util;
 
+    // 건물 내부 사진 저장
     @Transactional
     public SaveBuildingImageRes saveBuildingImage(Long buildingId, Double floor, MultipartFile image) {
         String imageUrl = s3Util.uploadFile(image, FilePath.BUILDING_IMAGE);
@@ -40,6 +43,7 @@ public class AdminBuildingService {
         return new SaveBuildingImageRes(buildingImage);
     }
 
+    // 건물 내부 사진 수정
     @Transactional
     public ModifyBuildingImageRes modifyBuildingImage(Long buildingImageId, Long buildingId, Double floor, MultipartFile image) {
         BuildingImage buildingImage = findBuildingImage(buildingImageId);
@@ -53,6 +57,18 @@ public class AdminBuildingService {
         buildingImage.update(building, floor, imageUrl);
 
         return new ModifyBuildingImageRes(buildingImage);
+    }
+
+    // 건물 내부 사진 삭제
+    @Transactional
+    public DeleteBuildingImageRes deleteBuildingImage(Long buildingImageId) {
+        BuildingImage buildingImage = findBuildingImage(buildingImageId);
+        if(s3Util.exists(buildingImage.getImage(), FilePath.BUILDING_IMAGE)) {
+            s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE);
+        }
+        buildingImageRepository.delete(buildingImage);
+
+        return new DeleteBuildingImageRes();
     }
 
     private Building findBuilding(Long buildingId) {

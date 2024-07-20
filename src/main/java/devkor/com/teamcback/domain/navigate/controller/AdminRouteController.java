@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.DeleteNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
+import devkor.com.teamcback.domain.navigate.dto.response.GetNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.ModifyNodeRes;
 import devkor.com.teamcback.domain.navigate.service.AdminRouteService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -44,6 +45,22 @@ public class AdminRouteController {
         @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
         @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor) {
         return CommonResponse.success(adminRouteService.getNodeList(buildingId, floor));
+    }
+
+    @GetMapping("/{nodeId}")
+    @Operation(summary = "노드 조회",
+        description = "노드 id로 노드 정보 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "노드를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GetNodeRes> getNode(
+        @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId
+    ) {
+        return CommonResponse.success(adminRouteService.getNode(nodeId));
     }
 
     @PostMapping

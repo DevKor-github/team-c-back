@@ -2,8 +2,8 @@ package devkor.com.teamcback.domain.navigate.entity;
 
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
-import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
+import devkor.com.teamcback.domain.admin.dto.request.CreateNodeReq;
+import devkor.com.teamcback.domain.admin.dto.request.ModifyNodeReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

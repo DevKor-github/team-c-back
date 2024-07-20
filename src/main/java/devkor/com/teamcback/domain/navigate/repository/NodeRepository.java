@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.navigate.repository;
 
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.navigate.dto.response.GetNodeRes;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.entity.NodeType;
 import java.util.List;

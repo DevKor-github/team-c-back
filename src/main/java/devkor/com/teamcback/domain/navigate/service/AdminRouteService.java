@@ -7,12 +7,15 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
+import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.DeleteNodeRes;
+import devkor.com.teamcback.domain.navigate.dto.response.GetNodeDetailRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.ModifyNodeRes;
@@ -45,10 +48,22 @@ public class AdminRouteService {
 
     // 노드 단일 조회
     @Transactional(readOnly = true)
-    public GetNodeRes getNode(Long nodeId) {
+    public GetNodeDetailRes getNode(Long nodeId) {
         Node node = findNode(nodeId);
 
-        return new GetNodeRes(node);
+        GetNodeDetailRes res =  new GetNodeDetailRes(node);
+
+        Classroom classroom = classroomRepository.findByNode(node);
+        Facility facility = facilityRepository.findByNode(node);
+
+        if(classroom != null) {
+            res.setPlace(classroom);
+        }
+        else if(facility != null) {
+            res.setPlace(facility);
+        }
+
+        return res;
     }
 
     // 노드 생성

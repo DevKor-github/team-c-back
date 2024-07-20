@@ -2,10 +2,12 @@ package devkor.com.teamcback.domain.navigate.dto.response;
 
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 
+@Schema(description = "노드 리스트 응답 dto")
 @Getter
 public class GetNodeListRes {
     private Long buildingId;

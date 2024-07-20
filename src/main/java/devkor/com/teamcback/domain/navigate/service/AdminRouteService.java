@@ -8,8 +8,11 @@ import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
+import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
+import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeRes;
+import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import java.util.List;
@@ -34,6 +37,15 @@ public class AdminRouteService {
         List<GetNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloor(building, floor).stream().map(node -> new GetNodeRes(node)).toList();
 
         return new GetNodeListRes(building, floor, buildingImage, nodeList);
+    }
+
+    // 노드 생성
+    @Transactional
+    public CreateNodeRes createNode(CreateNodeReq req) {
+        Building building = findBuilding(req.getBuildingId());
+        nodeRepository.save(new Node(building, req));
+
+        return new CreateNodeRes();
     }
 
     private Building findBuilding(Long buildingId) {

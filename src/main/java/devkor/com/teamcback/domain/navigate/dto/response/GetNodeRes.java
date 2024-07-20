@@ -1,8 +1,10 @@
 package devkor.com.teamcback.domain.navigate.dto.response;
 
 import devkor.com.teamcback.domain.navigate.entity.Node;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
+@Schema(description = "노드 응답 dto")
 @Getter
 public class GetNodeRes {
     private Long nodeId;

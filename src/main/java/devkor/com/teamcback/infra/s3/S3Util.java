@@ -25,6 +25,7 @@ public class S3Util {
     private final AmazonS3Client amazonS3Client;
     private static final String IMAGE_JPG = "image/jpeg";
     private static final String IMAGE_PNG = "image/png";
+    private static final String IMAGE_SVG = "image/svg+xml";
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
@@ -45,7 +46,7 @@ public class S3Util {
 
         // 이미지 파일인지 확인
         String fileType = multipartFile.getContentType();
-        if(fileType == null || (!fileType.equals(IMAGE_JPG) && !fileType.equals(IMAGE_PNG))) {
+        if(fileType == null || (!fileType.equals(IMAGE_JPG) && !fileType.equals(IMAGE_PNG) && !fileType.equals(IMAGE_SVG))) {
             throw new GlobalException(INVALID_IMAGE_FILE);
         }
 

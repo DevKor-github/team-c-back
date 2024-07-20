@@ -3,8 +3,9 @@ package devkor.com.teamcback.domain.admin.service;
 import static devkor.com.teamcback.global.response.ResultCode.DUPLICATED_BUILDING_IMAGE;
 import static devkor.com.teamcback.global.response.ResultCode.INCORRECT_FLOOR;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_IMAGE;
 
-import devkor.com.teamcback.domain.admin.dto.request.SaveBuildingImageReq;
+import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
@@ -26,21 +27,40 @@ public class AdminBuildingService {
     private final S3Util s3Util;
 
     @Transactional
-    public SaveBuildingImageRes saveBuildingImage(SaveBuildingImageReq req, MultipartFile image) {
+    public SaveBuildingImageRes saveBuildingImage(Long buildingId, Double floor, MultipartFile image) {
         String imageUrl = s3Util.uploadFile(image, FilePath.BUILDING_IMAGE);
-        Building building = findBuilding(req.getBuildingId());
+        Building building = findBuilding(buildingId);
 
-        if(req.getFloor() < building.getUnderFloor() || req.getFloor() > building.getFloor()) {
+        if(floor < building.getUnderFloor() || floor > building.getFloor()) {
             throw new GlobalException(INCORRECT_FLOOR);
         }
-        checkExistedImage(building, req.getFloor()); // 해당 건물, 층에 해당하는 사진이 있는지 확인
-        BuildingImage buildingImage = buildingImageRepository.save(new BuildingImage(req, imageUrl, building));
+        checkExistedImage(building, floor); // 해당 건물, 층에 해당하는 사진이 있는지 확인
+        BuildingImage buildingImage = buildingImageRepository.save(new BuildingImage(floor, imageUrl, building));
 
         return new SaveBuildingImageRes(buildingImage);
     }
 
+    @Transactional
+    public ModifyBuildingImageRes modifyBuildingImage(Long buildingImageId, Long buildingId, Double floor, MultipartFile image) {
+        BuildingImage buildingImage = findBuildingImage(buildingImageId);
+        Building building = findBuilding(buildingId);
+        if(s3Util.exists(buildingImage.getImage(), FilePath.BUILDING_IMAGE)) s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE);
+        if(!(buildingImage.getBuilding().getId().equals(buildingId) && buildingImage.getFloor().equals(floor))) {
+            checkExistedImage(building, floor); // 해당 건물, 층에 해당하는 사진이 있는지 확인
+        }
+
+        String imageUrl = s3Util.uploadFile(image, FilePath.BUILDING_IMAGE);
+        buildingImage.update(building, floor, imageUrl);
+
+        return new ModifyBuildingImageRes(buildingImage);
+    }
+
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
+    }
+
+    private BuildingImage findBuildingImage(Long buildingImageId) {
+        return buildingImageRepository.findById(buildingImageId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING_IMAGE));
     }
 
     private void checkExistedImage(Building building, Double floor) {

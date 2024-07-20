@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.building.entity;
 
-import devkor.com.teamcback.domain.admin.dto.request.SaveBuildingImageReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,9 +29,15 @@ public class BuildingImage {
     @JoinColumn(name = "building_id")
     private Building building;
 
-    public BuildingImage(SaveBuildingImageReq req, String fileUrl, Building building) {
-        this.floor = req.getFloor();
-        this.image = fileUrl;
+    public BuildingImage(Double floor, String imageUrl, Building building) {
+        this.floor = floor;
+        this.image = imageUrl;
+        this.building = building;
+    }
+
+    public void update(Building building, Double floor, String imageUrl) {
+        this.floor = floor;
+        this.image = imageUrl;
         this.building = building;
     }
 }

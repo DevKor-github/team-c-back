@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/buildings")
-public class AdminBuildingController {
+public class AdminBuildingImageController {
     private final AdminBuildingService adminBuildingService;
 
     @PostMapping(value = "/image",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

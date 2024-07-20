@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.navigate.dto.request;
 
 import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.navigate.entity.NodeType;
+import devkor.com.teamcback.domain.navigate.validation.CommaNumeric;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -25,7 +26,9 @@ public class CreateNodeReq {
     @Schema(description = "건물ID", example = "1")
     private Long buildingId;
     @Schema(description = "인접 노드", example = "1,2,3")
+    @CommaNumeric
     private String adjacentNode;
     @Schema(description = "인접 노드와의 거리", example = "10,12,5")
+    @CommaNumeric
     private String distance;
 }

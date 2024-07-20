@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -75,7 +76,7 @@ public class AdminRouteController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<CreateNodeRes> createNode(
-        @Parameter(description = "노드 생성 요청 dto") @RequestBody CreateNodeReq req) {
+        @Parameter(description = "노드 생성 요청 dto") @Valid @RequestBody CreateNodeReq req) {
         return CommonResponse.success(adminRouteService.createNode(req));
     }
 
@@ -91,7 +92,7 @@ public class AdminRouteController {
     })
     public CommonResponse<ModifyNodeRes> modifyNodeRes(
         @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId,
-        @Parameter(description = "노드 수정 요청 dto") @RequestBody ModifyNodeReq req
+        @Parameter(description = "노드 수정 요청 dto") @Valid @RequestBody ModifyNodeReq req
     ) {
         return CommonResponse.success(adminRouteService.modifyNode(nodeId, req));
     }

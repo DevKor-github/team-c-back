@@ -67,7 +67,6 @@ public class AdminRouteService {
     }
 
     // 노드 생성
-
     @Transactional
     public CreateNodeRes createNode(CreateNodeReq req) {
         Building building = findBuilding(req.getBuildingId());
@@ -75,8 +74,8 @@ public class AdminRouteService {
 
         return new CreateNodeRes(node);
     }
-    // 노드 수정
 
+    // 노드 수정
     @Transactional
     public ModifyNodeRes modifyNode(Long nodeId, ModifyNodeReq req) {
         Node node = findNode(nodeId);
@@ -86,8 +85,8 @@ public class AdminRouteService {
 
         return new ModifyNodeRes();
     }
-    // 노드 삭제
 
+    // 노드 삭제
     @Transactional
     public DeleteNodeRes deleteNode(Long nodeId) {
         Node node = findNode(nodeId);

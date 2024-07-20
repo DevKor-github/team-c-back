@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.admin.controller;
 
 import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
+import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
 import devkor.com.teamcback.domain.admin.service.AdminBuildingService;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -84,5 +86,21 @@ public class AdminBuildingController {
         @Parameter(description = "삭제할 건물 사진 ID") @PathVariable Long buildingImageId
     ) {
         return CommonResponse.success(adminBuildingService.deleteBuildingImage(buildingImageId));
+    }
+
+    @GetMapping(value = "/image/{buildingImageId}")
+    @Operation(summary = "건물 내부 사진 조회",
+        description = "건물 내부 사진 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "객체를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GetBuildingImageRes> getBuildingImage(
+        @Parameter(description = "조회할 건물 사진 ID") @PathVariable Long buildingImageId
+    ) {
+        return CommonResponse.success(adminBuildingService.getBuildingImage(buildingImageId));
     }
 }

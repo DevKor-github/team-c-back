@@ -6,6 +6,7 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_IMAGE;
 
 import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
+import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -69,6 +70,14 @@ public class AdminBuildingService {
         buildingImageRepository.delete(buildingImage);
 
         return new DeleteBuildingImageRes();
+    }
+
+    // 건물 내부 사진 조회
+    @Transactional(readOnly = true)
+    public GetBuildingImageRes getBuildingImage(Long buildingImageId) {
+        BuildingImage buildingImage =findBuildingImage(buildingImageId);
+
+        return new GetBuildingImageRes(buildingImage);
     }
 
     private Building findBuilding(Long buildingId) {

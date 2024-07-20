@@ -51,7 +51,6 @@ public class Node extends BaseEntity {
     private String distance;
 
     public Node(Building building, CreateNodeReq req) {
-//        if(req.getNodeId() != null) this.id = req.getNodeId();
         this.type = req.getType();
         this.xCoord = req.getXCoord();
         this.yCoord = req.getYCoord();

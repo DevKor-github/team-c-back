@@ -36,7 +36,6 @@ public enum ResultCode {
     NOT_FOUND_NODE(HttpStatus.NOT_FOUND, 6000, "노드를 찾을 수 없습니다."),
     NOT_FOUND_ROUTE(HttpStatus.BAD_REQUEST, 6001, "경로를 찾을 수 없습니다."),
     NOT_PROVIDED_ROUTE(HttpStatus.BAD_REQUEST, 6002, "해당 경로는 제공되지 않습니다."),
-    DUPLICATED_NODE_ID(HttpStatus.CONFLICT, 6003, "요청한 노드 ID에 해당하는 노드가 이미 존재합니다."),
 
     // 즐겨찾기 7000번대
     INCORRECT_COLOR(HttpStatus.BAD_REQUEST, 7000, "정해진 색상 내에서 선택해주세요."),

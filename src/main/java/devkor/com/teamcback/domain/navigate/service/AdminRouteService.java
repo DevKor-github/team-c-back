@@ -12,6 +12,7 @@ import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
+import devkor.com.teamcback.domain.navigate.dto.response.DeleteNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.ModifyNodeRes;
@@ -45,7 +46,6 @@ public class AdminRouteService {
     // 노드 생성
     @Transactional
     public CreateNodeRes createNode(CreateNodeReq req) {
-//        if(req.getNodeId() != null) checkNodeDuplication(req.getNodeId()); // 요청한 노드 ID에 해당하는 노드가 있는지 확인
         Building building = findBuilding(req.getBuildingId());
         Node node = nodeRepository.save(new Node(building, req));
 
@@ -63,6 +63,15 @@ public class AdminRouteService {
         return new ModifyNodeRes();
     }
 
+    // 노드 삭제
+    @Transactional
+    public DeleteNodeRes deleteNode(Long nodeId) {
+        Node node = findNode(nodeId);
+        nodeRepository.delete(node);
+
+        return new DeleteNodeRes();
+    }
+
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
@@ -74,11 +83,4 @@ public class AdminRouteService {
     private Node findNode(Long nodeId) {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
     }
-
-//    private void checkNodeDuplication(Long nodeId) {
-//        Optional<Node> node = nodeRepository.findById(nodeId);
-//        if(node.isPresent()) {
-//            throw new GlobalException(DUPLICATED_NODE_ID);
-//        }
-//    }
 }

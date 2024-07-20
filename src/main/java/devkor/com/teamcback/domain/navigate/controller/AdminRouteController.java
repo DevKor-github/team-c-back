@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.navigate.controller;
 import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
+import devkor.com.teamcback.domain.navigate.dto.response.DeleteNodeRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetNodeListRes;
 import devkor.com.teamcback.domain.navigate.dto.response.ModifyNodeRes;
 import devkor.com.teamcback.domain.navigate.service.AdminRouteService;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -60,10 +62,35 @@ public class AdminRouteController {
     }
 
     @PutMapping("/{nodeId}")
+    @Operation(summary = "노드 수정",
+        description = "노드 수정")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "객체를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
     public CommonResponse<ModifyNodeRes> modifyNodeRes(
         @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId,
         @Parameter(description = "노드 수정 요청 dto") @RequestBody ModifyNodeReq req
     ) {
         return CommonResponse.success(adminRouteService.modifyNode(nodeId, req));
+    }
+
+    @DeleteMapping("/{nodeId}")
+    @Operation(summary = "노드 삭제",
+        description = "노드 삭제")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "노드를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<DeleteNodeRes> deleteNode(
+        @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId
+    ) {
+        return CommonResponse.success(adminRouteService.deleteNode(nodeId));
     }
 }

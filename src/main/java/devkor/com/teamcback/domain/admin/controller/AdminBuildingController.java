@@ -4,6 +4,7 @@ import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
+import devkor.com.teamcback.domain.admin.dto.response.SearchBuildingImageRes;
 import devkor.com.teamcback.domain.admin.service.AdminBuildingService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -102,5 +103,22 @@ public class AdminBuildingController {
         @Parameter(description = "조회할 건물 사진 ID") @PathVariable Long buildingImageId
     ) {
         return CommonResponse.success(adminBuildingService.getBuildingImage(buildingImageId));
+    }
+
+    @GetMapping(value = "/image")
+    @Operation(summary = "건물 내부 사진 검색",
+        description = "건물 내부 사진 검색")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "객체를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<SearchBuildingImageRes> getBuildingImage(
+        @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
+        @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor
+    ) {
+        return CommonResponse.success(adminBuildingService.searchBuildingImage(buildingId, floor));
     }
 }

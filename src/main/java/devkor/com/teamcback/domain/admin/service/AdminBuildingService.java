@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
+import devkor.com.teamcback.domain.admin.dto.response.SearchBuildingImageRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
@@ -80,12 +81,30 @@ public class AdminBuildingService {
         return new GetBuildingImageRes(buildingImage);
     }
 
+    // 건물 내부 사진 검색
+    @Transactional(readOnly = true)
+    public SearchBuildingImageRes searchBuildingImage(Long buildingId, Double floor) {
+        Building building = findBuilding(buildingId);
+        BuildingImage buildingImage = findBuildingImage(building, floor);
+
+        return new SearchBuildingImageRes(buildingImage);
+    }
+
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
 
     private BuildingImage findBuildingImage(Long buildingImageId) {
         return buildingImageRepository.findById(buildingImageId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING_IMAGE));
+    }
+
+    private BuildingImage findBuildingImage(Building building, Double floor) {
+        BuildingImage bulidingImage = buildingImageRepository.findByBuildingAndFloor(building, floor);
+        if(bulidingImage == null) {
+            throw new GlobalException(NOT_FOUND_BUILDING_IMAGE);
+        }
+        return bulidingImage;
+
     }
 
     private void checkExistedImage(Building building, Double floor) {

@@ -19,6 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,7 +60,7 @@ public class AdminRouteController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<GetNodeDetailRes> getNode(
-        @Parameter(description = "조회할 노드 ID") @RequestParam Long nodeId
+        @Parameter(description = "조회할 노드 ID") @PathVariable Long nodeId
     ) {
         return CommonResponse.success(adminRouteService.getNode(nodeId));
     }
@@ -90,7 +91,7 @@ public class AdminRouteController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<ModifyNodeRes> modifyNodeRes(
-        @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId,
+        @Parameter(description = "수정할 노드 ID") @PathVariable Long nodeId,
         @Parameter(description = "노드 수정 요청 dto") @Valid @RequestBody ModifyNodeReq req
     ) {
         return CommonResponse.success(adminRouteService.modifyNode(nodeId, req));
@@ -107,7 +108,7 @@ public class AdminRouteController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<DeleteNodeRes> deleteNode(
-        @Parameter(description = "수정할 노드 ID") @RequestParam Long nodeId
+        @Parameter(description = "수정할 노드 ID") @PathVariable Long nodeId
     ) {
         return CommonResponse.success(adminRouteService.deleteNode(nodeId));
     }

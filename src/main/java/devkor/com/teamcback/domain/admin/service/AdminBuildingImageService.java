@@ -15,7 +15,6 @@ import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
-import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
-public class AdminBuildingService {
+public class AdminBuildingImageService {
     private final BuildingRepository buildingRepository;
     private final BuildingImageRepository buildingImageRepository;
     private final S3Util s3Util;

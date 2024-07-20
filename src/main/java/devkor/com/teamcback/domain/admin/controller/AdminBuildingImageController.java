@@ -5,7 +5,7 @@ import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
 import devkor.com.teamcback.domain.admin.dto.response.SearchBuildingImageRes;
-import devkor.com.teamcback.domain.admin.service.AdminBuildingService;
+import devkor.com.teamcback.domain.admin.service.AdminBuildingImageService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/buildings")
 public class AdminBuildingImageController {
-    private final AdminBuildingService adminBuildingService;
+    private final AdminBuildingImageService adminBuildingImageService;
 
     @PostMapping(value = "/image",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "건물 내부 사진 저장",
@@ -49,7 +49,8 @@ public class AdminBuildingImageController {
         @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor,
         @Parameter(description = "저장할 사진 파일") @RequestPart("image") MultipartFile image
         ) {
-        return CommonResponse.success(adminBuildingService.saveBuildingImage(buildingId, floor, image));
+        return CommonResponse.success(
+            adminBuildingImageService.saveBuildingImage(buildingId, floor, image));
     }
 
     @PutMapping(value = "/image/{buildingImageId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -70,7 +71,8 @@ public class AdminBuildingImageController {
         @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor,
         @Parameter(description = "수정할 사진 파일") @RequestPart("image") MultipartFile image
     ) {
-        return CommonResponse.success(adminBuildingService.modifyBuildingImage(buildingImageId, buildingId, floor, image));
+        return CommonResponse.success(
+            adminBuildingImageService.modifyBuildingImage(buildingImageId, buildingId, floor, image));
     }
 
     @DeleteMapping(value = "/image/{buildingImageId}")
@@ -86,7 +88,7 @@ public class AdminBuildingImageController {
     public CommonResponse<DeleteBuildingImageRes> deleteBuildingImage(
         @Parameter(description = "삭제할 건물 사진 ID") @PathVariable Long buildingImageId
     ) {
-        return CommonResponse.success(adminBuildingService.deleteBuildingImage(buildingImageId));
+        return CommonResponse.success(adminBuildingImageService.deleteBuildingImage(buildingImageId));
     }
 
     @GetMapping(value = "/image/{buildingImageId}")
@@ -102,7 +104,7 @@ public class AdminBuildingImageController {
     public CommonResponse<GetBuildingImageRes> getBuildingImage(
         @Parameter(description = "조회할 건물 사진 ID") @PathVariable Long buildingImageId
     ) {
-        return CommonResponse.success(adminBuildingService.getBuildingImage(buildingImageId));
+        return CommonResponse.success(adminBuildingImageService.getBuildingImage(buildingImageId));
     }
 
     @GetMapping(value = "/image")
@@ -119,6 +121,7 @@ public class AdminBuildingImageController {
         @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
         @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor
     ) {
-        return CommonResponse.success(adminBuildingService.searchBuildingImage(buildingId, floor));
+        return CommonResponse.success(
+            adminBuildingImageService.searchBuildingImage(buildingId, floor));
     }
 }

@@ -57,10 +57,10 @@ public class AdminRouteService {
         Facility facility = facilityRepository.findByNode(node);
 
         if(classroom != null) {
-            res.setPlace(classroom);
+            res.setClassroomPlace(classroom);
         }
         else if(facility != null) {
-            res.setPlace(facility);
+            res.setFacilityPlace(facility);
         }
 
         return res;

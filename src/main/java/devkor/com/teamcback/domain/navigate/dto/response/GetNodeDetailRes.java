@@ -42,13 +42,13 @@ public class GetNodeDetailRes {
         this.buildingName = node.getBuilding().getName();
     }
 
-    public void setPlace(Classroom classroom) {
+    public void setClassroomPlace(Classroom classroom) {
         this.placeType = PlaceType.CLASSROOM.toString();
         this.placeId = classroom.getId();
         this.placeName = classroom.getName();
     }
 
-    public void setPlace(Facility facility) {
+    public void setFacilityPlace(Facility facility) {
         this.placeType = PlaceType.FACILITY.toString();
         this.placeId = facility.getId();
         this.placeName = facility.getName();

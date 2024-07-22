@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum FacilityType {
+    TOILET("화장실"),
     MEN_TOILET("남자화장실"),
     WOMEN_TOILET("여자화장실"),
     MEN_HANDICAPPED_TOILET("남자장애인화장실"),
@@ -15,7 +16,7 @@ public enum FacilityType {
     PRINTER("프린터"),
     LOUNGE("라운지"),
     CAFE("카페"),
-    SMOKING_AREA("흡연구역"),
+    SMOKING_BOOTH("흡연부스"),
     CONVENIENCE_STORE("편의점"),
     CAFETERIA("식당"),
     READING_ROOM("열람실"),
@@ -26,7 +27,9 @@ public enum FacilityType {
     BANK("은행"),
     TRASH_CAN("쓰레기통"),
     GYM("헬스장"),
-    TOILET("화장실");
+    BICYCLE_RACK("자전거보관소"),
+    BENCH("벤치"),
+    SHUTTLE_BUS("셔틀버스정거장");
 
     private final String name;
 }

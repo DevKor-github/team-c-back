@@ -26,7 +26,12 @@ public enum FacilityType {
     BANK("은행"),
     TRASH_CAN("쓰레기통"),
     GYM("헬스장"),
-    TOILET("화장실");
+    TOILET("화장실"),
+    BICYCLE_RACK("자전거보관소"),
+    MAILBOX("우체통"),
+    BENCH("벤치"),
+    BASKETBALL_COURT("농구코드")
+    ;
 
     private final String name;
 }

@@ -11,7 +11,7 @@ import lombok.Getter;
 public class GetBuildingNicknameListRes {
     private Long buildingId;
     private String buildingName;
-    private List<GetBuildingNicknameRes> nicknameList = new ArrayList<>();
+    private List<GetBuildingNicknameRes> nicknameList;
 
     public GetBuildingNicknameListRes(Building building, List<GetBuildingNicknameRes> nicknameList) {
         this.buildingId = building.getId();

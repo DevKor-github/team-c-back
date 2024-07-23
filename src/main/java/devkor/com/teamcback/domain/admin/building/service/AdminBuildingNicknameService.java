@@ -45,6 +45,7 @@ public class AdminBuildingNicknameService {
         return new DeleteBuildingNicknameRes();
     }
 
+    // 건물 별명 조회
     @Transactional(readOnly = true)
     public GetBuildingNicknameListRes getBuildingNickname(Long buildingId) {
         Building building = findBuilding(buildingId);

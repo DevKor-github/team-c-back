@@ -32,6 +32,7 @@ public enum ResultCode {
 
     // 강의실 4000번대
     NOT_FOUND_CLASSROOM(HttpStatus.NOT_FOUND, 4000, "강의실을 찾을 수 없습니다."),
+    NOT_FOUND_CLASSROOM_NICKNAME(HttpStatus.NOT_FOUND, 4001, "강의실 별명을 찾을 수 없습니다."),
 
     // 편의시설 5000번대
     NOT_FOUND_FACILITY(HttpStatus.NOT_FOUND, 5000, "편의시설을 찾을 수 없습니다."),

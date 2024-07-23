@@ -5,12 +5,15 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING
 
 import devkor.com.teamcback.domain.admin.building.dto.request.SaveBuildingNicknameReq;
 import devkor.com.teamcback.domain.admin.building.dto.response.DeleteBuildingNicknameRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.GetBuildingNicknameListRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.GetBuildingNicknameRes;
 import devkor.com.teamcback.domain.admin.building.dto.response.SaveBuildingNicknameRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,16 @@ public class AdminBuildingNicknameService {
         buildingNicknameRepository.delete(buildingNickname);
 
         return new DeleteBuildingNicknameRes();
+    }
+
+    @Transactional(readOnly = true)
+    public GetBuildingNicknameListRes getBuildingNickname(Long buildingId) {
+        Building building = findBuilding(buildingId);
+        List<GetBuildingNicknameRes> nicknameList = buildingNicknameRepository.findAllByBuilding(building)
+            .stream().map(buildingNickname -> new GetBuildingNicknameRes(buildingNickname)).toList();
+
+
+        return new GetBuildingNicknameListRes(building, nicknameList);
     }
 
     private Building findBuilding(Long buildingId) {

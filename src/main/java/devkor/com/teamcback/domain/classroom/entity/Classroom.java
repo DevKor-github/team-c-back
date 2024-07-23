@@ -37,6 +37,8 @@ public class Classroom extends BaseEntity {
     @Column(nullable = false)
     private Double floor;
 
+    private Integer maskIndex;
+
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;

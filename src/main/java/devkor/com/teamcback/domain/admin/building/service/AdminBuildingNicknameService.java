@@ -1,8 +1,10 @@
 package devkor.com.teamcback.domain.admin.building.service;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_NICKNAME;
 
 import devkor.com.teamcback.domain.admin.building.dto.request.SaveBuildingNicknameReq;
+import devkor.com.teamcback.domain.admin.building.dto.response.DeleteBuildingNicknameRes;
 import devkor.com.teamcback.domain.admin.building.dto.response.SaveBuildingNicknameRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
@@ -30,7 +32,21 @@ public class AdminBuildingNicknameService {
         return new SaveBuildingNicknameRes();
     }
 
+    // 건물 별명 삭제
+    @Transactional
+    public DeleteBuildingNicknameRes deleteBuildingNickname(Long nicknameId) {
+        BuildingNickname buildingNickname = findBuildingNickname(nicknameId);
+
+        buildingNicknameRepository.delete(buildingNickname);
+
+        return new DeleteBuildingNicknameRes();
+    }
+
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
+    }
+
+    private BuildingNickname findBuildingNickname(Long buildingNicknameId) {
+        return buildingNicknameRepository.findById(buildingNicknameId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING_NICKNAME));
     }
 }

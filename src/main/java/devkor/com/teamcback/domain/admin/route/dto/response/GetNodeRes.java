@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.admin.dto.response;
+package devkor.com.teamcback.domain.admin.route.dto.response;
 
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import io.swagger.v3.oas.annotations.media.Schema;

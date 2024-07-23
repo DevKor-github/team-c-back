@@ -1,11 +1,11 @@
-package devkor.com.teamcback.domain.admin.controller;
+package devkor.com.teamcback.domain.admin.building.controller;
 
-import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.SearchBuildingImageRes;
-import devkor.com.teamcback.domain.admin.service.AdminBuildingImageService;
+import devkor.com.teamcback.domain.admin.building.dto.response.DeleteBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.GetBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.ModifyBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.SaveBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.SearchBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.service.AdminBuildingImageService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

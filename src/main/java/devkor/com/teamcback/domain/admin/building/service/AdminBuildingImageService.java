@@ -1,15 +1,15 @@
-package devkor.com.teamcback.domain.admin.service;
+package devkor.com.teamcback.domain.admin.building.service;
 
 import static devkor.com.teamcback.global.response.ResultCode.DUPLICATED_BUILDING_IMAGE;
 import static devkor.com.teamcback.global.response.ResultCode.INCORRECT_FLOOR;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_IMAGE;
 
-import devkor.com.teamcback.domain.admin.dto.response.DeleteBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.ModifyBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.SaveBuildingImageRes;
-import devkor.com.teamcback.domain.admin.dto.response.SearchBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.DeleteBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.GetBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.ModifyBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.SaveBuildingImageRes;
+import devkor.com.teamcback.domain.admin.building.dto.response.SearchBuildingImageRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;

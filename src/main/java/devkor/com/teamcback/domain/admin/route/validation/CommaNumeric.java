@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.admin.validation;
+package devkor.com.teamcback.domain.admin.route.validation;
 
 import jakarta.validation.Constraint;
 import java.lang.annotation.ElementType;

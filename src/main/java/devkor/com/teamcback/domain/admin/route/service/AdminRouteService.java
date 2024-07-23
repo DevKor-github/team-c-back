@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.admin.service;
+package devkor.com.teamcback.domain.admin.route.service;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_NODE;
@@ -11,14 +11,14 @@ import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
-import devkor.com.teamcback.domain.admin.dto.request.CreateNodeReq;
-import devkor.com.teamcback.domain.admin.dto.request.ModifyNodeReq;
-import devkor.com.teamcback.domain.admin.dto.response.CreateNodeRes;
-import devkor.com.teamcback.domain.admin.dto.response.DeleteNodeRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetNodeDetailRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetNodeListRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetNodeRes;
-import devkor.com.teamcback.domain.admin.dto.response.ModifyNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.request.CreateNodeReq;
+import devkor.com.teamcback.domain.admin.route.dto.request.ModifyNodeReq;
+import devkor.com.teamcback.domain.admin.route.dto.response.CreateNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.DeleteNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.GetNodeDetailRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.GetNodeListRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.GetNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.ModifyNodeRes;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;

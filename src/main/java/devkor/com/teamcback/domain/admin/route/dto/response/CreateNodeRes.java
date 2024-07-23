@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.admin.dto.response;
+package devkor.com.teamcback.domain.admin.route.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import devkor.com.teamcback.domain.navigate.entity.Node;

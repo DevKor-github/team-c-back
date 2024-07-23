@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.admin.dto.response;
+package devkor.com.teamcback.domain.admin.route.dto.response;
 
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.facility.entity.Facility;

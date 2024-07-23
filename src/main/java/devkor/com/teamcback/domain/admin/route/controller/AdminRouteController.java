@@ -1,13 +1,13 @@
-package devkor.com.teamcback.domain.admin.controller;
+package devkor.com.teamcback.domain.admin.route.controller;
 
-import devkor.com.teamcback.domain.admin.dto.request.CreateNodeReq;
-import devkor.com.teamcback.domain.admin.dto.request.ModifyNodeReq;
-import devkor.com.teamcback.domain.admin.dto.response.CreateNodeRes;
-import devkor.com.teamcback.domain.admin.dto.response.DeleteNodeRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetNodeDetailRes;
-import devkor.com.teamcback.domain.admin.dto.response.GetNodeListRes;
-import devkor.com.teamcback.domain.admin.dto.response.ModifyNodeRes;
-import devkor.com.teamcback.domain.admin.service.AdminRouteService;
+import devkor.com.teamcback.domain.admin.route.dto.request.CreateNodeReq;
+import devkor.com.teamcback.domain.admin.route.dto.request.ModifyNodeReq;
+import devkor.com.teamcback.domain.admin.route.dto.response.CreateNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.DeleteNodeRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.GetNodeDetailRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.GetNodeListRes;
+import devkor.com.teamcback.domain.admin.route.dto.response.ModifyNodeRes;
+import devkor.com.teamcback.domain.admin.route.service.AdminRouteService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

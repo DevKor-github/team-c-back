@@ -48,6 +48,8 @@ public class Facility extends BaseEntity {
 
     private String operatingTime;
 
+    private Integer maskIndex;
+
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;

@@ -23,6 +23,7 @@ public class GetRoomDetailRes {
     private Double latitude;
     private double xCoord;
     private double yCoord;
+    private Integer maskIndex;
 
     public GetRoomDetailRes(Classroom classroom) {
         this.type = "CLASSROOM";
@@ -35,6 +36,7 @@ public class GetRoomDetailRes {
         this.latitude = classroom.getNode().getLatitude();
         this.xCoord = classroom.getNode().getXCoord();
         this.yCoord = classroom.getNode().getYCoord();
+        this.maskIndex = classroom.getMaskIndex();
     }
 
     public GetRoomDetailRes(Facility facility) {
@@ -51,5 +53,6 @@ public class GetRoomDetailRes {
         this.latitude = facility.getNode().getLatitude();
         this.xCoord = facility.getNode().getXCoord();
         this.yCoord = facility.getNode().getYCoord();
+        this.maskIndex = facility.getMaskIndex();
     }
 }

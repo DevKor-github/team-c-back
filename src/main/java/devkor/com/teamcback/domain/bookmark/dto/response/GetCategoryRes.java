@@ -15,11 +15,21 @@ public class GetCategoryRes {
     private String color;
     @Schema(description = "카테고리 메모", example = "자주 찾는 장소 모음")
     private String memo;
+    @Schema(description = "카테고리의 즐겨찾기 수", example = "5")
+    private Long bookmarkCount;
 
     public GetCategoryRes(Category category) {
         this.categoryId = category.getId();
         this.category = category.getCategory();
         this.color = category.getColor().getName();
         this.memo = category.getMemo();
+    }
+
+    public GetCategoryRes(Category category, Long bookmarkCount) {
+        this.categoryId = category.getId();
+        this.category = category.getCategory();
+        this.color = category.getColor().getName();
+        this.memo = category.getMemo();
+        this.bookmarkCount = bookmarkCount;
     }
 }

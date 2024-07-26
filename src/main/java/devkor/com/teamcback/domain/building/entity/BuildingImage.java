@@ -35,9 +35,7 @@ public class BuildingImage {
         this.building = building;
     }
 
-    public void update(Building building, Double floor, String imageUrl) {
-        this.floor = floor;
+    public void update(String imageUrl) {
         this.image = imageUrl;
-        this.building = building;
     }
 }

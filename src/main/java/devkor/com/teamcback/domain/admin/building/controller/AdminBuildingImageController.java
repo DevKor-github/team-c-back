@@ -28,11 +28,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/buildings/images")
+@RequestMapping("/api/admin/buildings")
 public class AdminBuildingImageController {
     private final AdminBuildingImageService adminBuildingImageService;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{buildingId}/floors/{floor}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "건물 내부 사진 저장",
         description = "건물 내부 사진 저장")
     @ApiResponses(value = {
@@ -45,15 +45,15 @@ public class AdminBuildingImageController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<SaveBuildingImageRes> saveBuildingImage(
-        @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
-        @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor,
+        @Parameter(name = "buildingId", description = "건물 ID") @PathVariable Long buildingId,
+        @Parameter(name = "floor", description = "건물 층 수") @PathVariable Double floor,
         @Parameter(description = "저장할 사진 파일") @RequestPart("image") MultipartFile image
         ) {
         return CommonResponse.success(
             adminBuildingImageService.saveBuildingImage(buildingId, floor, image));
     }
 
-    @PutMapping(value = "/{imageId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/images/{imageId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "건물 내부 사진 수정",
         description = "건물 내부 사진 수정")
     @ApiResponses(value = {
@@ -67,15 +67,13 @@ public class AdminBuildingImageController {
     })
     public CommonResponse<ModifyBuildingImageRes> modifyBuildingImage(
         @Parameter(description = "수정할 건물 사진 ID") @PathVariable Long imageId,
-        @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
-        @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor,
         @Parameter(description = "수정할 사진 파일") @RequestPart("image") MultipartFile image
     ) {
         return CommonResponse.success(
-            adminBuildingImageService.modifyBuildingImage(imageId, buildingId, floor, image));
+            adminBuildingImageService.modifyBuildingImage(imageId, image));
     }
 
-    @DeleteMapping(value = "/{imageId}")
+    @DeleteMapping(value = "/images/{imageId}")
     @Operation(summary = "건물 내부 사진 삭제",
         description = "건물 내부 사진 삭제")
     @ApiResponses(value = {
@@ -91,23 +89,7 @@ public class AdminBuildingImageController {
         return CommonResponse.success(adminBuildingImageService.deleteBuildingImage(imageId));
     }
 
-    @GetMapping(value = "/{imageId}")
-    @Operation(summary = "건물 내부 사진 조회",
-        description = "건물 내부 사진 조회")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-        @ApiResponse(responseCode = "404", description = "객체를 찾을 수 없습니다.",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-    })
-    public CommonResponse<GetBuildingImageRes> getBuildingImage(
-        @Parameter(description = "조회할 건물 사진 ID") @PathVariable Long imageId
-    ) {
-        return CommonResponse.success(adminBuildingImageService.getBuildingImage(imageId));
-    }
-
-    @GetMapping
+    @GetMapping("/{buildingId}/floors/{floor}/image")
     @Operation(summary = "건물 내부 사진 검색",
         description = "건물 내부 사진 검색")
     @ApiResponses(value = {
@@ -118,8 +100,8 @@ public class AdminBuildingImageController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<SearchBuildingImageRes> getBuildingImage(
-        @Parameter(name = "buildingId", description = "건물 ID") @RequestParam Long buildingId,
-        @Parameter(name = "floor", description = "건물 층 수") @RequestParam Double floor
+        @Parameter(name = "buildingId", description = "건물 ID") @PathVariable Long buildingId,
+        @Parameter(name = "floor", description = "건물 층 수") @PathVariable Double floor
     ) {
         return CommonResponse.success(
             adminBuildingImageService.searchBuildingImage(buildingId, floor));

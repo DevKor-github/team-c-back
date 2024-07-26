@@ -91,9 +91,10 @@ public class S3Util {
     }
 
     public boolean exists(String fileUrl, FilePath filePath) {
-        // 파일 URL에서 파일 이름 추출
+        // 주어진 파일 URL로부터 파일명을 추출
         String fileName = getFileNameFromFileUrl(fileUrl, filePath);
-
+        // 파일명을 UTF-8로 디코딩
+        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
         // S3에 파일이 존재하는지 확인
         if (fileName.isBlank()
             || !amazonS3Client.doesObjectExist(bucketName, filePath.getPath() + fileName)) {

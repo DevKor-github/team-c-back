@@ -35,7 +35,7 @@ public class AdminBuildingImageService {
         String imageUrl = s3Util.uploadFile(image, FilePath.BUILDING_IMAGE);
         Building building = findBuilding(buildingId);
 
-        if(floor < building.getUnderFloor() || floor > building.getFloor()) {
+        if(floor < building.getUnderFloor() * (-1) || floor > building.getFloor()) {
             throw new GlobalException(INCORRECT_FLOOR);
         }
         checkExistedImage(building, floor); // 해당 건물, 층에 해당하는 사진이 있는지 확인
@@ -46,16 +46,14 @@ public class AdminBuildingImageService {
 
     // 건물 내부 사진 수정
     @Transactional
-    public ModifyBuildingImageRes modifyBuildingImage(Long buildingImageId, Long buildingId, Double floor, MultipartFile image) {
+    public ModifyBuildingImageRes modifyBuildingImage(Long buildingImageId, MultipartFile image) {
         BuildingImage buildingImage = findBuildingImage(buildingImageId);
-        Building building = findBuilding(buildingId);
-        if(s3Util.exists(buildingImage.getImage(), FilePath.BUILDING_IMAGE)) s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE);
-        if(!(buildingImage.getBuilding().getId().equals(buildingId) && buildingImage.getFloor().equals(floor))) {
-            checkExistedImage(building, floor); // 해당 건물, 층에 해당하는 사진이 있는지 확인
+        if(s3Util.exists(buildingImage.getImage(), FilePath.BUILDING_IMAGE)) {
+            s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE); // 기존 사진 S3에서 삭제
         }
 
         String imageUrl = s3Util.uploadFile(image, FilePath.BUILDING_IMAGE);
-        buildingImage.update(building, floor, imageUrl);
+        buildingImage.update(imageUrl);
 
         return new ModifyBuildingImageRes(buildingImage);
     }
@@ -65,19 +63,11 @@ public class AdminBuildingImageService {
     public DeleteBuildingImageRes deleteBuildingImage(Long buildingImageId) {
         BuildingImage buildingImage = findBuildingImage(buildingImageId);
         if(s3Util.exists(buildingImage.getImage(), FilePath.BUILDING_IMAGE)) {
-            s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE);
+            s3Util.deleteFile(buildingImage.getImage(), FilePath.BUILDING_IMAGE); // 기존 사진 S3에서 삭제
         }
         buildingImageRepository.delete(buildingImage);
 
         return new DeleteBuildingImageRes();
-    }
-
-    // 건물 내부 사진 조회
-    @Transactional(readOnly = true)
-    public GetBuildingImageRes getBuildingImage(Long buildingImageId) {
-        BuildingImage buildingImage =findBuildingImage(buildingImageId);
-
-        return new GetBuildingImageRes(buildingImage);
     }
 
     // 건물 내부 사진 검색
@@ -98,11 +88,11 @@ public class AdminBuildingImageService {
     }
 
     private BuildingImage findBuildingImage(Building building, Double floor) {
-        BuildingImage bulidingImage = buildingImageRepository.findByBuildingAndFloor(building, floor);
-        if(bulidingImage == null) {
+        BuildingImage buildingImage = buildingImageRepository.findByBuildingAndFloor(building, floor);
+        if(buildingImage == null) {
             throw new GlobalException(NOT_FOUND_BUILDING_IMAGE);
         }
-        return bulidingImage;
+        return buildingImage;
 
     }
 

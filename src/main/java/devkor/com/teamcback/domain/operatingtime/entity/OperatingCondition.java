@@ -27,7 +27,7 @@ public class OperatingCondition extends BaseEntity {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private OperatingWeekend operatingWeekend = OperatingWeekend.NONE;
+    private OperatingWeekend operatingWeekend = OperatingWeekend.EVERY;
 
     @Column(nullable = false)
     private boolean isWeekday;

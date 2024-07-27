@@ -6,5 +6,5 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum OperatingWeekend {
-    EVEN, ODD, EVERY, NONE;
+    EVEN, ODD, EVERY;
 }

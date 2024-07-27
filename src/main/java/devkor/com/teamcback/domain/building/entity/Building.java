@@ -46,4 +46,8 @@ public class Building extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "node_id")
     private Node node;
+
+    public void setOperating(boolean operating) {
+        isOperating = operating;
+    }
 }

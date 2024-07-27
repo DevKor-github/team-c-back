@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.bookmark.controller;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
+import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.service.CategoryService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -99,7 +100,7 @@ public class CategoryController {
         @Parameter(description = "카테고리 id", required = true)
         @PathVariable Long categoryId,
         @Parameter(description = "카테고리 이름, 색상, 메모", required = true)
-        @RequestBody CreateCategoryReq req) {
+        @RequestBody ModifyCategoryReq req) {
         return CommonResponse.success(categoryService.modifyCategory(userDetail.getUser().getUserId(), categoryId, req));
     }
 

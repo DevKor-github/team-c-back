@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.bookmark.service;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
+import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
@@ -70,7 +71,7 @@ public class CategoryService {
      * 카테고리 수정
      */
     @Transactional
-    public ModifyCategoryRes modifyCategory(Long userId, Long categoryId, CreateCategoryReq req) {
+    public ModifyCategoryRes modifyCategory(Long userId, Long categoryId, ModifyCategoryReq req) {
         User user = findUser(userId);
         Category category = findCategory(categoryId);
 

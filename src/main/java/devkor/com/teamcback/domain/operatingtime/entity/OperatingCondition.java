@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.operatingtime.entity;
 
 import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import jakarta.persistence.Column;
@@ -37,6 +38,10 @@ public class OperatingCondition extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
+
+    @ManyToOne
+    @JoinColumn(name = "classroom_id")
+    private Classroom classroom;
 
     @ManyToOne
     @JoinColumn(name = "facility_id")

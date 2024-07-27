@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.bookmark.controller;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
+import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.service.CategoryService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -223,7 +224,7 @@ public class CategoryController {
      * @param userDetail 사용자 정보
      * @param categoryId 카테고리 id
      * @param bookmarkId 수정할 즐겨찾기 id
-     * @param req 즐겨찾기 수정을 위한 정보
+     * @param req 즐겨찾기 메모 수정을 위한 정보
      */
     @Operation(summary = "즐겨찾기 수정", description = "즐겨찾기 수정: 로그인 필요")
     @ApiResponses(value = {
@@ -243,8 +244,8 @@ public class CategoryController {
         @PathVariable Long categoryId,
         @Parameter(description = "즐겨찾기 id", required = true)
         @PathVariable Long bookmarkId,
-        @Parameter(description = "장소타입, 장소 id (건물 or 강의실 or 편의시설), 메모", required = true)
-        @RequestBody CreateBookmarkReq req) {
+        @Parameter(description = "수정된 메모", required = true)
+        @RequestBody ModifyBookmarkReq req) {
         return CommonResponse.success(categoryService.modifyBookmark(userDetail.getUser().getUserId(), categoryId, bookmarkId, req));
     }
 

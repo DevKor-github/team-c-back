@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.bookmark.service;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
+import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
@@ -135,7 +136,7 @@ public class CategoryService {
 
         //장소 중복 확인하기
         //해당 카테고리안에 placeType, placeId가 모두 동일한 것이 있으면 중복
-        checkPlaceDuplication(null, category, req.getPlaceType(), req.getPlaceId());
+        checkPlaceDuplication(category, req.getPlaceType(), req.getPlaceId());
 
         //즐겨찾기 생성
         Bookmark bookmark = bookmarkRepository.save(new Bookmark(req, category));
@@ -162,10 +163,10 @@ public class CategoryService {
     }
 
     /**
-     * 즐겨찾기 수정
+     * 즐겨찾기 수정 (memo 수정만 가능)
      */
     @Transactional
-    public ModifyBookmarkRes modifyBookmark(Long userId, Long categoryId, Long bookmarkId, CreateBookmarkReq req) {
+    public ModifyBookmarkRes modifyBookmark(Long userId, Long categoryId, Long bookmarkId, ModifyBookmarkReq req) {
         User user = findUser(userId);
         Category category = findCategory(categoryId);
         Bookmark bookmark = findBookmark(category, bookmarkId);
@@ -173,10 +174,7 @@ public class CategoryService {
         // 카테고리 소유자인지 확인
         checkAuthority(user, bookmark.getCategory().getUser());
 
-        //장소 중복 확인하기 (bookmarkid가 기존과 동일한 경우 제외)
-        checkPlaceDuplication(bookmark, bookmark.getCategory(), req.getPlaceType(), req.getPlaceId());
-
-        bookmark.update(req, bookmark.getCategory());
+        bookmark.update(req.getMemo());
 
         return new ModifyBookmarkRes();
     }
@@ -219,39 +217,23 @@ public class CategoryService {
         throw new GlobalException(NOT_FOUND_IN_CATEGORY);
     }
 
-    private void checkPlaceDuplication(Bookmark presentBookmark, Category category, PlaceType placeType, Long placeId) {
-        Optional<Bookmark> optionalBookmark = Optional.ofNullable(bookmarkRepository.findBookmarkByCategoryAndPlaceTypeAndPlaceId(category, placeType, placeId));
-        // 해당하는 북마크 존재하는 경우
+    private void checkPlaceDuplication(Category category, PlaceType placeType, Long placeId) {
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByCategoryAndPlaceTypeAndPlaceId(category, placeType, placeId);
+
+        // 같은 카테고리에 동일 북마크가 존재하는 경우
         if (optionalBookmark.isPresent()) {
-            // 찾은 북마크가 수정 전 북마크와 동일한 것인 경우는 제외 (Ex. memo만 변경 등)
-            if(optionalBookmark.get() != presentBookmark) {
-                throw new GlobalException(DUPLICATED_BOOKMARK);
-            }
+            throw new GlobalException(DUPLICATED_BOOKMARK);
         }
     }
 
     public void checkPlaceExists(PlaceType placeType, Long placeId) {
-        boolean exists = false;
-
-        if ("building".equals(placeType.getName())) {
-            exists = buildingRepository.existsById(placeId);
-        } else if ("classroom".equals(placeType.getName())) {
-            exists = classroomRepository.existsById(placeId);
-        } else if ("facility".equals(placeType.getName())) {
-            exists = facilityRepository.existsById(placeId);
-        }
-
-        if(!exists) {
-            if ("building".equals(placeType.getName())) {
-                throw new GlobalException(NOT_FOUND_BUILDING);
-            } else if ("classroom".equals(placeType.getName())) {
-                throw new GlobalException(NOT_FOUND_CLASSROOM);
-            } else if ("facility".equals(placeType.getName())) {
-                throw new GlobalException(NOT_FOUND_FACILITY);
-            }
+        if ("building".equals(placeType.getName()) && !buildingRepository.existsById(placeId)) {
+            throw new GlobalException(NOT_FOUND_BUILDING);
+        } else if ("classroom".equals(placeType.getName()) && !classroomRepository.existsById(placeId)) {
+            throw new GlobalException(NOT_FOUND_CLASSROOM);
+        } else if ("facility".equals(placeType.getName()) && !facilityRepository.existsById(placeId)) {
+            throw new GlobalException(NOT_FOUND_FACILITY);
         }
     }
-
-
 
 }

@@ -52,11 +52,8 @@ public class Bookmark {
 
     }
 
-    public void update(CreateBookmarkReq req, Category category) {
-        this.category = category;
-        this.memo = req.getMemo();
-        this.placeType = req.getPlaceType();
-        this.placeId = req.getPlaceId();
+    public void update(String memo) {
+        this.memo = memo;
     }
 
 }

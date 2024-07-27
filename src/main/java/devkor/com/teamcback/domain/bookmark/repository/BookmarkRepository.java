@@ -6,9 +6,10 @@ import devkor.com.teamcback.domain.bookmark.entity.PlaceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
-    Bookmark findBookmarkByCategoryAndPlaceTypeAndPlaceId(Category category, PlaceType placeType, Long placeId);
+    Optional<Bookmark> findByCategoryAndPlaceTypeAndPlaceId(Category category, PlaceType placeType, Long placeId);
     Long countAllByCategory(Category category);
     List<Bookmark> findAllByCategory(Category category);
 

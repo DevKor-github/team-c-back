@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.bookmark.entity;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
+import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.Column;
@@ -45,7 +46,7 @@ public class Category extends BaseEntity {
         this.user = user;
     }
 
-    public void update(CreateCategoryReq req) {
+    public void update(ModifyCategoryReq req) {
         this.category = req.getCategory();
         this.color = req.getColor();
         this.memo = req.getMemo();

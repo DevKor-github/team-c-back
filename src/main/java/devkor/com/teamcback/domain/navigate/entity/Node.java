@@ -75,4 +75,8 @@ public class Node extends BaseEntity {
         this.adjacentNode = req.getAdjacentNode();
         this.distance = req.getDistance();
     }
+
+    public void setRouting(boolean routing) {
+        this.routing = routing;
+    }
 }

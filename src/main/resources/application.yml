@@ -109,3 +109,10 @@ springdoc:
 default:
   image:
     url: https://kodaero.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
+
+data:
+  api:
+    holiday:
+      end-point: http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo
+      encoded-key: RRDg18a7noGpfK%2F1rmFBRX8ms0%2BbAL0PO1VqCEhrWak%2BKISmaIZf%2BcHsT2FMSFtFnm%2FvLNlPtBrNZoWdTt6jfA%3D%3D
+      decoded-key: RRDg18a7noGpfK/1rmFBRX8ms0+bAL0PO1VqCEhrWak+KISmaIZf+cHsT2FMSFtFnm/vLNlPtBrNZoWdTt6jfA==

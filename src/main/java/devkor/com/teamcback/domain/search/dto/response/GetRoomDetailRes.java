@@ -20,7 +20,7 @@ public class GetRoomDetailRes {
     private boolean plugAvailability;
     private String imageUrl;
     @JsonInclude(Include.NON_NULL)
-    private String operatingTime;
+    private boolean isOperating;
     private Double longitude;
     private Double latitude;
     private double xCoord;
@@ -34,6 +34,7 @@ public class GetRoomDetailRes {
         this.detail = classroom.getDetail();
         this.plugAvailability = classroom.isPlugAvailability();
         this.imageUrl = classroom.getImageUrl();
+        this.isOperating = classroom.isOperating();
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.xCoord = classroom.getNode().getXCoord();
@@ -50,7 +51,7 @@ public class GetRoomDetailRes {
         this.availability = facility.isAvailability();
         this.plugAvailability = facility.isPlugAvailability();
         this.imageUrl = facility.getImageUrl();
-        this.operatingTime = facility.getOperatingTime();
+        this.isOperating = facility.isOperating();
         this.longitude = facility.getNode().getLongitude();
         this.latitude = facility.getNode().getLatitude();
         this.xCoord = facility.getNode().getXCoord();

@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.operatingtime.service;
 
-import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OperatingService {
     private final OperatingConditionRepository operatingConditionRepository;
     private final OperatingTimeRepository operatingTimeRepository;
-    private final NodeRepository nodeRepository;
 
     @Transactional
     public void updateOperatingTime(boolean isWeekday, boolean isVacation, Boolean evenWeek, LocalDateTime now) {

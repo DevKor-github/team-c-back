@@ -8,16 +8,18 @@ import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import lombok.Getter;
 
 @Getter
-@JsonInclude(Include.NON_NULL)
 public class GetRoomDetailRes {
     private String type;
     private Long id;
+    @JsonInclude(Include.NON_NULL)
     private FacilityType facilityType;
     private String name;
     private String detail;
+    @JsonInclude(Include.NON_NULL)
     private boolean availability;
     private boolean plugAvailability;
     private String imageUrl;
+    @JsonInclude(Include.NON_NULL)
     private String operatingTime;
     private Double longitude;
     private Double latitude;
@@ -48,7 +50,7 @@ public class GetRoomDetailRes {
         this.availability = facility.isAvailability();
         this.plugAvailability = facility.isPlugAvailability();
         this.imageUrl = facility.getImageUrl();
-        this.operatingTime = facility.getImageUrl();
+        this.operatingTime = facility.getOperatingTime();
         this.longitude = facility.getNode().getLongitude();
         this.latitude = facility.getNode().getLatitude();
         this.xCoord = facility.getNode().getXCoord();

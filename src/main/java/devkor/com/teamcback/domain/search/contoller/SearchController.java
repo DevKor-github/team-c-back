@@ -2,31 +2,22 @@ package devkor.com.teamcback.domain.search.contoller;
 
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
-import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
-import devkor.com.teamcback.domain.search.dto.response.SaveSearchLogRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityTypeRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchRoomRes;
+import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -165,6 +156,33 @@ public class SearchController {
         @RequestParam(name = "type") FacilityType facilityType) {
         return CommonResponse.success(searchService.searchBuildingWithFacilityType(facilityType));
     }
+
+    /**
+     * Mask Index 대응 교실 조회
+     * @param buildingId 건물 id
+     * @param floor 건물 층
+     * @param type 장소 종류
+     * @param maskIndex 교실 mask index
+     */
+    @Operation(summary = "Mask Index 대응 교실 조회 ", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/buildings/{buildingId}/floor/{floor}/mask")
+    public CommonResponse<searchPlaceByMaskIndexRes> searchPlaceByMaskIndex(
+        @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
+        @PathVariable Long buildingId,
+        @Parameter(name = "floor", description = "건물 층", example = "1", required = true)
+        @PathVariable int floor,
+        @Parameter(name = "type", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
+        @RequestParam PlaceType type,
+        @Parameter(name = "maskIndex", description = "교실 mask index", example = "5", required = true)
+        @RequestParam Integer maskIndex) {
+        return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, type, maskIndex));
+    }
+
 
     /**
      * 검색 기록 조회

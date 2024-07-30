@@ -12,16 +12,7 @@ import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
-import devkor.com.teamcback.domain.search.dto.response.GetBuildingDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetFacilityRes;
-import devkor.com.teamcback.domain.search.dto.response.GetRoomDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityTypeRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchRoomRes;
+import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import java.util.HashMap;
@@ -207,6 +198,24 @@ public class SearchService {
 
         List<GetBuildingDetailRes> buildingDetailRes = buildingList.stream().map(GetBuildingDetailRes::new).toList();
         return new SearchBuildingRes(buildingDetailRes);
+    }
+
+    /**
+     * Mask Index 대응 교실 조회
+     */
+    public searchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, PlaceType type, Integer maskIndex) {
+        Building building = findBuilding(buildingId);
+        searchPlaceByMaskIndexRes res = new searchPlaceByMaskIndexRes();
+
+        switch (type) {
+            case CLASSROOM -> {
+                res = new searchPlaceByMaskIndexRes(classroomRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+            }
+            case FACILITY -> {
+                res =  new searchPlaceByMaskIndexRes(facilityRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+            }
+        }
+        return res;
     }
 
     /**

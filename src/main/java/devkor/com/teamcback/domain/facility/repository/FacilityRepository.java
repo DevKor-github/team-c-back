@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.facility.repository;
 
 import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.navigate.entity.Node;
@@ -16,9 +17,12 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
 
     List<Facility> findAllByBuilding(Building building);
 
-    List<Facility> findAllByBuildingAndFloor(Building building, int floor);
+    List<Facility> findAllByBuildingAndFloor(Building building, double floor);
 
     List<Facility> findAllByType(FacilityType facilityType);
 
     Facility findByNode(Node node);
+
+    Facility findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
+
 }

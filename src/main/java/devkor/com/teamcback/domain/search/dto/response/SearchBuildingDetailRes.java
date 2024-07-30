@@ -12,14 +12,16 @@ public class SearchBuildingDetailRes {
     private String name;
     private String address;
     private String details;
-    private List<FacilityType> types; //건물 내 facility 종류 리스트
-    private List<GetMainFacilityRes> mainFacilityResList;
+    private boolean favorite;
+    private List<FacilityType> existTypes; //건물 내 facility 종류 리스트(아이콘용)
+    private List<GetMainFacilityRes> mainFacilityList;
 
-    public SearchBuildingDetailRes(List<GetMainFacilityRes> facilities, List<FacilityType> types, Building building) {
+    public SearchBuildingDetailRes(List<GetMainFacilityRes> facilities, List<FacilityType> types, Building building, boolean favorite) {
         this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.address = building.getAddress();
         this.details = building.getDetail();
-        this.types = types;
-        this.mainFacilityResList = facilities;
+        this.favorite = favorite;
+        this.existTypes = types;
+        this.mainFacilityList = facilities;
     }
 }

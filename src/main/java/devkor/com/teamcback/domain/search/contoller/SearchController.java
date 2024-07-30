@@ -13,18 +13,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -186,6 +180,7 @@ public class SearchController {
     /**
      * 건물 상세 정보 조회
      * @param buildingId 건물 id
+     * @param userDetail 사용자 정보
      */
     @Operation(summary = "건물 상세 정보 조회", description = "건물 상세 정보 조회")
     @ApiResponses(value = {
@@ -195,9 +190,14 @@ public class SearchController {
     })
     @GetMapping("/buildings/{buildingId}")
     public CommonResponse<SearchBuildingDetailRes> searchBuildingDetail(
+        @Parameter(description = "사용자정보", required = false)
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId) {
-        return CommonResponse.success(searchService.searchBuildingDetail(buildingId));
+
+        Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
+        return CommonResponse.success(searchService.searchBuildingDetail(userId, buildingId));
+
     }
 
     /**

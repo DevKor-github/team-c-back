@@ -12,5 +12,5 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     Optional<Bookmark> findByCategoryAndPlaceTypeAndPlaceId(Category category, PlaceType placeType, Long placeId);
     Long countAllByCategory(Category category);
     List<Bookmark> findAllByCategory(Category category);
-
+    Boolean existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType placeType, Long placeId, List<Category> category);
 }

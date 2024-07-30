@@ -1,5 +1,8 @@
 package devkor.com.teamcback.domain.search.service;
 
+import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
+import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
@@ -15,15 +18,15 @@ import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-
-import java.util.*;
-
+import devkor.com.teamcback.domain.user.entity.User;
+import devkor.com.teamcback.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +38,9 @@ public class SearchService {
     private final ClassroomNicknameRepository classroomNicknameRepository;
     private final FacilityRepository facilityRepository;
     private final RedisTemplate<String, SearchLog> searchLogRedis;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     /**
      * 검색어 자동 완성
@@ -222,13 +228,13 @@ public class SearchService {
      * 건물 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public SearchBuildingDetailRes searchBuildingDetail(Long buildingId) {
+    public SearchBuildingDetailRes searchBuildingDetail(Long userId, Long buildingId) {
         Building building = findBuilding(buildingId);
 
-        //가져올 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
+        //(임의) 가져올 대표 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
+        //자세한 회의 후 List 수정하기
         List<FacilityType> types = Arrays.asList(FacilityType.LOUNGE, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.GYM, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM);
-        List<Facility> mainFacilities = facilityRepository.findAllByTypeInOrderByFloor(types);
-
+        List<Facility> mainFacilities = facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
         List<GetMainFacilityRes> res = new ArrayList<>();
 
         for (Facility facility : mainFacilities) {
@@ -238,11 +244,27 @@ public class SearchService {
         // 건물 내 편의시설 종류 정보
         SearchFacilityTypeRes containFacilities = searchFacilityTypeByBuilding(buildingId);
 
-        //운영시간 정보, 운영여부 t/f 나중에 넣기
-        //즐겨찾기 여부 추가하기
+        //즐겨찾기 여부 확인 (로그인 X -> false)
+        boolean favorite = false;
+        if(userId != null) {
+            User user = findUser(userId);
+            // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
+            List<Category> categories = categoryRepository.findAllByUser(user);
+            //PlaceType 엔티티가 2개라서 이렇게밖에 안되는데 더 나은 코드 아시는 분 계시면 리뷰 남겨주시면 감사하겠습니다!ㅠㅠ
+            if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(devkor.com.teamcback.domain.bookmark.entity.PlaceType.BUILDING, buildingId, categories)) {
+                favorite = true;
+            }
+        }
 
+        //운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
+        //커뮤니티 구상 완료되면 커뮤니티 정보도..?
 
-        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building);
+        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building, favorite);
+    }
+
+    private User findUser(Long userId) {
+        Optional<User> user =  userRepository.findById(userId);
+        return user.orElse(null);
     }
 
     /**

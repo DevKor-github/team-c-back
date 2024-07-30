@@ -15,16 +15,15 @@ import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -203,6 +202,7 @@ public class SearchService {
     /**
      * Mask Index 대응 교실 조회
      */
+    @Transactional(readOnly = true)
     public searchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, PlaceType type, Integer maskIndex) {
         Building building = findBuilding(buildingId);
         searchPlaceByMaskIndexRes res = new searchPlaceByMaskIndexRes();
@@ -216,6 +216,33 @@ public class SearchService {
             }
         }
         return res;
+    }
+
+    /**
+     * 건물 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchBuildingDetailRes searchBuildingDetail(Long buildingId) {
+        Building building = findBuilding(buildingId);
+
+        //가져올 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
+        List<FacilityType> types = Arrays.asList(FacilityType.LOUNGE, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.GYM, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM);
+        List<Facility> mainFacilities = facilityRepository.findAllByTypeInOrderByFloor(types);
+
+        List<GetMainFacilityRes> res = new ArrayList<>();
+
+        for (Facility facility : mainFacilities) {
+            res.add(new GetMainFacilityRes(facility));
+        }
+
+        // 건물 내 편의시설 종류 정보
+        SearchFacilityTypeRes containFacilities = searchFacilityTypeByBuilding(buildingId);
+
+        //운영시간 정보, 운영여부 t/f 나중에 넣기
+        //즐겨찾기 여부 추가하기
+
+
+        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building);
     }
 
     /**

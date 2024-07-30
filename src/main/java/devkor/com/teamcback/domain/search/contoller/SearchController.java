@@ -164,7 +164,7 @@ public class SearchController {
      * @param type 장소 종류
      * @param maskIndex 교실 mask index
      */
-    @Operation(summary = "Mask Index 대응 교실 조회 ", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @Operation(summary = "Mask Index 대응 교실 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -183,6 +183,22 @@ public class SearchController {
         return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, type, maskIndex));
     }
 
+    /**
+     * 건물 상세 정보 조회
+     * @param buildingId 건물 id
+     */
+    @Operation(summary = "건물 상세 정보 조회", description = "건물 상세 정보 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/buildings/{buildingId}")
+    public CommonResponse<SearchBuildingDetailRes> searchBuildingDetail(
+        @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
+        @PathVariable Long buildingId) {
+        return CommonResponse.success(searchService.searchBuildingDetail(buildingId));
+    }
 
     /**
      * 검색 기록 조회

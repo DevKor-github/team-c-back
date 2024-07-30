@@ -6,6 +6,8 @@ import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import java.util.List;
+
+import devkor.com.teamcback.domain.search.entity.PlaceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FacilityRepository extends JpaRepository<Facility, Long> {
@@ -25,4 +27,5 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
 
     Facility findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
 
+    List<Facility> findAllByTypeInOrderByFloor(List<FacilityType> types);
 }

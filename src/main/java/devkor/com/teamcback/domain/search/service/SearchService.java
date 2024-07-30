@@ -245,21 +245,21 @@ public class SearchService {
         SearchFacilityTypeRes containFacilities = searchFacilityTypeByBuilding(buildingId);
 
         //즐겨찾기 여부 확인 (로그인 X -> false)
-        boolean favorite = false;
+        boolean bookmarked = false;
         if(userId != null) {
             User user = findUser(userId);
             // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
             List<Category> categories = categoryRepository.findAllByUser(user);
             //PlaceType 엔티티가 2개라서 이렇게밖에 안되는데 더 나은 코드 아시는 분 계시면 리뷰 남겨주시면 감사하겠습니다!ㅠㅠ
             if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(devkor.com.teamcback.domain.bookmark.entity.PlaceType.BUILDING, buildingId, categories)) {
-                favorite = true;
+                bookmarked = true;
             }
         }
 
         //운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
         //커뮤니티 구상 완료되면 커뮤니티 정보도..?
 
-        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building, favorite);
+        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building, bookmarked);
     }
 
     private User findUser(Long userId) {

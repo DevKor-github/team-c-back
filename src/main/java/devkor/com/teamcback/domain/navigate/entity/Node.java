@@ -78,4 +78,8 @@ public class Node extends BaseEntity {
         this.adjacentNode = req.getAdjacentNode();
         this.distance = req.getDistance();
     }
+
+    public void setOperating(boolean operating) {
+        isOperating = operating;
+    }
 }

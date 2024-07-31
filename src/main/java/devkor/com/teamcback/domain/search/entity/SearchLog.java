@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.search.entity;
 
+import devkor.com.teamcback.domain.common.PlaceType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

@@ -1,5 +1,8 @@
 package devkor.com.teamcback.domain.search.service;
 
+import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
+import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
@@ -8,33 +11,27 @@ import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.entity.ClassroomNickname;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomNicknameRepository;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
-import devkor.com.teamcback.domain.search.dto.response.GetBuildingDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetFacilityRes;
-import devkor.com.teamcback.domain.search.dto.response.GetRoomDetailRes;
-import devkor.com.teamcback.domain.search.dto.response.GetSearchLogRes;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchBuildingRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchFacilityTypeRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
-import devkor.com.teamcback.domain.search.dto.response.SearchRoomRes;
-import devkor.com.teamcback.domain.search.entity.PlaceType;
+import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import java.util.HashMap;
-import java.util.Map;
+import devkor.com.teamcback.domain.user.entity.User;
+import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +42,9 @@ public class SearchService {
     private final ClassroomNicknameRepository classroomNicknameRepository;
     private final FacilityRepository facilityRepository;
     private final RedisTemplate<String, SearchLog> searchLogRedis;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     /**
      * 검색어 자동 완성
@@ -210,6 +210,75 @@ public class SearchService {
     }
 
     /**
+     * Mask Index 대응 교실 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, Integer maskIndex, PlaceType type) {
+        Building building = findBuilding(buildingId);
+        SearchPlaceByMaskIndexRes res = new SearchPlaceByMaskIndexRes();
+
+        switch (type) {
+            case CLASSROOM -> {
+                res = new SearchPlaceByMaskIndexRes(classroomRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+            }
+            case FACILITY -> {
+                res =  new SearchPlaceByMaskIndexRes(facilityRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+            }
+        }
+        return res;
+    }
+
+    /**
+     * 건물 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchBuildingDetailRes searchBuildingDetail(Long userId, Long buildingId) {
+        Building building = findBuilding(buildingId);
+
+        //(임의) 가져올 대표 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
+        //자세한 회의 후 List 수정하기
+        List<FacilityType> types = Arrays.asList(FacilityType.LOUNGE, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.GYM, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM);
+        List<Facility> mainFacilities = getFacilitiesByBuildingAndTypes(building, types);
+        List<GetMainFacilityRes> res = new ArrayList<>();
+
+        for (Facility facility : mainFacilities) {
+            res.add(new GetMainFacilityRes(facility));
+        }
+
+        // 건물 내 편의시설 종류 정보(아이콘)
+        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
+        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+        List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
+            .map(Facility::getType)
+            .distinct()
+            .toList();
+
+        //즐겨찾기 여부 확인 (로그인 X -> false)
+        boolean bookmarked = false;
+        if(userId != null) {
+            User user = findUser(userId);
+            // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
+            List<Category> categories = categoryRepository.findAllByUser(user);
+            if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.BUILDING, buildingId, categories)) {
+                bookmarked = true;
+            }
+        }
+
+        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
+        // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보 넣기
+
+        return new SearchBuildingDetailRes(res, containFacilityTypes, building, bookmarked);
+    }
+
+    private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
+        return facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
+    }
+
+    /**
      * 검색 기록 조회
      */
     public List<GetSearchLogRes> getSearchLog(Long userId) {
@@ -242,6 +311,6 @@ public class SearchService {
     }
 
     private Building findBuilding(Long buildingId) {
-        return buildingRepository.findById(buildingId).orElseThrow();
+        return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
 }

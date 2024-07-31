@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.search.dto.request;
 
-import devkor.com.teamcback.domain.search.entity.PlaceType;
+import devkor.com.teamcback.domain.common.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 

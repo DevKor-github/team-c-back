@@ -1,9 +1,8 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import devkor.com.teamcback.domain.search.entity.PlaceType;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.LocalDate;
 import lombok.Getter;
 
 @Schema(description = "검색 기록 정보")

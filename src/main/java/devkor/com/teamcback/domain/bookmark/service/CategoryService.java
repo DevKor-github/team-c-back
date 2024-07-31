@@ -7,12 +7,11 @@ import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
-import devkor.com.teamcback.domain.bookmark.entity.PlaceType;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
-import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -228,11 +227,11 @@ public class CategoryService {
     }
 
     public void checkPlaceExists(PlaceType placeType, Long placeId) {
-        if ("building".equals(placeType.getName()) && !buildingRepository.existsById(placeId)) {
+        if ("BUILDING".equals(placeType.name()) && !buildingRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_BUILDING);
-        } else if ("classroom".equals(placeType.getName()) && !classroomRepository.existsById(placeId)) {
+        } else if ("CLASSROOM".equals(placeType.name()) && !classroomRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_CLASSROOM);
-        } else if ("facility".equals(placeType.getName()) && !facilityRepository.existsById(placeId)) {
+        } else if ("FACILITY".equals(placeType.name()) && !facilityRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_FACILITY);
         }
     }

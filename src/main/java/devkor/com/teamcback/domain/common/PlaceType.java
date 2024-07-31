@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.search.entity;
+package devkor.com.teamcback.domain.common;
 
 public enum PlaceType {
     BUILDING, CLASSROOM, FACILITY

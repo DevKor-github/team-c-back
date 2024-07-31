@@ -25,15 +25,15 @@ public class OperatingCondition extends BaseEntity {
     @GeneratedValue
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    private OperatingWeekend operatingWeekend = OperatingWeekend.EVERY; // 매주, 짝수, 홀수 토요일
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private OperatingWeekend operatingWeekend = OperatingWeekend.EVERY;
+    private DayOfWeek dayOfWeek; // 평일, 토, 일
 
     @Column(nullable = false)
-    private boolean isWeekday;
-
-    @Column(nullable = false)
-    private boolean isVacation;
+    private boolean isVacation; // 방학, 학기 중
 
     @ManyToOne
     @JoinColumn(name = "building_id")

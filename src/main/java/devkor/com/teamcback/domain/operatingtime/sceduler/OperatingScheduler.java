@@ -1,8 +1,8 @@
 package devkor.com.teamcback.domain.operatingtime.sceduler;
 
+import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
@@ -36,27 +36,36 @@ public class OperatingScheduler {
         LocalDate now = nowTime.toLocalDate();
 
 
-        boolean isWeekday = isWeekday(now); // 평일 여부
-        log.info("isWeekday: {}", isWeekday);
+        DayOfWeek dayOfWeek = findDayOfWeek(now);
+        log.info("dayOfWeek: {}", dayOfWeek.toString());
         boolean isVacation = isVacation(now); // 방학 여부
         log.info("isVacation: {}", isVacation);
-        Boolean evenWeek = null;
-        if(now.getDayOfWeek() == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
+
+        boolean evenWeek = false;
+        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
             evenWeek = isEvenWeek(now);
             log.info("evenWeek: {}", evenWeek);
         }
 
-        operatingService.updateOperatingTime(isWeekday, isVacation, evenWeek, nowTime);
+        operatingService.updateOperatingTime(dayOfWeek, isVacation, evenWeek, nowTime);
     }
 
-    private boolean isWeekday(LocalDate date) {
-        if(date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SATURDAY) {
-            return false;
-        }
+    private DayOfWeek findDayOfWeek(LocalDate date) {
         if(holidayService.isHoliday(date)) {
-            return false;
+            return DayOfWeek.HOLIDAY;
         }
-        return true;
+
+        switch (date.getDayOfWeek()) {
+            case SATURDAY -> {
+                return DayOfWeek.SATURDAY;
+            }
+            case SUNDAY -> {
+                return DayOfWeek.SUNDAY;
+            }
+            default -> {
+                return DayOfWeek.WEEKDAY;
+            }
+        }
     }
 
     private boolean isVacation(LocalDate date) {
@@ -83,7 +92,8 @@ public class OperatingScheduler {
     private boolean isEvenWeek(LocalDate now) {
         // 이번 달의 첫 번째 토요일 찾기
         LocalDate firstOfMonth = now.withDayOfMonth(1);
-        LocalDate firstSaturday = firstOfMonth.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        LocalDate firstSaturday = firstOfMonth.with(TemporalAdjusters.nextOrSame(
+            java.time.DayOfWeek.SATURDAY));
 
         int count = 0; // 주 차이
         LocalDate date = firstSaturday;

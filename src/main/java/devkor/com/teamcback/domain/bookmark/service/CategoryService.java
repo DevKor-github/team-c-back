@@ -227,11 +227,11 @@ public class CategoryService {
     }
 
     public void checkPlaceExists(PlaceType placeType, Long placeId) {
-        if ("BUILDING".equals(placeType.name()) && !buildingRepository.existsById(placeId)) {
+        if (PlaceType.BUILDING.equals(placeType) && !buildingRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_BUILDING);
-        } else if ("CLASSROOM".equals(placeType.name()) && !classroomRepository.existsById(placeId)) {
+        } else if (PlaceType.CLASSROOM.equals(placeType) && !classroomRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_CLASSROOM);
-        } else if ("FACILITY".equals(placeType.name()) && !facilityRepository.existsById(placeId)) {
+        } else if (PlaceType.FACILITY.equals(placeType) && !facilityRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_FACILITY);
         }
     }

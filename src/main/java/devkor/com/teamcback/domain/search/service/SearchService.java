@@ -256,8 +256,8 @@ public class SearchService {
             }
         }
 
-        //운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
-        //커뮤니티 구상 완료되면 커뮤니티 정보도..?
+        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
+        // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보도..?
 
         return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building, bookmarked);
     }

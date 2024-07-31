@@ -84,7 +84,7 @@ public class OperatingService {
     // 건물 운영 여부에 따라 출입문 routing 변경
     private void changeNodeIsOperating(boolean isOperating, Building building) {
         log.info("건물 출입문 노드 isOperating 변경");
-        List<Node> nodeList = nodeRepository.findAllByBuildingAndNodeType(building, ENTRANCE);
+        List<Node> nodeList = nodeRepository.findAllByBuildingAndType(building, ENTRANCE);
         for(Node node : nodeList) {
             node.setOperating(isOperating);
         }

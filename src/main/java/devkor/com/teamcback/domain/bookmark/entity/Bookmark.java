@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.bookmark.entity;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -30,18 +31,6 @@ public class Bookmark {
 
     @Column
     private String memo;
-
-//    @ManyToOne
-//    @JoinColumn(name = "building_id")
-//    private Building building;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "classroom_id")
-//    private Classroom classroom;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "facility_id")
-//    private Facility facility;
 
     public Bookmark(CreateBookmarkReq req, Category category) {
         //category_id, memo, placeType, 빌교편중1

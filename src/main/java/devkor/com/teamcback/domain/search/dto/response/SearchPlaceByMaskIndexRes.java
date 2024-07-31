@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import devkor.com.teamcback.domain.bookmark.entity.PlaceType;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

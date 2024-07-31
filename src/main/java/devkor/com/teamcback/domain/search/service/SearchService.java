@@ -11,12 +11,12 @@ import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.classroom.entity.ClassroomNickname;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomNicknameRepository;
 import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
-import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -259,8 +259,7 @@ public class SearchService {
             User user = findUser(userId);
             // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
             List<Category> categories = categoryRepository.findAllByUser(user);
-            //PlaceType 엔티티가 2개라서 이렇게밖에 안되는데 더 나은 코드 아시는 분 계시면 리뷰 남겨주시면 감사하겠습니다!ㅠㅠ
-            if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(devkor.com.teamcback.domain.bookmark.entity.PlaceType.BUILDING, buildingId, categories)) {
+            if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.BUILDING, buildingId, categories)) {
                 bookmarked = true;
             }
         }

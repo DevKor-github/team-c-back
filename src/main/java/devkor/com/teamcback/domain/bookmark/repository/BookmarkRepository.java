@@ -2,7 +2,7 @@ package devkor.com.teamcback.domain.bookmark.repository;
 
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
-import devkor.com.teamcback.domain.bookmark.entity.PlaceType;
+import devkor.com.teamcback.domain.common.PlaceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -32,6 +32,8 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private String address;
 
+    private String operatingTime;
+
     private boolean isOperating = true;
 
     @Column(nullable = false)

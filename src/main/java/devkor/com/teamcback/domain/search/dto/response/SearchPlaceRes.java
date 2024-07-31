@@ -30,6 +30,8 @@ public class SearchPlaceRes {
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
     @Schema(description = "건물 운영 시간", example = "00:00~00:00")
+    private String operatingTime;
+    @Schema(description = "건물 운영 여부", example = "true")
     private boolean isOperating;
     @Schema(description = "건물 출입 시 학생증 필요 여부", example = "false")
     private Boolean needStudentCard;
@@ -54,6 +56,7 @@ public class SearchPlaceRes {
         this.imageUrl = building.getImageUrl();
         this.detail = building.getDetail();
         this.address = building.getAddress();
+        this.operatingTime = building.getOperatingTime();
         this.isOperating = building.isOperating();
         this.needStudentCard = building.isNeedStudentCard();
         this.longitude = building.getNode().getLongitude();
@@ -68,6 +71,8 @@ public class SearchPlaceRes {
         this.name = classroom.getName();
         this.imageUrl = classroom.getImageUrl();
         this.detail = classroom.getDetail();
+        this.operatingTime = classroom.getOperatingTime();
+        this.isOperating = classroom.isOperating();
         this.floor = classroom.getFloor();
         this.plugAvailability = classroom.isPlugAvailability();
         this.longitude = classroom.getNode().getLongitude();

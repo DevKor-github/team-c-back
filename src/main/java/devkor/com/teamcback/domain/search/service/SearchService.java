@@ -302,6 +302,42 @@ public class SearchService {
         return new SearchBuildingDetailRes(res, containFacilityTypes, building, bookmarked);
     }
 
+    /**
+     * 장소(교실, 편의시설) 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchPlaceDetailRes searchPlaceDetail(Long userId, Long placeId, PlaceType placeType) {
+        SearchPlaceDetailRes res = new SearchPlaceDetailRes();
+        List<Category> categories = new ArrayList<>();
+        boolean bookmarked = false;
+
+        //즐겨찾기 여부 확인용 정보 가져오기
+        if(userId != null) {
+            User user = findUser(userId);
+            categories = categoryRepository.findAllByUser(user);
+        }
+
+        switch (placeType) {
+            case CLASSROOM -> {
+                Classroom classroom = findClassroom(placeId);
+                if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.CLASSROOM, classroom.getId(), categories)) {
+                    bookmarked = true;
+                }
+                res = new SearchPlaceDetailRes(classroom, bookmarked);
+            }
+            case FACILITY -> {
+                Facility facility = findFacility(placeId);
+                if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.FACILITY, facility.getId(), categories)) {
+                    bookmarked = true;
+                }
+                res =  new SearchPlaceDetailRes(facility, bookmarked);
+            }
+        }
+
+        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
+        return res;
+    }
+
     private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
         return facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
     }

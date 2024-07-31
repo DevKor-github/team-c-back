@@ -9,7 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     Classroom findClassroomById(Long id);
 
-    List<Classroom> findAllByBuildingAndFloor(Building building, int floor);
+    List<Classroom> findAllByBuildingAndFloor(Building building, double floor);
 
+    Classroom findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
     Classroom findByNode(Node node);
 }

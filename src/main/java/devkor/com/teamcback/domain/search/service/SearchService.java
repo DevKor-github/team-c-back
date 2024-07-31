@@ -209,16 +209,16 @@ public class SearchService {
      * Mask Index 대응 교실 조회
      */
     @Transactional(readOnly = true)
-    public searchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, PlaceType type, Integer maskIndex) {
+    public SearchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, PlaceType type, Integer maskIndex) {
         Building building = findBuilding(buildingId);
-        searchPlaceByMaskIndexRes res = new searchPlaceByMaskIndexRes();
+        SearchPlaceByMaskIndexRes res = new SearchPlaceByMaskIndexRes();
 
         switch (type) {
             case CLASSROOM -> {
-                res = new searchPlaceByMaskIndexRes(classroomRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+                res = new SearchPlaceByMaskIndexRes(classroomRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
             }
             case FACILITY -> {
-                res =  new searchPlaceByMaskIndexRes(facilityRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
+                res =  new SearchPlaceByMaskIndexRes(facilityRepository.findByBuildingAndFloorAndMaskIndex(building, floor, maskIndex));
             }
         }
         return res;

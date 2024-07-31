@@ -165,7 +165,7 @@ public class SearchController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @GetMapping("/buildings/{buildingId}/floor/{floor}/mask")
-    public CommonResponse<searchPlaceByMaskIndexRes> searchPlaceByMaskIndex(
+    public CommonResponse<SearchPlaceByMaskIndexRes> searchPlaceByMaskIndex(
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)

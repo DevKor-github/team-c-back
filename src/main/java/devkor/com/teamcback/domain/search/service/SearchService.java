@@ -20,6 +20,7 @@ import devkor.com.teamcback.domain.search.entity.PlaceType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 @Service
 @RequiredArgsConstructor
@@ -263,8 +266,7 @@ public class SearchService {
     }
 
     private User findUser(Long userId) {
-        Optional<User> user =  userRepository.findById(userId);
-        return user.orElse(null);
+        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
     }
 
     /**

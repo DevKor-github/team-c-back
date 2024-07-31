@@ -5,6 +5,7 @@ import static devkor.com.teamcback.domain.navigate.entity.NodeType.ENTRANCE;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
+import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
@@ -26,10 +27,10 @@ public class OperatingService {
     private final NodeRepository nodeRepository;
 
     @Transactional
-    public void updateOperatingTime(boolean isWeekday, boolean isVacation, Boolean evenWeek, LocalDateTime now) {
-        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByIsWeekdayAndIsVacation(isWeekday, isVacation);
+    public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek, LocalDateTime now) {
+        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsVacation(dayOfWeek, isVacation);
 
-        if(evenWeek != null) { // 토요일인 경우
+        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우
             if(evenWeek) {
                 operatingConditionList.stream().filter(operatingCondition ->
                     operatingCondition.getOperatingWeekend() == OperatingWeekend.EVEN || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);

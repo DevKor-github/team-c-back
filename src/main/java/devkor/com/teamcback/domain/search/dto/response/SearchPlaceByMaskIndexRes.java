@@ -10,17 +10,17 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Schema(description = "maskIndex 대응 장소 정보")
-public class searchPlaceByMaskIndexRes {
+public class SearchPlaceByMaskIndexRes {
     @Schema(description = "장소 종류", example = "CLASSROOM")
     private PlaceType placeType;
     @Schema(description = "장소 Id", example = "1")
     private Long placeId;
 
-    public searchPlaceByMaskIndexRes(Classroom classroom) {
+    public SearchPlaceByMaskIndexRes(Classroom classroom) {
         this.placeType = PlaceType.CLASSROOM;
         this.placeId = classroom.getId();
     }
-    public searchPlaceByMaskIndexRes(Facility facility) {
+    public SearchPlaceByMaskIndexRes(Facility facility) {
         this.placeType = PlaceType.FACILITY;
         this.placeId = facility.getId();
     }

@@ -108,7 +108,23 @@ public class SearchService {
     @Transactional(readOnly = true)
     public SearchBuildingRes searchAllBuildings() {
         List<Building> buildingList = buildingRepository.findAll();
-        return new SearchBuildingRes(buildingList.stream().filter(building -> building.getId() != 0).map(GetBuildingDetailRes::new).toList());
+        List<GetBuildingDetailRes> res = new ArrayList<>();
+
+        // 각 건물에 존재하는 편의시설 타입 추가 (건물 모달)
+        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
+        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+
+        return new SearchBuildingRes(
+            buildingList.stream()
+            .filter(building -> building.getId() != 0)
+            .map(building -> {
+                List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
+                    .map(Facility::getType)
+                    .distinct()
+                    .toList();
+                return new GetBuildingDetailRes(building, containFacilityTypes);
+            })
+            .collect(Collectors.toList()));
     }
 
     /**

@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.operatingtime.entity.Holiday;
 import devkor.com.teamcback.domain.operatingtime.repositoy.HolidayRepository;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,10 @@ public class HolidayService {
         List<Holiday> holidayList = fromJSONtoItems(responseEntity.getBody()).stream().map(holidayResDto -> new Holiday(holidayResDto)).toList();
 
         holidayRepository.saveAll(holidayList);
+    }
+
+    public boolean isHoliday(LocalDate date) {
+        return holidayRepository.existsByDateAndIsHoliday(date, true);
     }
 
     private List<HolidayResDto> fromJSONtoItems(String responseEntity) {

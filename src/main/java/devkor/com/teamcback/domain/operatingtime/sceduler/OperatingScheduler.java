@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.sceduler;
 
+import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -15,11 +16,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OperatingScheduler {
     private final OperatingService operatingService;
+    private final HolidayService holidayService;
 
     private static final int SUMMER_VACATION_START_MONTH = 6;
     private static final int SUMMER_VACATION_START_DAY = 22;
     private static final int SUMMER_VACATION_END_MONTH = 9;
     private static final int SUMMER_VACATION_END_DAY = 1;
+
     private static final int WINTER_VACATION_START_MONTH = 12;
     private static final int WINTER_VACATION_START_DAY = 21;
     private static final int WINTER_VACATION_END_MONTH = 3;
@@ -50,33 +53,30 @@ public class OperatingScheduler {
         if(date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SATURDAY) {
             return false;
         }
-        if(isHoliday(date)) {
+        if(holidayService.isHoliday(date)) {
             return false;
         }
         return true;
     }
 
-    private boolean isHoliday(LocalDate date) {
-        // TODO: 공휴일이면 true 반환
-        return false;
-    }
-
     private boolean isVacation(LocalDate date) {
         int month = date.getMonthValue();
         int day = date.getDayOfMonth();
-        if(month > SUMMER_VACATION_START_MONTH && month < SUMMER_VACATION_END_MONTH) {
+
+        // 여름방학 기간
+        if((month == SUMMER_VACATION_START_MONTH && day >= SUMMER_VACATION_START_DAY) ||
+            (month == SUMMER_VACATION_END_MONTH && day <= SUMMER_VACATION_END_DAY) ||
+            (month > SUMMER_VACATION_START_MONTH && month < SUMMER_VACATION_END_MONTH)) {
             return true;
-        } else if(month < WINTER_VACATION_END_MONTH) {
-            return true;
-        } else if(month == SUMMER_VACATION_START_MONTH) {
-            return day >= SUMMER_VACATION_START_DAY;
-        } else if(month == SUMMER_VACATION_END_MONTH) {
-            return day <= SUMMER_VACATION_END_DAY;
-        } else if(month == WINTER_VACATION_START_MONTH) {
-            return day >= WINTER_VACATION_START_DAY;
-        } else if(month == WINTER_VACATION_END_MONTH) {
-            return day <= WINTER_VACATION_END_DAY;
         }
+
+        // 겨울방학 기간
+        if((month == WINTER_VACATION_START_MONTH && day >= WINTER_VACATION_START_DAY) ||
+            (month == WINTER_VACATION_END_MONTH && day <= WINTER_VACATION_END_DAY) ||
+            (month < WINTER_VACATION_END_MONTH)) {
+            return true;
+        }
+
         return false;
     }
 

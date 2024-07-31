@@ -39,6 +39,8 @@ public class Classroom extends BaseEntity {
 
     private Integer maskIndex;
 
+    private String operatingTime;
+
     @Column(nullable = false)
     private boolean isOperating = true;
 

@@ -46,6 +46,8 @@ public class Facility extends BaseEntity {
 
     private String imageUrl;
 
+    private String operatingTime;
+
     private boolean isOperating;
 
     private Integer maskIndex;

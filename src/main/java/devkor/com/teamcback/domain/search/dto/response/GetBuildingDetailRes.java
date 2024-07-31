@@ -10,6 +10,7 @@ public class GetBuildingDetailRes {
     private String imageUrl;
     private String detail;
     private String address;
+    private String operatingTime;
     private boolean isOperating;
     private Boolean needStudentCard;
     private Double longitude;
@@ -23,6 +24,7 @@ public class GetBuildingDetailRes {
         this.imageUrl = building.getImageUrl();
         this.detail = building.getDetail();
         this.address = building.getAddress();
+        this.operatingTime = building.getOperatingTime();
         this.isOperating = building.isOperating();
         this.needStudentCard = building.isNeedStudentCard();
         this.longitude = building.getNode().getLongitude();

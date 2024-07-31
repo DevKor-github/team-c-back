@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.bookmark.entity;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
 import jakarta.persistence.*;
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @Table(name = "tb_bookmark")
 @NoArgsConstructor
-public class Bookmark {
+public class Bookmark extends BaseEntity {
     @Id
     @GeneratedValue
     private Long id;

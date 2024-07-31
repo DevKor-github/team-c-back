@@ -1,5 +1,10 @@
 package devkor.com.teamcback.domain.operatingtime.service;
 
+import static devkor.com.teamcback.domain.navigate.entity.NodeType.ENTRANCE;
+
+import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.navigate.entity.Node;
+import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
@@ -18,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OperatingService {
     private final OperatingConditionRepository operatingConditionRepository;
     private final OperatingTimeRepository operatingTimeRepository;
+    private final NodeRepository nodeRepository;
 
     @Transactional
     public void updateOperatingTime(boolean isWeekday, boolean isVacation, Boolean evenWeek, LocalDateTime now) {
@@ -36,10 +42,11 @@ public class OperatingService {
 
         for(OperatingCondition operCondition : operatingConditionList) {
             boolean isOperating = checkOperatingTime(operCondition, now);
+
             if(operCondition.getBuilding() != null) {
                 log.info("building: {}", operCondition.getBuilding().getName());
                 operCondition.getBuilding().setOperating(isOperating);
-//                changeNodeRouting(isOperating, operCondition.getBuilding());
+                changeNodeIsOperating(isOperating, operCondition.getBuilding());
             }
             else if(operCondition.getClassroom() != null) {
                 log.info("classroom: {}", operCondition.getClassroom().getName());
@@ -74,12 +81,12 @@ public class OperatingService {
         return false;
     }
 
-//    // 건물 운영 여부에 따라 출입문 routing 변경
-//    private void changeNodeRouting(boolean isOperating, Building building) {
-//        log.info("건물 출입문 routing 변경");
-//        List<Node> nodeList = nodeRepository.findAllByBuildingAndNodeType(building, ENTRANCE);
-//        for(Node node : nodeList) {
-//            node.setRouting(isOperating);
-//        }
-//    }
+    // 건물 운영 여부에 따라 출입문 routing 변경
+    private void changeNodeIsOperating(boolean isOperating, Building building) {
+        log.info("건물 출입문 노드 isOperating 변경");
+        List<Node> nodeList = nodeRepository.findAllByBuildingAndNodeType(building, ENTRANCE);
+        for(Node node : nodeList) {
+            node.setOperating(isOperating);
+        }
+    }
 }

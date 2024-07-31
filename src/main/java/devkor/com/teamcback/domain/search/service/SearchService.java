@@ -212,7 +212,7 @@ public class SearchService {
      * Mask Index 대응 교실 조회
      */
     @Transactional(readOnly = true)
-    public SearchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, PlaceType type, Integer maskIndex) {
+    public SearchPlaceByMaskIndexRes searchPlaceByMaskIndex(Long buildingId, int floor, Integer maskIndex, PlaceType type) {
         Building building = findBuilding(buildingId);
         SearchPlaceByMaskIndexRes res = new SearchPlaceByMaskIndexRes();
 

@@ -155,8 +155,8 @@ public class SearchController {
      * Mask Index 대응 교실 조회
      * @param buildingId 건물 id
      * @param floor 건물 층
-     * @param type 장소 종류
      * @param maskIndex 교실 mask index
+     * @param type 장소 종류
      */
     @Operation(summary = "Mask Index 대응 교실 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
     @ApiResponses(value = {
@@ -164,17 +164,17 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    @GetMapping("/buildings/{buildingId}/floor/{floor}/mask")
+    @GetMapping("/buildings/{buildingId}/floor/{floor}/mask/{maskIndex}")
     public CommonResponse<SearchPlaceByMaskIndexRes> searchPlaceByMaskIndex(
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)
         @PathVariable int floor,
-        @Parameter(name = "type", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
-        @RequestParam PlaceType type,
         @Parameter(name = "maskIndex", description = "교실 mask index", example = "5", required = true)
-        @RequestParam Integer maskIndex) {
-        return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, type, maskIndex));
+        @PathVariable Integer maskIndex,
+        @Parameter(name = "type", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
+        @RequestParam PlaceType type) {
+        return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, maskIndex, type));
     }
 
     /**

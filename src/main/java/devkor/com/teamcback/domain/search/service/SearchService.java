@@ -30,6 +30,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 @Service
@@ -237,15 +238,20 @@ public class SearchService {
         //(임의) 가져올 대표 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
         //자세한 회의 후 List 수정하기
         List<FacilityType> types = Arrays.asList(FacilityType.LOUNGE, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.GYM, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM);
-        List<Facility> mainFacilities = facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
+        List<Facility> mainFacilities = getFacilitiesByBuildingAndTypes(building, types);
         List<GetMainFacilityRes> res = new ArrayList<>();
 
         for (Facility facility : mainFacilities) {
             res.add(new GetMainFacilityRes(facility));
         }
 
-        // 건물 내 편의시설 종류 정보
-        SearchFacilityTypeRes containFacilities = searchFacilityTypeByBuilding(buildingId);
+        // 건물 내 편의시설 종류 정보(아이콘)
+        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
+        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+        List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
+            .map(Facility::getType)
+            .distinct()
+            .toList();
 
         //즐겨찾기 여부 확인 (로그인 X -> false)
         boolean bookmarked = false;
@@ -260,9 +266,13 @@ public class SearchService {
         }
 
         // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
-        // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보도..?
+        // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보 넣기
 
-        return new SearchBuildingDetailRes(res, containFacilities.getTypeList(), building, bookmarked);
+        return new SearchBuildingDetailRes(res, containFacilityTypes, building, bookmarked);
+    }
+
+    private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
+        return facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
     }
 
     private User findUser(Long userId) {
@@ -302,6 +312,6 @@ public class SearchService {
     }
 
     private Building findBuilding(Long buildingId) {
-        return buildingRepository.findById(buildingId).orElseThrow();
+        return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
 }

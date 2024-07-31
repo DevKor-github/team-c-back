@@ -30,8 +30,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -245,6 +244,23 @@ public class SearchService {
     }
 
     /**
+     * 교실 대응 Mask Index 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchMaskIndexByPlaceRes searchMaskIndexByPlace(Long placeId, PlaceType type) {
+        SearchMaskIndexByPlaceRes res = new SearchMaskIndexByPlaceRes();
+        switch (type) {
+            case CLASSROOM -> {
+                res = new SearchMaskIndexByPlaceRes(findClassroom(placeId));
+            }
+            case FACILITY -> {
+                res =  new SearchMaskIndexByPlaceRes(findFacility(placeId));
+            }
+        }
+        return res;
+    }
+
+    /**
      * 건물 상세 정보 조회
      */
     @Transactional(readOnly = true)
@@ -328,5 +344,11 @@ public class SearchService {
 
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
+    }
+    private Classroom findClassroom(Long classroomId) {
+        return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
+    }
+    private Facility findFacility(Long facilityId) {
+        return facilityRepository.findById(facilityId).orElseThrow(() -> new GlobalException(NOT_FOUND_FACILITY));
     }
 }

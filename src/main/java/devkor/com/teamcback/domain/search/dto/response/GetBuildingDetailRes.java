@@ -41,7 +41,7 @@ public class GetBuildingDetailRes {
 
     public GetBuildingDetailRes(Building building, List<FacilityType> facilityTypes) {
         this.buildingId = building.getId();
-        this.name = building.getName();
+        this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.imageUrl = building.getImageUrl();
         this.detail = building.getDetail();
         this.address = building.getAddress();
@@ -51,10 +51,10 @@ public class GetBuildingDetailRes {
         this.latitude = building.getNode().getLatitude();
         this.floor = building.getFloor();
         this.underFloor = building.getUnderFloor();
+        this.facilityTypes = facilityTypes;
         //TODO: 차후 isOperating, nextOperatingTime 수정하기(현재 임시값)
         this.isOperating = true;
-        this.nextBuildingTime = "10:00";
-        this.facilityTypes = facilityTypes;
+        this.nextBuildingTime = "22:00";
 
     }
 }

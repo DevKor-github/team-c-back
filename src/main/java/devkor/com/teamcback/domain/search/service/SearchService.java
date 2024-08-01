@@ -30,8 +30,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -108,7 +107,23 @@ public class SearchService {
     @Transactional(readOnly = true)
     public SearchBuildingRes searchAllBuildings() {
         List<Building> buildingList = buildingRepository.findAll();
-        return new SearchBuildingRes(buildingList.stream().filter(building -> building.getId() != 0).map(GetBuildingDetailRes::new).toList());
+        List<GetBuildingDetailRes> res = new ArrayList<>();
+
+        // 각 건물에 존재하는 편의시설 타입 추가 (건물 모달)
+        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
+        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+
+        return new SearchBuildingRes(
+            buildingList.stream()
+            .filter(building -> building.getId() != 0)
+            .map(building -> {
+                List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
+                    .map(Facility::getType)
+                    .distinct()
+                    .toList();
+                return new GetBuildingDetailRes(building, containFacilityTypes);
+            })
+            .collect(Collectors.toList()));
     }
 
     /**
@@ -229,6 +244,23 @@ public class SearchService {
     }
 
     /**
+     * 교실 대응 Mask Index 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchMaskIndexByPlaceRes searchMaskIndexByPlace(Long placeId, PlaceType type) {
+        SearchMaskIndexByPlaceRes res = new SearchMaskIndexByPlaceRes();
+        switch (type) {
+            case CLASSROOM -> {
+                res = new SearchMaskIndexByPlaceRes(findClassroom(placeId));
+            }
+            case FACILITY -> {
+                res =  new SearchMaskIndexByPlaceRes(findFacility(placeId));
+            }
+        }
+        return res;
+    }
+
+    /**
      * 건물 상세 정보 조회
      */
     @Transactional(readOnly = true)
@@ -268,6 +300,42 @@ public class SearchService {
         // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보 넣기
 
         return new SearchBuildingDetailRes(res, containFacilityTypes, building, bookmarked);
+    }
+
+    /**
+     * 장소(교실, 편의시설) 상세 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public SearchPlaceDetailRes searchPlaceDetail(Long userId, Long placeId, PlaceType placeType) {
+        SearchPlaceDetailRes res = new SearchPlaceDetailRes();
+        List<Category> categories = new ArrayList<>();
+        boolean bookmarked = false;
+
+        //즐겨찾기 여부 확인용 정보 가져오기
+        if(userId != null) {
+            User user = findUser(userId);
+            categories = categoryRepository.findAllByUser(user);
+        }
+
+        switch (placeType) {
+            case CLASSROOM -> {
+                Classroom classroom = findClassroom(placeId);
+                if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.CLASSROOM, classroom.getId(), categories)) {
+                    bookmarked = true;
+                }
+                res = new SearchPlaceDetailRes(classroom, bookmarked);
+            }
+            case FACILITY -> {
+                Facility facility = findFacility(placeId);
+                if(bookmarkRepository.existsByPlaceTypeAndPlaceIdAndCategoryIn(PlaceType.FACILITY, facility.getId(), categories)) {
+                    bookmarked = true;
+                }
+                res =  new SearchPlaceDetailRes(facility, bookmarked);
+            }
+        }
+
+        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
+        return res;
     }
 
     private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
@@ -312,5 +380,11 @@ public class SearchService {
 
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
+    }
+    private Classroom findClassroom(Long classroomId) {
+        return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
+    }
+    private Facility findFacility(Long facilityId) {
+        return facilityRepository.findById(facilityId).orElseThrow(() -> new GlobalException(NOT_FOUND_FACILITY));
     }
 }

@@ -16,6 +16,8 @@ public class GetFacilityRes {
     @Schema(description = "편의시설 이용 가능 여부", example = "true")
     private Boolean availability;
     @Schema(description = "운영 시간", example = "08:30-17:00")
+    private String operatingTime;
+    @Schema(description = "운영 여부", example = "true")
     private boolean isOperating;
     @Schema(description = "편의시설 image url", example = "url")
     private String imageUrl;
@@ -32,6 +34,7 @@ public class GetFacilityRes {
         this.facilityId = facility.getId();
         this.name = facility.getName();
         this.availability = facility.isAvailability();
+        this.operatingTime = facility.getOperatingTime();
         this.isOperating = facility.isOperating();
         this.imageUrl = facility.getImageUrl();
         this.xCoord = facility.getNode().getXCoord();

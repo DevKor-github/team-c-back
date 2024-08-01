@@ -5,9 +5,9 @@ import lombok.Getter;
 
 @Getter
 public class SearchRoomRes {
-    private List<GetRoomDetailRes> roomList;
+    private List<SearchRoomDetailRes> roomList;
 
-    public SearchRoomRes(List<GetRoomDetailRes> roomList) {
+    public SearchRoomRes(List<SearchRoomDetailRes> roomList) {
         this.roomList = roomList;
     }
 }

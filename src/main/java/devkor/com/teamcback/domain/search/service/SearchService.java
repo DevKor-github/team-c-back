@@ -45,12 +45,15 @@ public class SearchService {
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
 
+    // 아이콘으로 표시할 편의시설 종류
+    private final List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+
     /**
      * 검색어 자동 완성
      */
     @Transactional(readOnly = true)
-    public List<GlobalSearchRes> globalSearch(Long buildingId, String word) {
-        List<GlobalSearchRes> resList = new ArrayList<>();
+    public GlobalSearchListRes globalSearch(Long buildingId, String word) {
+        List<GlobalSearchRes> list = new ArrayList<>();
 
         List<Classroom> classrooms = getClassrooms(word);
         List<Facility> facilities = getFacilities(word);
@@ -59,10 +62,10 @@ public class SearchService {
         if(buildingId != null) {
             Building building = findBuilding(buildingId);
             for(Classroom classroom : classrooms) {
-                if(classroom.getBuilding().equals(building)) resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                if(classroom.getBuilding().equals(building)) list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                if(facility.getBuilding().equals(building)) resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                if(facility.getBuilding().equals(building)) list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
             }
         }
 
@@ -70,50 +73,27 @@ public class SearchService {
             List<Building> buildings = getBuildings(word);
 
             for(Building building : buildings) {
-                resList.add(new GlobalSearchRes(building, PlaceType.BUILDING));
+                list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
             }
             for(Classroom classroom : classrooms) {
-                resList.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                resList.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
             }
         }
 
-        return resList;
-    }
-
-    /**
-     * 건물 또는 강의실 검색
-     */
-    @Transactional(readOnly = true)
-    public SearchPlaceRes searchPlace(PlaceType type, Long id) {
-        SearchPlaceRes res = new SearchPlaceRes();
-        switch (type) {
-            case BUILDING -> {
-                res = new SearchPlaceRes(buildingRepository.findBuildingById(id));
-            }
-            case CLASSROOM -> {
-                res =  new SearchPlaceRes(classroomRepository.findClassroomById(id));
-            }
-        }
-
-        return res;
+        return new GlobalSearchListRes(list);
     }
 
     /**
      * 모든 건물 검색
      */
     @Transactional(readOnly = true)
-    public SearchBuildingRes searchAllBuildings() {
+    public SearchBuildingListRes searchAllBuildings() {
         List<Building> buildingList = buildingRepository.findAll();
-        List<GetBuildingDetailRes> res = new ArrayList<>();
 
-        // 각 건물에 존재하는 편의시설 타입 추가 (건물 모달)
-        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
-        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
-
-        return new SearchBuildingRes(
+        return new SearchBuildingListRes(
             buildingList.stream()
             .filter(building -> building.getId() != 0)
             .map(building -> {
@@ -121,7 +101,7 @@ public class SearchService {
                     .map(Facility::getType)
                     .distinct()
                     .toList();
-                return new GetBuildingDetailRes(building, containFacilityTypes);
+                return new SearchBuildingRes(building, containFacilityTypes);
             })
             .collect(Collectors.toList()));
     }
@@ -130,15 +110,15 @@ public class SearchService {
      * 건물 내 특정 종류의 편의시설 검색
      */
     @Transactional(readOnly = true)
-    public SearchFacilityRes searchBuildingFacilityByType(Long buildingId, FacilityType facilityType) {
+    public SearchFacilityListRes searchBuildingFacilityByType(Long buildingId, FacilityType facilityType) {
         Building building = findBuilding(buildingId);
-        SearchFacilityRes res = new SearchFacilityRes(building, facilityType);
+        SearchFacilityListRes res = new SearchFacilityListRes(building, facilityType);
 
         List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
-        Map<Double, List<GetFacilityRes>> map = new HashMap<>();
+        Map<Double, List<SearchFacilityRes>> map = new HashMap<>();
         for(Facility facility : facilities) {
             if(!map.containsKey(facility.getFloor())) map.put(facility.getFloor(), new ArrayList<>());
-            map.get(facility.getFloor()).add(new GetFacilityRes(facility));
+            map.get(facility.getFloor()).add(new SearchFacilityRes(facility));
         }
 
         res.setFacilities(map);
@@ -203,9 +183,9 @@ public class SearchService {
          List<Classroom> classroomList = classroomRepository.findAllByBuildingAndFloor(building, floor);
          List<Facility> facilityList = facilityRepository.findAllByBuildingAndFloor(building, floor);
 
-         List<GetRoomDetailRes> roomDetailRes = new ArrayList<>(
-             classroomList.stream().map(GetRoomDetailRes::new).toList());
-         roomDetailRes.addAll(facilityList.stream().map(GetRoomDetailRes::new).toList());
+         List<SearchRoomDetailRes> roomDetailRes = new ArrayList<>(
+             classroomList.stream().map(SearchRoomDetailRes::new).toList());
+         roomDetailRes.addAll(facilityList.stream().map(SearchRoomDetailRes::new).toList());
 
          return new SearchRoomRes(roomDetailRes);
     }
@@ -213,15 +193,24 @@ public class SearchService {
     /**
      * 편의시설이 있는 건물
      */
-    public SearchBuildingRes searchBuildingWithFacilityType(FacilityType facilityType) {
+    public SearchBuildingListRes searchBuildingWithFacilityType(FacilityType facilityType) {
         List<Facility> facilityList = facilityRepository.findAllByType(facilityType);
         List<Building> buildingList = facilityList.stream()
             .map(Facility::getBuilding)
             .distinct()
             .toList();
 
-        List<GetBuildingDetailRes> buildingDetailRes = buildingList.stream().map(GetBuildingDetailRes::new).toList();
-        return new SearchBuildingRes(buildingDetailRes);
+        return new SearchBuildingListRes(
+            buildingList.stream()
+                .filter(building -> building.getId() != 0)
+                .map(building -> {
+                    List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
+                        .map(Facility::getType)
+                        .distinct()
+                        .toList();
+                    return new SearchBuildingRes(building, containFacilityTypes);
+                })
+                .toList());
     }
 
     /**
@@ -271,15 +260,12 @@ public class SearchService {
         //자세한 회의 후 List 수정하기
         List<FacilityType> types = Arrays.asList(FacilityType.LOUNGE, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.GYM, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM);
         List<Facility> mainFacilities = getFacilitiesByBuildingAndTypes(building, types);
-        List<GetMainFacilityRes> res = new ArrayList<>();
+        List<SearchMainFacilityRes> res = new ArrayList<>();
 
         for (Facility facility : mainFacilities) {
-            res.add(new GetMainFacilityRes(facility));
+            res.add(new SearchMainFacilityRes(facility));
         }
 
-        // 건물 내 편의시설 종류 정보(아이콘)
-        // 자판기, 프린터, 라운지, 열람실, 스터디룸, 카페, 편의점, 식당, 수면실, 샤워실, 은행, 헬스장
-        List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
         List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
             .map(Facility::getType)
             .distinct()
@@ -296,7 +282,6 @@ public class SearchService {
             }
         }
 
-        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
         // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보 넣기
 
         return new SearchBuildingDetailRes(res, containFacilityTypes, building, bookmarked);
@@ -334,7 +319,6 @@ public class SearchService {
             }
         }
 
-        // TODO: 운영시간 정보, 운영여부 t/f 나중에 넣기 (운영시간 완성되면)
         return res;
     }
 
@@ -349,12 +333,12 @@ public class SearchService {
     /**
      * 검색 기록 조회
      */
-    public List<GetSearchLogRes> getSearchLog(Long userId) {
+    public List<SearchLogRes> getSearchLog(Long userId) {
         List<SearchLog> searchLogs = searchLogRedis.opsForList().range(String.valueOf(userId), 0, 10);
-        List<GetSearchLogRes> resList = new ArrayList<>();
+        List<SearchLogRes> resList = new ArrayList<>();
         if(searchLogs != null) {
             for (SearchLog searchLog : searchLogs) {
-                resList.add(new GetSearchLogRes(searchLog));
+                resList.add(new SearchLogRes(searchLog));
             }
         }
         return resList;

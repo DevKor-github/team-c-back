@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Getter
-public class GetMainFacilityRes {
+public class SearchMainFacilityRes {
     @Schema(description = "편의시설명", example = "2층 학생식당")
     private String name;
     @Schema(description = "편의시설 종류", example = "CAFETERIA")
@@ -16,7 +16,7 @@ public class GetMainFacilityRes {
     @Schema(description = "이미지 URL")
     private String imageUrl;
 
-    public GetMainFacilityRes(Facility facility) {
+    public SearchMainFacilityRes(Facility facility) {
         if(facility.getFloor() > 0) {
             int floor = (int) Math.floor(facility.getFloor());
             this.name = floor + "층 " + facility.getName();

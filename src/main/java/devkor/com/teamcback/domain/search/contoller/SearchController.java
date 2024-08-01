@@ -178,6 +178,26 @@ public class SearchController {
     }
 
     /**
+     * place 대응 Mask Index 반환
+     * @param placeId 장소 id
+     * @param placeType 장소 종류
+     */
+    @Operation(summary = "Mask Index 대응 교실 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/place/{placeId}/mask")
+    public CommonResponse<SearchMaskIndexByPlaceRes> searchMaskIndexByPlace(
+        @Parameter(name = "placeId", description = "classroom_id 또는 facility_id", example = "1", required = true)
+        @PathVariable Long placeId,
+        @Parameter(name = "placeType", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
+        @RequestParam PlaceType placeType) {
+        return CommonResponse.success(searchService.searchMaskIndexByPlace(placeId, placeType));
+    }
+
+    /**
      * 건물 상세 정보 조회
      * @param buildingId 건물 id
      * @param userDetail 사용자 정보
@@ -194,10 +214,32 @@ public class SearchController {
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId) {
-
         Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
         return CommonResponse.success(searchService.searchBuildingDetail(userId, buildingId));
+    }
 
+    /**
+     * 장소(교실, 편의시설) 상세 정보 조회
+     * @param placeType 장소 종류
+     * @param placeId 장소 id
+     * @param userDetail 사용자 정보
+     */
+    @Operation(summary = "장소(교실 or 시설) 상세 정보 조회", description = "장소(교실 or 시설) 상세 정보 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/place/{placeId}")
+    public CommonResponse<SearchPlaceDetailRes> searchPlaceDetail(
+        @Parameter(description = "사용자정보", required = false)
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
+        @Parameter(name = "placeId", description = "classroom_id 또는 facility_id", example = "1", required = true)
+        @PathVariable Long placeId,
+        @Parameter(name = "placeType", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
+        @RequestParam PlaceType placeType) {
+        Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
+        return CommonResponse.success(searchService.searchPlaceDetail(userId, placeId, placeType));
     }
 
     /**

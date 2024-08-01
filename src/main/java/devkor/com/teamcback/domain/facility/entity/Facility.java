@@ -63,4 +63,8 @@ public class Facility extends BaseEntity {
     public void setOperating(boolean operating) {
         isOperating = operating;
     }
+
+    public void setOperatingTime(String operatingTime) {
+        this.operatingTime = operatingTime;
+    }
 }

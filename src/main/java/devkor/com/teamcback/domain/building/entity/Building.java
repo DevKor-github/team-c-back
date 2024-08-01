@@ -52,4 +52,8 @@ public class Building extends BaseEntity {
     public void setOperating(boolean operating) {
         isOperating = operating;
     }
+
+    public void setOperatingTime(String operatingTime) {
+        this.operatingTime = operatingTime;
+    }
 }

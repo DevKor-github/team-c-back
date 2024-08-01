@@ -33,7 +33,7 @@ public class OperatingScheduler {
     private static Boolean evenWeek = null;
 
 //    @Scheduled(cron = "0/10 * * * * *") // 테스트용
-    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
+//    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     public void updateOperatingTime() {
         log.info("운영 시간 업데이트");
         LocalDate now = LocalDate.now();
@@ -53,7 +53,7 @@ public class OperatingScheduler {
     }
 
 //    @Scheduled(cron = "0 * * * * *") // 테스트용
-    @Scheduled(cron = "0 0,30 1-23 * * *") // 매일 30분마다 (자정 제외)
+//    @Scheduled(cron = "0 0,30 1-23 * * *") // 매일 30분마다 (자정 제외)
     public void updateIsOperating() {
         log.info("운영 여부 업데이트");
         LocalDateTime nowTime = LocalDateTime.now();

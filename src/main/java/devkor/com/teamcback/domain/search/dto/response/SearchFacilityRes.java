@@ -1,30 +1,45 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import devkor.com.teamcback.domain.facility.entity.Facility;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import lombok.Getter;
-import lombok.Setter;
 
-@Schema(description = "편의시설 조회 결과")
+@Schema(description = "편의시설 정보")
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchFacilityRes {
-    @Schema(description = "편의시설이 위치한 건물 ID", example = "1")
-    private Long buildingId;
-    @Schema(description = "편의시설이 위치한 건물 이름", example = "애기능생활관")
-    private String buildingName;
-    @Schema(description = "편의시설 종류", example = "TRASH_CAN")
-    private FacilityType type;
-    @Schema(description = "각 층별 편의시설 조회 결과")
-    @Setter
-    private Map<Double, List<GetFacilityRes>> facilities = new HashMap<>();
+    @Schema(description = "편의시설 ID", example = "1")
+    private Long facilityId;
+    @Schema(description = "편의시설 이름", example = "쓰레기통1")
+    private String name;
+    @Schema(description = "편의시설 이용 가능 여부", example = "true")
+    private Boolean availability;
+    @Schema(description = "운영 시간", example = "08:30-17:00")
+    private String operatingTime;
+    @Schema(description = "운영 여부", example = "true")
+    private boolean isOperating;
+    @Schema(description = "편의시설 image url", example = "url")
+    private String imageUrl;
+    @Schema(description = "편의시설 내부지도 상 x좌표", example = "100")
+    private Double xCoord;
+    @Schema(description = "편의시설 내부지도 상 y좌표", example = "250")
+    private Double yCoord;
+    @Schema(description = "편의시설 경도", example = "127.0274309")
+    private Double longitude;
+    @Schema(description = "편의시설 위도", example = "37.5844829")
+    private Double latitude;
 
-    public SearchFacilityRes(Building building, FacilityType type) {
-        this.buildingId = building.getId();
-        this.buildingName = building.getName();
-        this.type = type;
+    public SearchFacilityRes(Facility facility) {
+        this.facilityId = facility.getId();
+        this.name = facility.getName();
+        this.availability = facility.isAvailability();
+        this.operatingTime = facility.getOperatingTime();
+        this.isOperating = facility.isOperating();
+        this.imageUrl = facility.getImageUrl();
+        this.xCoord = facility.getNode().getXCoord();
+        this.yCoord = facility.getNode().getYCoord();
+        this.longitude = facility.getNode().getLongitude();
+        this.latitude = facility.getNode().getLatitude();
     }
 }

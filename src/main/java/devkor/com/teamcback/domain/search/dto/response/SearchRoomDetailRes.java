@@ -8,7 +8,7 @@ import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import lombok.Getter;
 
 @Getter
-public class GetRoomDetailRes {
+public class SearchRoomDetailRes {
     private String type;
     private Long id;
     @JsonInclude(Include.NON_NULL)
@@ -27,7 +27,7 @@ public class GetRoomDetailRes {
     private double yCoord;
     private Integer maskIndex;
 
-    public GetRoomDetailRes(Classroom classroom) {
+    public SearchRoomDetailRes(Classroom classroom) {
         this.type = "CLASSROOM";
         this.id = classroom.getId();
         this.name = classroom.getName();
@@ -43,7 +43,7 @@ public class GetRoomDetailRes {
         this.maskIndex = classroom.getMaskIndex();
     }
 
-    public GetRoomDetailRes(Facility facility) {
+    public SearchRoomDetailRes(Facility facility) {
         this.type = "FACILITY";
         this.id = facility.getId();
         this.facilityType = facility.getType();

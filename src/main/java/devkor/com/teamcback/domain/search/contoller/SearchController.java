@@ -39,30 +39,12 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<List<GlobalSearchRes>> globalSearch(
+    public CommonResponse<GlobalSearchListRes> globalSearch(
         @Parameter(name = "building_id", description = "태그화된 건물의 ID(생략 가능)", example = "1", required = false)
         @RequestParam(name = "building_id", required = false) Long buildingId,
         @Parameter(name = "keyword", description = "검색 키워드", example = "애기능", required = true)
         @RequestParam(name = "keyword") String keyword) {
         return CommonResponse.success(searchService.globalSearch(buildingId, keyword));
-    }
-
-    /**
-     * 건물, 강의실 검색
-     * @param placeType 장소 종류
-     * @param id 장소 id
-     */
-    @GetMapping("/place")
-    @Operation(summary = "건물, 강의실 조회 결과", description = "특정 건물 또는 강의실 하나에 대한 상세 정보 조회")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-    })
-    public CommonResponse<SearchPlaceRes> searchPlace(
-        @Parameter(name = "placeType", description = "BUILDING 또는 CLASSROOM", example = "BUILDING", required = true)
-        @RequestParam PlaceType placeType,
-        @Parameter(name = "id", description = "건물이나 강의실의 id", example = "1", required = true)
-        @RequestParam Long id) {
-        return CommonResponse.success(searchService.searchPlace(placeType, id));
     }
 
     /**
@@ -75,7 +57,7 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchBuildingRes> searchAllBuildings() {
+    public CommonResponse<SearchBuildingListRes> searchAllBuildings() {
         return CommonResponse.success(searchService.searchAllBuildings());
     }
 
@@ -91,7 +73,7 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchFacilityRes> searchBuildingFacilityByType(
+    public CommonResponse<SearchFacilityListRes> searchBuildingFacilityByType(
         @Parameter(name = "buildingId", description = "편의시설이 위치한 건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "type", description = "찾고자 하는 편의시설 종류", example = "TRASH_CAN", required = true)
@@ -145,7 +127,7 @@ public class SearchController {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
     })
     @GetMapping("/facilities")
-    public CommonResponse<SearchBuildingRes> searchBuildingWithFacilityType(
+    public CommonResponse<SearchBuildingListRes> searchBuildingWithFacilityType(
         @Parameter(name = "type", description = "검색하는 편의시설 종류", example = "TRASH_CAN", required = true)
         @RequestParam(name = "type") FacilityType facilityType) {
         return CommonResponse.success(searchService.searchBuildingWithFacilityType(facilityType));
@@ -182,7 +164,7 @@ public class SearchController {
      * @param placeId 장소 id
      * @param placeType 장소 종류
      */
-    @Operation(summary = "Mask Index 대응 교실 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @Operation(summary = "장소 대응 Mask Index 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -254,10 +236,10 @@ public class SearchController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @GetMapping("/logs")
-    public CommonResponse<List<GetSearchLogRes>> getSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail) {
-        List<GetSearchLogRes> resList = new ArrayList<>();
+    public CommonResponse<SearchLogListRes> getSearchLog(@AuthenticationPrincipal UserDetailsImpl userDetail) {
+        List<SearchLogRes> resList = new ArrayList<>();
         if(userDetail != null) resList = searchService.getSearchLog(userDetail.getUser().getUserId());
-        return CommonResponse.success(resList);
+        return CommonResponse.success(new SearchLogListRes(resList));
     }
 
     /**

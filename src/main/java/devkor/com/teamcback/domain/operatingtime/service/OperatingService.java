@@ -12,6 +12,8 @@ import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingConditionRepository;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingTimeRepository;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,19 +29,39 @@ public class OperatingService {
     private final NodeRepository nodeRepository;
 
     @Transactional
-    public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek, LocalDateTime now) {
-        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsVacation(dayOfWeek, isVacation);
+    public void updateOperatingTime(DayOfWeek dayOfWeek, Boolean isVacation, Boolean evenWeek) {
+        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
 
-        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우
-            if(evenWeek) {
-                operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.EVEN || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+        for(OperatingCondition operatingCondition : operatingConditionList) {
+            List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
+
+            LocalTime endTime = LocalTime.of(0, 0);
+            LocalTime startTime = LocalTime.of(23, 59);
+
+            for(OperatingTime operatingTime : operatingTimeList) {
+                LocalTime end = LocalTime.of(operatingTime.getEndHour(), operatingTime.getEndMinute());
+                LocalTime start = LocalTime.of(operatingTime.getStartHour(), operatingTime.getStartMinute());
+                if(endTime.isBefore(end)) endTime = end;
+                if(startTime.isAfter(start)) startTime = start;
             }
-            else {
-                operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.ODD || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+
+            String newOperatingTime = formatTimeRange(startTime, endTime);
+
+            if(operatingCondition.getBuilding() != null) {
+                operatingCondition.getBuilding().setOperatingTime(newOperatingTime);
+            }
+            else if(operatingCondition.getClassroom() != null) {
+                operatingCondition.getClassroom().setOperatingTime(newOperatingTime);
+            }
+            else if(operatingCondition.getFacility() != null) {
+                operatingCondition.getFacility().setOperatingTime(newOperatingTime);
             }
         }
+    }
+
+    @Transactional
+    public void updateIsOperating(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek, LocalDateTime now) {
+        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
 
         for(OperatingCondition operCondition : operatingConditionList) {
             boolean isOperating = checkOperatingTime(operCondition, now);
@@ -60,6 +82,23 @@ public class OperatingService {
         }
     }
 
+    private List<OperatingCondition> findOperatingCondition(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek) {
+        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsVacation(dayOfWeek, isVacation);
+
+        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우
+            if(evenWeek) {
+                operatingConditionList.stream().filter(operatingCondition ->
+                    operatingCondition.getOperatingWeekend() == OperatingWeekend.EVEN || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+            }
+            else {
+                operatingConditionList.stream().filter(operatingCondition ->
+                    operatingCondition.getOperatingWeekend() == OperatingWeekend.ODD || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+            }
+        }
+
+        return operatingConditionList;
+    }
+
     // 운영 시간 확인
     private boolean checkOperatingTime(OperatingCondition operatingCondition, LocalDateTime now) {
         int hour = now.getHour();
@@ -68,14 +107,12 @@ public class OperatingService {
         log.info("minute: {}", minute);
 
         List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
+
+        // 운영 여부 판단
         for(OperatingTime operatingTime : operatingTimeList) {
-            if(hour > operatingTime.getStartHour() && hour < operatingTime.getEndHour()) {
-                return true;
-            }
-            else if(hour == operatingTime.getStartHour() && minute >= operatingTime.getStartMinute()) {
-                return true;
-            }
-            else if(hour == operatingTime.getEndHour() && minute <= operatingTime.getEndMinute()) {
+            if((hour > operatingTime.getStartHour() && hour < operatingTime.getEndHour()) ||
+                (hour == operatingTime.getStartHour() && minute >= operatingTime.getStartMinute()) ||
+                (hour == operatingTime.getEndHour() && minute <= operatingTime.getEndMinute())) {
                 return true;
             }
         }
@@ -89,5 +126,17 @@ public class OperatingService {
         for(Node node : nodeList) {
             node.setOperating(isOperating);
         }
+    }
+
+    private String formatTimeRange(LocalTime start, LocalTime end) {
+        // 포맷을 "HH:mm" 형식으로 지정
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        // 각각의 LocalTime을 포맷된 문자열로 변환
+        String startFormatted = start.format(formatter);
+        String endFormatted = end.format(formatter);
+
+        // 두 시간 문자열을 "HH:mm-HH:mm" 형식으로 연결
+        return startFormatted + "-" + endFormatted;
     }
 }

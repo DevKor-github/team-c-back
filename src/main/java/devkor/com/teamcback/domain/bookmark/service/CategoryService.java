@@ -100,24 +100,24 @@ public class CategoryService {
      * 카테고리 전체 조회
      */
     @Transactional(readOnly = true)
-    public List<GetCategoryRes> getAllCategories(Long userId) {
+    public GetCategoryListRes getAllCategories(Long userId) {
         User user = findUser(userId);
 
-        return categoryRepository.findAllByUser(user).stream().map(category -> new GetCategoryRes(category, bookmarkRepository.countAllByCategory(category))).collect(Collectors.toList());
+        return new GetCategoryListRes(categoryRepository.findAllByUser(user).stream().map(category -> new GetCategoryRes(category, bookmarkRepository.countAllByCategory(category))).toList());
     }
 
     /**
      * 특정 카테고리 상세조회 (즐겨찾기 List)
      */
     @Transactional(readOnly = true)
-    public List<GetBookmarkRes> getAllBookmarks(Long userId, Long categoryId) {
+    public GetBookmarkListRes getAllBookmarks(Long userId, Long categoryId) {
         User user = findUser(userId);
         Category category = findCategory(categoryId);
 
         // 카테고리 소유자인지 확인
         checkAuthority(user, category.getUser());
 
-        return bookmarkRepository.findAllByCategory(category).stream().map(GetBookmarkRes::new).collect(Collectors.toList());
+        return new GetBookmarkListRes(bookmarkRepository.findAllByCategory(category).stream().map(GetBookmarkRes::new).toList());
     }
 
     /**

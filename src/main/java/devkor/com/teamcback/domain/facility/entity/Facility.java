@@ -48,6 +48,8 @@ public class Facility extends BaseEntity {
 
     private String operatingTime;
 
+    private boolean isOperating;
+
     private Integer maskIndex;
 
     @ManyToOne
@@ -57,4 +59,12 @@ public class Facility extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "node_id")
     private Node node;
+
+    public void setOperating(boolean operating) {
+        isOperating = operating;
+    }
+
+    public void setOperatingTime(String operatingTime) {
+        this.operatingTime = operatingTime;
+    }
 }

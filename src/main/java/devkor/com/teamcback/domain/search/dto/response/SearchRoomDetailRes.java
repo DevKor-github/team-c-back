@@ -8,7 +8,7 @@ import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import lombok.Getter;
 
 @Getter
-public class GetRoomDetailRes {
+public class SearchRoomDetailRes {
     private String type;
     private Long id;
     @JsonInclude(Include.NON_NULL)
@@ -19,21 +19,23 @@ public class GetRoomDetailRes {
     private boolean availability;
     private boolean plugAvailability;
     private String imageUrl;
-    @JsonInclude(Include.NON_NULL)
     private String operatingTime;
+    private boolean isOperating;
     private Double longitude;
     private Double latitude;
     private double xCoord;
     private double yCoord;
     private Integer maskIndex;
 
-    public GetRoomDetailRes(Classroom classroom) {
+    public SearchRoomDetailRes(Classroom classroom) {
         this.type = "CLASSROOM";
         this.id = classroom.getId();
         this.name = classroom.getName();
         this.detail = classroom.getDetail();
         this.plugAvailability = classroom.isPlugAvailability();
         this.imageUrl = classroom.getImageUrl();
+        this.operatingTime = classroom.getOperatingTime();
+        this.isOperating = classroom.isOperating();
         this.longitude = classroom.getNode().getLongitude();
         this.latitude = classroom.getNode().getLatitude();
         this.xCoord = classroom.getNode().getXCoord();
@@ -41,7 +43,7 @@ public class GetRoomDetailRes {
         this.maskIndex = classroom.getMaskIndex();
     }
 
-    public GetRoomDetailRes(Facility facility) {
+    public SearchRoomDetailRes(Facility facility) {
         this.type = "FACILITY";
         this.id = facility.getId();
         this.facilityType = facility.getType();
@@ -51,6 +53,7 @@ public class GetRoomDetailRes {
         this.plugAvailability = facility.isPlugAvailability();
         this.imageUrl = facility.getImageUrl();
         this.operatingTime = facility.getOperatingTime();
+        this.isOperating = facility.isOperating();
         this.longitude = facility.getNode().getLongitude();
         this.latitude = facility.getNode().getLatitude();
         this.xCoord = facility.getNode().getXCoord();

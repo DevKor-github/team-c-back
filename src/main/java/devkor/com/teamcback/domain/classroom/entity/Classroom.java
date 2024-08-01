@@ -39,6 +39,11 @@ public class Classroom extends BaseEntity {
 
     private Integer maskIndex;
 
+    private String operatingTime;
+
+    @Column(nullable = false)
+    private boolean isOperating = true;
+
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
@@ -47,13 +52,11 @@ public class Classroom extends BaseEntity {
     @JoinColumn(name = "node_id")
     private Node node;
 
-    public Classroom(String name, String detail, boolean plugAvailability, String imageUrl,
-        double floor, Building building) {
-        this.name = name;
-        this.detail = detail;
-        this.plugAvailability = plugAvailability;
-        this.imageUrl = imageUrl;
-        this.floor = floor;
-        this.building = building;
+    public void setOperating(boolean operating) {
+        isOperating = operating;
+    }
+
+    public void setOperatingTime(String operatingTime) {
+        this.operatingTime = operatingTime;
     }
 }

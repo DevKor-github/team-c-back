@@ -21,7 +21,6 @@ public class SearchPlaceDetailRes {
     private boolean availability;  //사용 가능 여부
     private boolean plugAvailability;
     private String imageUrl;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String operatingTime;
     private Double longitude;
     private Double latitude;
@@ -47,11 +46,16 @@ public class SearchPlaceDetailRes {
         this.detail = classroom.getDetail();
         this.plugAvailability = classroom.isPlugAvailability();
         this.imageUrl = classroom.getImageUrl();
+        this.operatingTime = classroom.getOperatingTime();
         this.maskIndex = classroom.getMaskIndex();
         this.bookmarked = bookmarked;
-        //TODO: 나중에 운영 정보 수정해서 넣기
-        this.isOperating = true;
-        this.nextPlaceTime = "22:00";
+        this.isOperating = classroom.isOperating();
+        if(classroom.isOperating()) { // 운영 중이면 종료 시간
+            this.nextPlaceTime = classroom.getOperatingTime().substring(6);
+        }
+        else { // 운영 종료인 경우 여는 시간
+            this.nextPlaceTime = classroom.getOperatingTime().substring(0, 5);
+        }
     }
 
     public SearchPlaceDetailRes(Facility facility, boolean bookmarked) {
@@ -74,8 +78,12 @@ public class SearchPlaceDetailRes {
         this.operatingTime = facility.getOperatingTime();
         this.maskIndex = facility.getMaskIndex();
         this.bookmarked = bookmarked;
-        //TODO: 나중에 운영 정보 수정해서 넣기
-        this.isOperating = false;
-        this.nextPlaceTime = "9:00";
+        this.isOperating = facility.isOperating();
+        if(facility.isOperating()) { // 운영 중이면 종료 시간
+            this.nextPlaceTime = facility.getOperatingTime().substring(6);
+        }
+        else { // 운영 종료인 경우 여는 시간
+            this.nextPlaceTime = facility.getOperatingTime().substring(0, 5);
+        }
     }
 }

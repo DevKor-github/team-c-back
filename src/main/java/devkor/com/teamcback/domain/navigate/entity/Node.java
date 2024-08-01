@@ -42,6 +42,9 @@ public class Node extends BaseEntity {
     @Column(nullable = false)
     private boolean routing;
 
+    @Column(nullable = false)
+    private boolean isOperating = true;
+
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
@@ -74,5 +77,9 @@ public class Node extends BaseEntity {
         this.building = building;
         this.adjacentNode = req.getAdjacentNode();
         this.distance = req.getDistance();
+    }
+
+    public void setOperating(boolean operating) {
+        isOperating = operating;
     }
 }

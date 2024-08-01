@@ -34,8 +34,10 @@ public class Building extends BaseEntity {
 
     private String operatingTime;
 
+    private boolean isOperating = true;
+
     @Column(nullable = false)
-    private Boolean needStudentCard;
+    private boolean needStudentCard;
 
     @Column(nullable = false)
     private Double floor; // 건물 최대 층수
@@ -47,13 +49,11 @@ public class Building extends BaseEntity {
     @JoinColumn(name = "node_id")
     private Node node;
 
-    public Building(String name, String imageUrl, String detail, String address, String operatingTime,
-        Boolean needStudentCard) {
-        this.name = name;
-        this.imageUrl = imageUrl;
-        this.detail = detail;
-        this.address = address;
+    public void setOperating(boolean operating) {
+        isOperating = operating;
+    }
+
+    public void setOperatingTime(String operatingTime) {
         this.operatingTime = operatingTime;
-        this.needStudentCard = needStudentCard;
     }
 }

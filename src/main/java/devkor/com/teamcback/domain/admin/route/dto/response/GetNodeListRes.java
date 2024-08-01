@@ -14,7 +14,7 @@ public class GetNodeListRes {
     private String buildingName;
     private String buildingImage;
     private Double floor;
-    private List<GetNodeRes> nodeList = new ArrayList<>();
+    private List<GetNodeRes> nodeList;
 
     public GetNodeListRes(Building building, Double floor, BuildingImage buildingImage, List<GetNodeRes> nodeList) {
         this.buildingId = building.getId();

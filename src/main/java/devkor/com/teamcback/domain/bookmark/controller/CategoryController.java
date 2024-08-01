@@ -141,7 +141,7 @@ public class CategoryController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @GetMapping
-    public CommonResponse<List<GetCategoryRes>> getAllCategories(
+    public CommonResponse<GetCategoryListRes> getAllCategories(
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail) {
         return CommonResponse.success(categoryService.getAllCategories(userDetail.getUser().getUserId()));
@@ -162,7 +162,7 @@ public class CategoryController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @GetMapping("/{categoryId}/bookmarks")
-    public CommonResponse<List<GetBookmarkRes>> getAllBookmarks(
+    public CommonResponse<GetBookmarkListRes> getAllBookmarks(
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(description = "카테고리 id", required = true)

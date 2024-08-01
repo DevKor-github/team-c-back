@@ -29,7 +29,7 @@ public class OperatingScheduler {
     private static final int WINTER_VACATION_END_DAY = 3;
 
 //    @Scheduled(cron = "0 * * * * *") // 테스트용
-    @Scheduled(cron = "0 */30 * * * *") // 매일 30분마다
+//    @Scheduled(cron = "0 */30 * * * *") // 매일 30분마다
     public void updateIsOperating() {
         log.info("운영 시간 업데이트");
         LocalDateTime nowTime = LocalDateTime.now();

@@ -4,9 +4,11 @@ import devkor.com.teamcback.domain.navigate.entity.NodeType;
 import devkor.com.teamcback.domain.admin.route.validation.CommaNumeric;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
 @Schema(description = "수정할 노드 정보")
 @Getter
+@Setter
 public class ModifyNodeReq {
     @Schema(description = "노드 타입", example = "NORMAL")
     private NodeType type;

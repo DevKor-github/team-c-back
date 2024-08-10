@@ -119,7 +119,7 @@ public class SearchService {
         Building building = findBuilding(buildingId);
         SearchFacilityListRes res = new SearchFacilityListRes(building, facilityType);
 
-        List<Facility> facilities = getFacilityBuildingAndType(building, facilityType);
+        List<Facility> facilities = getFacilityByBuildingAndType(building, facilityType);
 
         Map<Double, List<SearchFacilityRes>> map = new HashMap<>();
         for(Facility facility : facilities) {
@@ -369,7 +369,7 @@ public class SearchService {
     }
 
     // 특정 건물 및 타입에 속하는 편의시설 검색 (화장실 검색하는 경우 - 다른 화장실 모두 포함하도록)
-    private List<Facility> getFacilityBuildingAndType(Building building, FacilityType facilityType) {
+    private List<Facility> getFacilityByBuildingAndType(Building building, FacilityType facilityType) {
         List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
         if(facilityType == FacilityType.TOILET) {
             facilities.addAll(facilityRepository.findAllByBuildingAndTypeIn(building, List.of(FacilityType.MEN_TOILET, FacilityType.WOMEN_TOILET, FacilityType.MEN_HANDICAPPED_TOILET, FacilityType.WOMEN_HANDICAPPED_TOILET)));

@@ -46,7 +46,9 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
 
     // 아이콘으로 표시할 편의시설 종류
-    private final List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE, FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA, FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
+    private final List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE,
+        FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA,
+        FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
 
     /**
      * 검색어 자동 완성
@@ -56,11 +58,13 @@ public class SearchService {
         List<GlobalSearchRes> list = new ArrayList<>();
 
         List<Classroom> classrooms = getClassrooms(word);
-        List<Facility> facilities = getFacilities(word);
+        List<Facility> facilities;
 
         // 먼저 검색한 건물이 있을 때
         if(buildingId != null) {
             Building building = findBuilding(buildingId);
+            facilities = getFacilities(word, building);
+
             for(Classroom classroom : classrooms) {
                 if(classroom.getBuilding().equals(building)) list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
@@ -71,6 +75,7 @@ public class SearchService {
 
         else {
             List<Building> buildings = getBuildings(word);
+            facilities = getFacilities(word, null);
 
             for(Building building : buildings) {
                 list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
@@ -114,7 +119,8 @@ public class SearchService {
         Building building = findBuilding(buildingId);
         SearchFacilityListRes res = new SearchFacilityListRes(building, facilityType);
 
-        List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
+        List<Facility> facilities = getFacilityBuildingAndType(building, facilityType);
+
         Map<Double, List<SearchFacilityRes>> map = new HashMap<>();
         for(Facility facility : facilities) {
             if(!map.containsKey(facility.getFloor())) map.put(facility.getFloor(), new ArrayList<>());
@@ -124,39 +130,6 @@ public class SearchService {
         res.setFacilities(map);
 
         return res;
-    }
-
-    private List<Building> getBuildings(String word) {
-        // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByNicknameContaining(word);
-
-        // 중복을 제거하여 List에 저장
-        return buildingNicknames.stream()
-            .map(BuildingNickname::getBuilding)
-            .distinct()
-            .toList();
-    }
-
-    private List<Classroom> getClassrooms(String word) {
-        // 강의실 조회
-        List<ClassroomNickname> classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word);
-
-        // 중복을 제거하여 List에 저장
-        return classroomNicknames.stream()
-            .map(ClassroomNickname::getClassroom)
-            .distinct()
-            .toList();
-    }
-
-    // 검색어를 포함하는 편의시설의 리스트를 반환 (편의시설의 name을 반환)
-    private List<Facility> getFacilities(String word) {
-        List<Facility> facilities = facilityRepository.findByNameContaining(word);
-
-        return facilities.stream()
-            .collect(Collectors.collectingAndThen(
-                Collectors.toMap(Facility::getName, f -> f, (existing, replacement) -> existing),
-                map -> new ArrayList<>(map.values())
-            ));
     }
 
     /**
@@ -194,7 +167,7 @@ public class SearchService {
      * 편의시설이 있는 건물
      */
     public SearchBuildingListRes searchBuildingWithFacilityType(FacilityType facilityType) {
-        List<Facility> facilityList = facilityRepository.findAllByType(facilityType);
+        List<Facility> facilityList = getFacilitiesByType(facilityType);
         List<Building> buildingList = facilityList.stream()
             .map(Facility::getBuilding)
             .distinct()
@@ -322,14 +295,6 @@ public class SearchService {
         return res;
     }
 
-    private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
-        return facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
-    }
-
-    private User findUser(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
-    }
-
     /**
      * 검색 기록 조회
      */
@@ -362,12 +327,93 @@ public class SearchService {
         searchLogRedis.opsForList().leftPush(key, searchLog);
     }
 
+    private List<Building> getBuildings(String word) {
+        // 건물 조회
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByNicknameContaining(word);
+
+        // 중복을 제거하여 List에 저장
+        return buildingNicknames.stream()
+            .map(BuildingNickname::getBuilding)
+            .distinct()
+            .toList();
+    }
+
+    private List<Classroom> getClassrooms(String word) {
+        // 강의실 조회
+        List<ClassroomNickname> classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word);
+
+        // 중복을 제거하여 List에 저장
+        return classroomNicknames.stream()
+            .map(ClassroomNickname::getClassroom)
+            .distinct()
+            .toList();
+    }
+
+    // 검색어를 포함하는 편의시설의 리스트를 반환 (편의시설의 name을 반환)
+    private List<Facility> getFacilities(String word, Building building) {
+        List<Facility> facilities;
+
+        if(building != null) facilities = facilityRepository.findAllByBuildingAndNameContaining(building, word);
+        else facilities = facilityRepository.findByNameContaining(word);
+
+        return facilities.stream()
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(Facility::getName, f -> f, (existing, replacement) -> existing),
+                map -> new ArrayList<>(map.values())
+            ));
+    }
+
+    // 특정 건물 및 타입 리스트에 속하는 편의시설 검색
+    private List<Facility> getFacilitiesByBuildingAndTypes(Building building, List<FacilityType> types) {
+        return facilityRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
+    }
+
+    // 특정 건물 및 타입에 속하는 편의시설 검색 (화장실 검색하는 경우 - 다른 화장실 모두 포함하도록)
+    private List<Facility> getFacilityBuildingAndType(Building building, FacilityType facilityType) {
+        List<Facility> facilities = facilityRepository.findAllByBuildingAndType(building, facilityType);
+        if(facilityType == FacilityType.TOILET) {
+            facilities.addAll(facilityRepository.findAllByBuildingAndTypeIn(building, List.of(FacilityType.MEN_TOILET, FacilityType.WOMEN_TOILET, FacilityType.MEN_HANDICAPPED_TOILET, FacilityType.WOMEN_HANDICAPPED_TOILET)));
+        }
+        else if(facilityType == FacilityType.WOMEN_TOILET) {
+            facilities.addAll(facilityRepository.findAllByBuildingAndType(building, FacilityType.WOMEN_HANDICAPPED_TOILET));
+        }
+        else if(facilityType == FacilityType.MEN_TOILET) {
+            facilities.addAll(facilityRepository.findAllByBuildingAndType(building, FacilityType.MEN_HANDICAPPED_TOILET));
+        }
+
+        facilities.sort(Comparator.comparing(Facility::getFloor));
+
+        return facilities;
+    }
+
+    // 특정 타입에 속하는 편의시설 검색 (화장실 검색하는 경우 - 다른 화장실 모두 포함하도록)
+    private List<Facility> getFacilitiesByType(FacilityType facilityType) {
+        List<Facility> facilities = facilityRepository.findAllByType(facilityType);
+        if(facilityType == FacilityType.TOILET) {
+            facilities.addAll(facilityRepository.findAllByTypeIn(List.of(FacilityType.MEN_TOILET, FacilityType.WOMEN_TOILET, FacilityType.MEN_HANDICAPPED_TOILET, FacilityType.WOMEN_HANDICAPPED_TOILET)));
+        }
+        else if(facilityType == FacilityType.WOMEN_TOILET) {
+            facilities.addAll(facilityRepository.findAllByType(FacilityType.WOMEN_HANDICAPPED_TOILET));
+        }
+        else if(facilityType == FacilityType.MEN_TOILET) {
+            facilities.addAll(facilityRepository.findAllByType(FacilityType.MEN_HANDICAPPED_TOILET));
+        }
+
+        return facilities;
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
+    }
+
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
+
     private Classroom findClassroom(Long classroomId) {
         return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
     }
+
     private Facility findFacility(Long facilityId) {
         return facilityRepository.findById(facilityId).orElseThrow(() -> new GlobalException(NOT_FOUND_FACILITY));
     }

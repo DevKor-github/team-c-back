@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -55,5 +56,22 @@ public class Building extends BaseEntity {
 
     public void setOperatingTime(String operatingTime) {
         this.operatingTime = operatingTime;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Building building = (Building) o;
+        return Objects.equals(id, building.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

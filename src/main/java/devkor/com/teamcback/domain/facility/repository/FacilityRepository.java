@@ -15,15 +15,21 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
 
     List<Facility> findAllByBuildingAndType(Building building, FacilityType type);
 
+    List<Facility> findAllByBuildingAndTypeIn(Building building, List<FacilityType> types);
+
     List<Facility> findAllByBuilding(Building building);
 
     List<Facility> findAllByBuildingAndFloor(Building building, double floor);
 
     List<Facility> findAllByType(FacilityType facilityType);
 
+    List<Facility> findAllByTypeIn(List<FacilityType> types);
+
     Facility findByNode(Node node);
 
     Facility findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
 
     List<Facility> findAllByBuildingAndTypeInOrderByFloor(Building building, List<FacilityType> types);
+
+    List<Facility> findAllByBuildingAndNameContaining(Building building, String word);
 }

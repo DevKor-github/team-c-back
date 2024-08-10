@@ -29,7 +29,8 @@ public enum FacilityType {
     GYM("헬스장"),
     BICYCLE_RACK("자전거보관소"),
     BENCH("벤치"),
-    SHUTTLE_BUS("셔틀버스정거장");
+    SHUTTLE_BUS("셔틀버스정거장"),
+    BOOK_RETURN_MACHINE("도서반납기");
 
     private final String name;
 }

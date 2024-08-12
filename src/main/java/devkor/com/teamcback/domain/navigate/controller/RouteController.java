@@ -39,7 +39,6 @@ public class RouteController {
      * @param endId (endType이 COORD가 아닌 경우) 도착 시설 id
      * @param endLat (endType이 COORD인 경우) 도착 위도
      * @param endLong (endType이 COORD인 경우) 도착 경도
-     * @param barrierFree barrierFree 여부(ELEVATOR, STAIR의 경우 해당 노드 이용 X)
      *
      */
     @GetMapping()
@@ -50,7 +49,7 @@ public class RouteController {
         @ApiResponse(responseCode = "404", description = "Not Found",
         content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<GetRouteRes> findRoute(
+    public CommonResponse<List<GetRouteRes>> findRoute(
         @Parameter(name = "startType", description = "출발 장소의 LocationType", example = "CLASSROOM", required = true)
         @RequestParam LocationType startType,
         @Parameter(name = "startId", description = "startType이 COORD가 아닐 경우 해당 시설의 ID")
@@ -66,9 +65,7 @@ public class RouteController {
         @Parameter(name = "endLat", description = "endType이 COORD일 경우 해당 장소의 위도")
         @RequestParam(required = false) Double endLat,
         @Parameter(name = "endLong", description = "endType이 COORD일 경우 해당 장소의 경도")
-        @RequestParam(required = false) Double endLong,
-        @Parameter(name = "barrierFree", description = "STAIR 또는 ELEVATOR, 이용하지 않을 이동수단")
-        @RequestParam(required = false)NodeType barrierFree) throws ParseException {
+        @RequestParam(required = false) Double endLong) throws ParseException {
         List<Double> startLocation = new ArrayList<>();
         List<Double> endLocation = new ArrayList<>();
 
@@ -84,7 +81,9 @@ public class RouteController {
         else{
             endLocation.add(endId.doubleValue());
         }
-
-        return CommonResponse.success(routeService.findRoute(startLocation, startType, endLocation, endType, barrierFree));
+        List<GetRouteRes> returnList = new ArrayList<>();
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, null));
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.STAIR));
+        return CommonResponse.success(returnList);
     }
 }

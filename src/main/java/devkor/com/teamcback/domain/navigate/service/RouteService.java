@@ -67,7 +67,7 @@ public class RouteService {
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-
+        if (route.getPath().isEmpty()) return new GetRouteRes("제공되는 경로가 없습니다.");
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
     }
 
@@ -181,8 +181,14 @@ public class RouteService {
             graphNode.add(endNode);
         }
         for (Node node: graphNode){
+            String rawAdjacentNode = node.getAdjacentNode();
+            String rawDistance = node.getDistance();
+            //추후 수정이 필요할 코드(에러핸들링)
+            if (rawAdjacentNode == null || rawDistance == null) continue;
             String[] endNodeId = node.getAdjacentNode().split(",");
             String[] distance = node.getDistance().split(",");
+            //if (endNodeId.length != distance.length) throw new Error("노드"+node.getId()+"에 형식의 문제가 있습니다.");
+            if (endNodeId.length != distance.length) continue;
 
             for (int i = 0; i < endNodeId.length; i++) {
                 // 시작끝 모두 Long으로 써서 경로 찾은 후, 해당 경로 대해서만 node 찾기

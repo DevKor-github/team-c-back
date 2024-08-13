@@ -1,18 +1,11 @@
 package devkor.com.teamcback.domain.facility.entity;
 
+import devkor.com.teamcback.domain.admin.facility.dto.request.CreateFacilityReq;
+import devkor.com.teamcback.domain.admin.facility.dto.request.ModifyFacilityReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.navigate.entity.Node;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -59,6 +52,36 @@ public class Facility extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "node_id")
     private Node node;
+
+    public Facility(CreateFacilityReq req, Building building, Node node) {
+        this.type = req.getType();
+        this.name = req.getName();
+        this.floor = (double) req.getFloor();
+        this.detail = req.getDetail();
+        this.availability = req.isAvailability();
+        this.plugAvailability = req.isPlugAvailability();
+        this.imageUrl = req.getImageUrl();
+        this.operatingTime = req.getOperatingTime();
+        this.isOperating = req.isOperating();
+        this.maskIndex = req.getMaskIndex();
+        this.building = building;
+        this.node = node;
+    }
+
+    public void update(ModifyFacilityReq req, Building building, Node node) {
+        this.type = req.getType();
+        this.name = req.getName();
+        this.floor = (double) req.getFloor();
+        this.detail = req.getDetail();
+        this.availability = req.isAvailability();
+        this.plugAvailability = req.isPlugAvailability();
+        this.imageUrl = req.getImageUrl();
+        this.operatingTime = req.getOperatingTime();
+        this.isOperating = req.isOperating();
+        this.maskIndex = req.getMaskIndex();
+        this.building = building;
+        this.node = node;
+    }
 
     public void setOperating(boolean operating) {
         isOperating = operating;

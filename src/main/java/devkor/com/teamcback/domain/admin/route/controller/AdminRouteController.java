@@ -108,7 +108,7 @@ public class AdminRouteController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<DeleteNodeRes> deleteNode(
-        @Parameter(description = "수정할 노드 ID") @PathVariable Long nodeId
+        @Parameter(description = "삭제할 노드 ID") @PathVariable Long nodeId
     ) {
         return CommonResponse.success(adminRouteService.deleteNode(nodeId));
     }

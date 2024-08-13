@@ -1,16 +1,12 @@
 package devkor.com.teamcback.domain.classroom.entity;
 
+import devkor.com.teamcback.domain.admin.classroom.dto.request.CreateClassroomReq;
+import devkor.com.teamcback.domain.admin.classroom.dto.request.ModifyClassroomReq;
+import devkor.com.teamcback.domain.admin.classroom.dto.response.CreateClassroomRes;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.navigate.entity.Node;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -51,6 +47,32 @@ public class Classroom extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "node_id")
     private Node node;
+
+    public Classroom(CreateClassroomReq req, Building building, Node node) {
+        this.name = req.getName();
+        this.detail = req.getDetail();
+        this.plugAvailability = req.isPlugAvailability();
+        this.imageUrl = req.getImageUrl();
+        this.floor = (double) req.getFloor();
+        this.maskIndex = req.getMaskIndex();
+        this.operatingTime = req.getOperatingTime();
+        this.isOperating = req.isOperating();
+        this.building = building;
+        this.node = node;
+    }
+
+    public void update(ModifyClassroomReq req, Building building, Node node) {
+        this.name = req.getName();
+        this.detail = req.getDetail();
+        this.plugAvailability = req.isPlugAvailability();
+        this.imageUrl = req.getImageUrl();
+        this.floor = (double) req.getFloor();
+        this.maskIndex = req.getMaskIndex();
+        this.operatingTime = req.getOperatingTime();
+        this.isOperating = req.isOperating();
+        this.building = building;
+        this.node = node;
+    }
 
     public void setOperating(boolean operating) {
         isOperating = operating;

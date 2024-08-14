@@ -55,7 +55,7 @@ public class SearchPlaceDetailRes {
         this.bookmarked = bookmarked;
         this.isOperating = classroom.isOperating();
         if(classroom.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = classroom.getOperatingTime().substring(6);
+            this.nextPlaceTime = classroom.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = classroom.getOperatingTime().substring(0, 5);
@@ -86,7 +86,7 @@ public class SearchPlaceDetailRes {
         this.bookmarked = bookmarked;
         this.isOperating = facility.isOperating();
         if(facility.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = facility.getOperatingTime().substring(6);
+            this.nextPlaceTime = facility.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = facility.getOperatingTime().substring(0, 5);

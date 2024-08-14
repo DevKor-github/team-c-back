@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -22,18 +23,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OperatingCondition extends BaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private OperatingWeekend operatingWeekend = OperatingWeekend.EVERY; // 매주, 짝수, 홀수 토요일
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private DayOfWeek dayOfWeek; // 평일, 토, 일
 
-    @Column(nullable = false)
-    private boolean isVacation; // 방학, 학기 중
+    private Boolean isEvenWeek;
+
+    private Boolean isHoliday; // 공휴일 고려
+
+    private Boolean isVacation; // 방학, 학기 중
 
     @ManyToOne
     @JoinColumn(name = "building_id")

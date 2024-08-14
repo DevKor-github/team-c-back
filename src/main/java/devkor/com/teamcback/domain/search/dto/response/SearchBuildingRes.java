@@ -41,7 +41,7 @@ public class SearchBuildingRes {
         this.facilityTypes = facilityTypes;
         this.isOperating = building.isOperating();
         if(building.isOperating()) { // 운영 중이면 종료 시간
-            this.nextBuildingTime = building.getOperatingTime().substring(6);
+            this.nextBuildingTime = building.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
             this.nextBuildingTime = building.getOperatingTime().substring(0, 5);

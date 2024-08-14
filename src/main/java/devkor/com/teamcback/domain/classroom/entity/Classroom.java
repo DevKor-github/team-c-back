@@ -79,6 +79,8 @@ public class Classroom extends BaseEntity {
     }
 
     public void setOperatingTime(String operatingTime) {
-        this.operatingTime = operatingTime;
+        String remainingString = "";
+        if(this.operatingTime.length() > 11) remainingString = this.operatingTime.substring(11);
+        this.operatingTime = operatingTime + remainingString;
     }
 }

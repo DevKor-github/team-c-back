@@ -6,5 +6,5 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum DayOfWeek {
-    WEEKDAY, SATURDAY, SUNDAY, WEEKEND;
+    WEEKDAY, SATURDAY, SUNDAY;
 }

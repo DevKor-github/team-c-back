@@ -8,12 +8,12 @@ import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
-import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingConditionRepository;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingTimeRepository;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +28,11 @@ public class OperatingService {
     private final OperatingTimeRepository operatingTimeRepository;
     private final NodeRepository nodeRepository;
 
+    private static List<OperatingCondition> operatingConditionList = new ArrayList<>();
+
     @Transactional
-    public void updateOperatingTime(DayOfWeek dayOfWeek, Boolean isVacation, Boolean evenWeek) {
-        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
+    public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean evenWeek) {
+        operatingConditionList  = findOperatingCondition(dayOfWeek, isHoliday, isVacation, evenWeek);
 
         for(OperatingCondition operatingCondition : operatingConditionList) {
             List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
@@ -60,9 +62,7 @@ public class OperatingService {
     }
 
     @Transactional
-    public void updateIsOperating(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek, LocalDateTime now) {
-        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
-
+    public void updateIsOperating(LocalDateTime now) {
         for(OperatingCondition operCondition : operatingConditionList) {
             boolean isOperating = checkOperatingTime(operCondition, now);
 
@@ -82,17 +82,17 @@ public class OperatingService {
         }
     }
 
-    private List<OperatingCondition> findOperatingCondition(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek) {
-        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsVacation(dayOfWeek, isVacation);
+    private List<OperatingCondition> findOperatingCondition(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean evenWeek) {
+        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsHolidayAndIsVacationOrNot(dayOfWeek, isHoliday, isVacation);
 
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우
             if(evenWeek) {
                 operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.EVEN || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+                    operatingCondition.getIsEvenWeek() == null || operatingCondition.getIsEvenWeek() == true);
             }
             else {
                 operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.ODD || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+                    operatingCondition.getIsEvenWeek() == null || operatingCondition.getIsEvenWeek() == false);
             }
         }
 

@@ -65,6 +65,7 @@ public class OperatingService {
     public void updateIsOperating(LocalDateTime now) {
         for(OperatingCondition operCondition : operatingConditionList) {
             boolean isOperating = checkOperatingTime(operCondition, now);
+            log.info("isOperating: {}", isOperating);
 
             if(operCondition.getBuilding() != null) {
                 log.info("building: {}", operCondition.getBuilding().getName());

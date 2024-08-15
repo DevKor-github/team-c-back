@@ -22,6 +22,7 @@ import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchService {
@@ -57,25 +59,27 @@ public class SearchService {
     public GlobalSearchListRes globalSearch(Long buildingId, String word) {
         List<GlobalSearchRes> list = new ArrayList<>();
 
-        List<Classroom> classrooms = getClassrooms(word);
+        List<Classroom> classrooms;
         List<Facility> facilities;
 
         // 먼저 검색한 건물이 있을 때
         if(buildingId != null) {
             Building building = findBuilding(buildingId);
             facilities = getFacilities(word, building);
+            classrooms = getClassrooms(word, building);
 
             for(Classroom classroom : classrooms) {
-                if(classroom.getBuilding().equals(building)) list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                if(facility.getBuilding().equals(building)) list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
             }
         }
 
         else {
             List<Building> buildings = getBuildings(word);
             facilities = getFacilities(word, null);
+            classrooms = getClassrooms(word, null);
 
             for(Building building : buildings) {
                 list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
@@ -166,6 +170,7 @@ public class SearchService {
     /**
      * 편의시설이 있는 건물
      */
+    @Transactional(readOnly = true)
     public SearchBuildingListRes searchBuildingWithFacilityType(FacilityType facilityType) {
         List<Facility> facilityList = getFacilitiesByType(facilityType);
         List<Building> buildingList = facilityList.stream()
@@ -338,9 +343,21 @@ public class SearchService {
             .toList();
     }
 
-    private List<Classroom> getClassrooms(String word) {
+    private List<Classroom> getClassrooms(String word, Building building) {
+        List<Classroom> classrooms = new ArrayList<>();
+        if(building != null) {
+            classrooms = classroomRepository.findAllByBuilding(building);
+        }
+
         // 강의실 조회
-        List<ClassroomNickname> classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word);
+        List<ClassroomNickname> classroomNicknames = new ArrayList<>();
+        if(building != null && !classrooms.isEmpty()) {
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomIn(word, classrooms);
+        }
+        else if(building == null) {
+            classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word);
+        }
+
 
         // 중복을 제거하여 List에 저장
         return classroomNicknames.stream()

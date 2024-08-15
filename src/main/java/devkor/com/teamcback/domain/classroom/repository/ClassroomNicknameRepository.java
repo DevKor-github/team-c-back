@@ -10,4 +10,6 @@ public interface ClassroomNicknameRepository extends JpaRepository<ClassroomNick
     List<ClassroomNickname> findByNicknameContaining(String word);
 
     List<ClassroomNickname> findAllByClassroom(Classroom classroom);
+
+    List<ClassroomNickname> findByNicknameContainingAndClassroomIn(String word, List<Classroom> list);
 }

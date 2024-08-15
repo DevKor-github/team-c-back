@@ -15,4 +15,6 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
     Classroom findByNode(Node node);
 
     List<Classroom> findAllByIdNotIn(List<Long> classroomIdList);
+
+    List<Classroom> findAllByBuilding(Building building);
 }

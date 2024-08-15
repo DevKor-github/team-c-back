@@ -33,8 +33,8 @@ public class OperatingScheduler {
     private static Boolean isVacation = null;
     private static Boolean isEvenWeek = null;
 
-//    @Scheduled(cron = "0 * * * * *") // 테스트용
-    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
+    @Scheduled(cron = "0 * * * * *") // 테스트용 1분마다
+//    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     public void updateOperatingTime() {
         log.info("운영 시간 업데이트");
         LocalDate now = LocalDate.now();
@@ -55,8 +55,8 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-//    @Scheduled(cron = "*/20 * * * * *") // 테스트용
-    @Scheduled(cron = "0 0,30 1-23 * * *") // 매일 30분마다 (자정 제외)
+    @Scheduled(cron = "*/30 * * * * *") // 테스트용 30초마다
+//    @Scheduled(cron = "0 0,30 * * * *") // 매일 30분마다
     public void updateIsOperating() {
         log.info("운영 여부 업데이트");
         LocalDateTime nowTime = LocalDateTime.now();

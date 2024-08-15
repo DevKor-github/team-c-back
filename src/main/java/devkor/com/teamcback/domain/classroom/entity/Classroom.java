@@ -44,7 +44,7 @@ public class Classroom extends BaseEntity {
     @JoinColumn(name = "building_id")
     private Building building;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "node_id")
     private Node node;
 

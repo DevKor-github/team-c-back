@@ -32,4 +32,6 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
     List<Facility> findAllByBuildingAndTypeInOrderByFloor(Building building, List<FacilityType> types);
 
     List<Facility> findAllByBuildingAndNameContaining(Building building, String word);
+
+    List<Facility> findAllByIdNotIn(List<Long> facilityIdList);
 }

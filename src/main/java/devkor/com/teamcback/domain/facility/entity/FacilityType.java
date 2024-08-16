@@ -30,7 +30,9 @@ public enum FacilityType {
     BICYCLE_RACK("자전거보관소"),
     BENCH("벤치"),
     SHUTTLE_BUS("셔틀버스정거장"),
-    BOOK_RETURN_MACHINE("도서반납기");
+    BOOK_RETURN_MACHINE("도서반납기"),
+    TUMBLER_WASHER("텀블러세척기"),
+    ONESTOP_AUTO_MACHINE("원스탑무인발급기");
 
     private final String name;
 }

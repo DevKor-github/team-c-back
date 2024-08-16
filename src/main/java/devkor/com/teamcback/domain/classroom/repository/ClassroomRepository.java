@@ -13,4 +13,8 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
 
     Classroom findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
     Classroom findByNode(Node node);
+
+    List<Classroom> findAllByIdNotIn(List<Long> classroomIdList);
+
+    List<Classroom> findAllByBuilding(Building building);
 }

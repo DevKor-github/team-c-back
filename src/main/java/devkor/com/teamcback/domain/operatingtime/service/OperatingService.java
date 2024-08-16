@@ -3,17 +3,22 @@ package devkor.com.teamcback.domain.operatingtime.service;
 import static devkor.com.teamcback.domain.navigate.entity.NodeType.ENTRANCE;
 
 import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.building.repository.BuildingRepository;
+import devkor.com.teamcback.domain.classroom.entity.Classroom;
+import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
+import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
-import devkor.com.teamcback.domain.operatingtime.entity.OperatingWeekend;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingConditionRepository;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingTimeRepository;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,10 +32,21 @@ public class OperatingService {
     private final OperatingConditionRepository operatingConditionRepository;
     private final OperatingTimeRepository operatingTimeRepository;
     private final NodeRepository nodeRepository;
+    private final BuildingRepository buildingRepository;
+    private final ClassroomRepository classroomRepository;
+    private final FacilityRepository facilityRepository;
+
+    private static List<OperatingCondition> operatingConditionList = new ArrayList<>();
+    private static List<Classroom> notOperatingClassrooms = new ArrayList<>();
+    private static List<Facility> notOperatingFacilities = new ArrayList<>();
 
     @Transactional
-    public void updateOperatingTime(DayOfWeek dayOfWeek, Boolean isVacation, Boolean evenWeek) {
-        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
+    public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean evenWeek) {
+        List<Building> buildingList = new ArrayList<>();
+        List<Classroom> classroomList = new ArrayList<>();
+        List<Facility> facilityList = new ArrayList<>();
+
+        operatingConditionList  = findOperatingCondition(dayOfWeek, isHoliday, isVacation, evenWeek);
 
         for(OperatingCondition operatingCondition : operatingConditionList) {
             List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
@@ -49,22 +65,42 @@ public class OperatingService {
 
             if(operatingCondition.getBuilding() != null) {
                 operatingCondition.getBuilding().setOperatingTime(newOperatingTime);
+                buildingList.add(operatingCondition.getBuilding());
             }
             else if(operatingCondition.getClassroom() != null) {
                 operatingCondition.getClassroom().setOperatingTime(newOperatingTime);
+                classroomList.add(operatingCondition.getClassroom());
             }
             else if(operatingCondition.getFacility() != null) {
                 operatingCondition.getFacility().setOperatingTime(newOperatingTime);
+                facilityList.add(operatingCondition.getFacility());
             }
+        }
+
+        // 운영조건에 포함되지 못한 건물, 강의실, 편의시설
+        List<Building> notOperatingBuildings = buildingRepository.findAllByIdNotIn(buildingList.stream().map(Building::getId).toList());
+        for(Building building : notOperatingBuildings) {
+            if(building.getId() != 0) building.setOperating(false);
+        }
+
+        if(classroomList.isEmpty()) notOperatingClassrooms = classroomRepository.findAll();
+        else notOperatingClassrooms = classroomRepository.findAllByIdNotIn(classroomList.stream().map(Classroom::getId).toList());
+        for(Classroom classroom : notOperatingClassrooms) {
+            classroom.setOperating(classroom.getBuilding().isOperating()); // 건물 운영여부를 따라감
+        }
+
+        if(facilityList.isEmpty()) notOperatingFacilities = facilityRepository.findAll();
+        else notOperatingFacilities = facilityRepository.findAllByIdNotIn(facilityList.stream().map(Facility::getId).toList());
+        for(Facility facility : notOperatingFacilities) {
+            facility.setOperating(facility.getBuilding().isOperating()); // 건물 운영여부를 따라감
         }
     }
 
     @Transactional
-    public void updateIsOperating(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek, LocalDateTime now) {
-        List<OperatingCondition> operatingConditionList  = findOperatingCondition(dayOfWeek, isVacation, evenWeek);
-
+    public void updateIsOperating(LocalDateTime now) {
         for(OperatingCondition operCondition : operatingConditionList) {
             boolean isOperating = checkOperatingTime(operCondition, now);
+            log.info("isOperating: {}", isOperating);
 
             if(operCondition.getBuilding() != null) {
                 log.info("building: {}", operCondition.getBuilding().getName());
@@ -80,19 +116,28 @@ public class OperatingService {
                 operCondition.getFacility().setOperating(isOperating);
             }
         }
+
+        // 운영 조건에 포함되지 않은 강의실, 편의시설
+        for(Classroom classroom : notOperatingClassrooms) {
+            classroom.setOperating(classroom.getBuilding().isOperating()); // 건물 운영여부를 따라감
+        }
+
+        for(Facility facility : notOperatingFacilities) {
+            facility.setOperating(facility.getBuilding().isOperating()); // 건물 운영여부를 따라감
+        }
     }
 
-    private List<OperatingCondition> findOperatingCondition(DayOfWeek dayOfWeek, boolean isVacation, boolean evenWeek) {
-        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsVacation(dayOfWeek, isVacation);
+    private List<OperatingCondition> findOperatingCondition(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean evenWeek) {
+        List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findAllByDayOfWeekAndIsHolidayAndIsVacationOrNot(dayOfWeek, isHoliday, isVacation);
 
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우
             if(evenWeek) {
                 operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.EVEN || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+                    operatingCondition.getIsEvenWeek() == null || operatingCondition.getIsEvenWeek() == true);
             }
             else {
                 operatingConditionList.stream().filter(operatingCondition ->
-                    operatingCondition.getOperatingWeekend() == OperatingWeekend.ODD || operatingCondition.getOperatingWeekend() == OperatingWeekend.EVERY);
+                    operatingCondition.getIsEvenWeek() == null || operatingCondition.getIsEvenWeek() == false);
             }
         }
 

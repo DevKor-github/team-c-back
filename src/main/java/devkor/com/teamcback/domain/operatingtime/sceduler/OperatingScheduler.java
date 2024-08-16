@@ -29,57 +29,42 @@ public class OperatingScheduler {
     private static final int WINTER_VACATION_END_DAY = 3;
 
     private static DayOfWeek dayOfWeek = null;
+    private static Boolean isHoliday = null;
     private static Boolean isVacation = null;
-    private static Boolean evenWeek = null;
+    private static Boolean isEvenWeek = null;
 
-//    @Scheduled(cron = "0/10 * * * * *") // 테스트용
-//    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
+//    @Scheduled(cron = "0 * * * * *") // 테스트용 1분마다
+    @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     public void updateOperatingTime() {
         log.info("운영 시간 업데이트");
         LocalDate now = LocalDate.now();
 
         dayOfWeek = findDayOfWeek(now);
         log.info("dayOfWeek: {}", dayOfWeek.toString());
+        isHoliday = isHoliday(now);
+        log.info("isHoliday: {}", isHoliday);
         isVacation = isVacation(now);
         log.info("isVacation: {}", isVacation);
 
-        evenWeek = false;
+        isEvenWeek = false;
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
-            evenWeek = isEvenWeek(now);
-            log.info("evenWeek: {}", evenWeek);
+            isEvenWeek = isEvenWeek(now);
+            log.info("isEvenWeek: {}", isEvenWeek);
         }
 
-        operatingService.updateOperatingTime(dayOfWeek, isVacation, evenWeek);
+        operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-//    @Scheduled(cron = "0 * * * * *") // 테스트용
-//    @Scheduled(cron = "0 0,30 1-23 * * *") // 매일 30분마다 (자정 제외)
+//    @Scheduled(cron = "*/30 * * * * *") // 테스트용 30초마다
+    @Scheduled(cron = "0 0,30 * * * *") // 매일 30분마다
     public void updateIsOperating() {
         log.info("운영 여부 업데이트");
         LocalDateTime nowTime = LocalDateTime.now();
-        LocalDate now = LocalDate.now();
 
-        if(dayOfWeek == null) dayOfWeek = findDayOfWeek(now);
-        log.info("dayOfWeek: {}", dayOfWeek.toString());
-        if(isVacation == null) isVacation = isVacation(now);
-        log.info("isVacation: {}", isVacation);
-        if(evenWeek == null) {
-            evenWeek = false;
-            if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
-                evenWeek = isEvenWeek(now);
-                log.info("evenWeek: {}", evenWeek);
-            }
-        }
-        log.info("evenWeek: {}", evenWeek);
-
-        operatingService.updateIsOperating(dayOfWeek, isVacation, evenWeek, nowTime);
+        operatingService.updateIsOperating(nowTime);
     }
 
     private DayOfWeek findDayOfWeek(LocalDate date) {
-        if(holidayService.isHoliday(date)) {
-            return DayOfWeek.HOLIDAY;
-        }
-
         switch (date.getDayOfWeek()) {
             case SATURDAY -> {
                 return DayOfWeek.SATURDAY;
@@ -91,6 +76,10 @@ public class OperatingScheduler {
                 return DayOfWeek.WEEKDAY;
             }
         }
+    }
+
+    private boolean isHoliday(LocalDate date) {
+        return holidayService.isHoliday(date);
     }
 
     private boolean isVacation(LocalDate date) {

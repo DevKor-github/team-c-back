@@ -164,7 +164,7 @@ public class SearchController {
      * @param placeId 장소 id
      * @param placeType 장소 종류
      */
-    @Operation(summary = "장소 대응 Mask Index 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @Operation(summary = "장소 대응 Mask Index 조회", description = "Room의 id, placeType에 대응되는 mask index를 반환")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",

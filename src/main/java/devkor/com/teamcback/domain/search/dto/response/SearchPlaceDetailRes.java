@@ -11,8 +11,10 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class SearchPlaceDetailRes {
+    private Long buildingId;
+    private int floor;
     private PlaceType type;
-    private Long id;
+    private Long placeId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private FacilityType facilityType;
     private String name;
@@ -32,8 +34,10 @@ public class SearchPlaceDetailRes {
     private String nextPlaceTime;
 
     public SearchPlaceDetailRes(Classroom classroom, boolean bookmarked) {
+        this.buildingId = classroom.getBuilding().getId();
+        this.floor = classroom.getFloor().intValue();
         this.type = PlaceType.CLASSROOM;
-        this.id = classroom.getId();
+        this.placeId = classroom.getId();
         if(classroom.getBuilding().getId() == 0) {
             this.name = classroom.getName();
             this.longitude = classroom.getNode().getLongitude();
@@ -51,7 +55,7 @@ public class SearchPlaceDetailRes {
         this.bookmarked = bookmarked;
         this.isOperating = classroom.isOperating();
         if(classroom.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = classroom.getOperatingTime().substring(6);
+            this.nextPlaceTime = classroom.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = classroom.getOperatingTime().substring(0, 5);
@@ -59,8 +63,10 @@ public class SearchPlaceDetailRes {
     }
 
     public SearchPlaceDetailRes(Facility facility, boolean bookmarked) {
+        this.buildingId = facility.getBuilding().getId();
+        this.floor = facility.getFloor().intValue();
         this.type = PlaceType.FACILITY;
-        this.id = facility.getId();
+        this.placeId = facility.getId();
         this.facilityType = facility.getType();
         if(facility.getBuilding().getId() == 0) {
             this.name = facility.getName();
@@ -80,7 +86,7 @@ public class SearchPlaceDetailRes {
         this.bookmarked = bookmarked;
         this.isOperating = facility.isOperating();
         if(facility.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = facility.getOperatingTime().substring(6);
+            this.nextPlaceTime = facility.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = facility.getOperatingTime().substring(0, 5);

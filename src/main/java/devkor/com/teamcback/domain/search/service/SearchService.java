@@ -75,7 +75,7 @@ public class SearchService {
                 list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
             }
         }
 
@@ -91,7 +91,7 @@ public class SearchService {
                 list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
             }
         }
 
@@ -126,27 +126,11 @@ public class SearchService {
                             list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
                         }
                         for (Facility facility : facilities) {
-                            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
                         }
                     }
                 }
 
-                List<GlobalSearchRes> types = list.stream()
-                    .filter(res -> res.getPlaceType() == PlaceType.FACILITY && checkFacilityType(res.getName()))
-                    .toList();
-
-                list.removeAll(types);
-
-                list.addAll(types.stream()
-                    .collect(Collectors.collectingAndThen(
-                        Collectors.toMap(
-                            GlobalSearchRes::getName,
-                            res -> res,
-                            (existing, replacement) -> existing,
-                            LinkedHashMap::new
-                        ),
-                        map -> new ArrayList<>(map.values())
-                    )));
                 return new GlobalSearchListRes(orderSequence(list, word, candidateBuilding));
             }
         }
@@ -162,7 +146,7 @@ public class SearchService {
             list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
         }
         for(Facility facility : facilities) {
-            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
         }
 
         return new GlobalSearchListRes(orderSequence(list, word, null));

@@ -180,9 +180,6 @@ public class SearchService {
 
         return new SearchBuildingListRes(
             buildingList.stream()
-//                야외의 편의시설도 띄워야 하니까 0번 건물도 포함해서 보내는 것은 어떨까요?
-//                buildingId가 0인 경우에는 바로 위치로 띄우도록 프런트에 말하면 좋을 것 같습니다!
-//                .filter(building -> building.getId() != 0)
                 .map(building -> {
                     List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
                         .map(Facility::getType)

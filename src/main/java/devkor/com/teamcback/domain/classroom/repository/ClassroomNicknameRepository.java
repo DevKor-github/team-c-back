@@ -9,9 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClassroomNicknameRepository extends JpaRepository<ClassroomNickname, Long> {
-    List<ClassroomNickname> findByNicknameContaining(String word, Pageable pageable);
+    List<ClassroomNickname> findByNicknameContainingOrderByNickname(String word, Pageable pageable);
 
     List<ClassroomNickname> findAllByClassroom(Classroom classroom);
 
-    List<ClassroomNickname> findByNicknameContainingAndClassroomIn(String word, List<Classroom> list,  Pageable pageable);
+    List<ClassroomNickname> findByNicknameContainingAndClassroomInOrderByNickname(String word, List<Classroom> list,  Pageable pageable);
 }

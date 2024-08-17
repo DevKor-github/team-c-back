@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.facility.entity;
 
-import devkor.com.teamcback.domain.admin.facility.dto.request.CreateFacilityReq;
-import devkor.com.teamcback.domain.admin.facility.dto.request.ModifyFacilityReq;
+import devkor.com.teamcback.domain.facility.dto.request.CreateFacilityReq;
+import devkor.com.teamcback.domain.facility.dto.request.ModifyFacilityReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.navigate.entity.Node;

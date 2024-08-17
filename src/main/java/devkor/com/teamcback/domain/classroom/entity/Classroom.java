@@ -1,8 +1,7 @@
 package devkor.com.teamcback.domain.classroom.entity;
 
-import devkor.com.teamcback.domain.admin.classroom.dto.request.CreateClassroomReq;
-import devkor.com.teamcback.domain.admin.classroom.dto.request.ModifyClassroomReq;
-import devkor.com.teamcback.domain.admin.classroom.dto.response.CreateClassroomRes;
+import devkor.com.teamcback.domain.classroom.dto.request.CreateClassroomReq;
+import devkor.com.teamcback.domain.classroom.dto.request.ModifyClassroomReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.navigate.entity.Node;

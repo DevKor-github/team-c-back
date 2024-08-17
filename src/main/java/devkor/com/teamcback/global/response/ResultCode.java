@@ -47,7 +47,10 @@ public enum ResultCode {
     NOT_FOUND_CATEGORY(HttpStatus.NOT_FOUND, 7001, "카테고리를 찾을 수 없습니다."),
     NOT_FOUND_BOOKMARK(HttpStatus.NOT_FOUND, 7002, "즐겨찾기를 찾을 수 없습니다."),
     DUPLICATED_BOOKMARK(HttpStatus.CONFLICT, 7003, "해당 즐겨찾기가 이미 존재합니다."),
-    NOT_FOUND_IN_CATEGORY(HttpStatus.NOT_FOUND, 7004, "카테고리 내에 해당 즐겨찾기가 존재하지 않습니다.")
+    NOT_FOUND_IN_CATEGORY(HttpStatus.NOT_FOUND, 7004, "카테고리 내에 해당 즐겨찾기가 존재하지 않습니다."),
+
+    // 건의함 8000번대
+    NOT_FOUND_SUGGESTION(HttpStatus.NOT_FOUND, 8000, "건의를 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

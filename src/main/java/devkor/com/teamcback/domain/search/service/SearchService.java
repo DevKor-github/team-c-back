@@ -365,12 +365,11 @@ public class SearchService {
                 indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.FACILITY) {
-                if(checkFacilityType(res.getName())) {
-                    baseScore = 500;
-                }
+                baseScore = checkFacilityType(res.getName()) ? 500 : 0;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.CLASSROOM) {
+                baseScore = 0;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             scores.put(res, baseScore + indexScore);

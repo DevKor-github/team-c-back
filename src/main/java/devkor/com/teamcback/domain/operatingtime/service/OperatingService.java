@@ -15,6 +15,7 @@ import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingConditionRepository;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingTimeRepository;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +36,7 @@ public class OperatingService {
     private final BuildingRepository buildingRepository;
     private final ClassroomRepository classroomRepository;
     private final FacilityRepository facilityRepository;
+    private final EntityManager entityManager;
 
     private static List<OperatingCondition> operatingConditionList = new ArrayList<>();
     private static List<Classroom> notOperatingClassrooms = new ArrayList<>();
@@ -85,15 +87,10 @@ public class OperatingService {
 
         if(classroomList.isEmpty()) notOperatingClassrooms = classroomRepository.findAll();
         else notOperatingClassrooms = classroomRepository.findAllByIdNotIn(classroomList.stream().map(Classroom::getId).toList());
-        for(Classroom classroom : notOperatingClassrooms) {
-            classroom.setOperating(classroom.getBuilding().isOperating()); // 건물 운영여부를 따라감
-        }
 
         if(facilityList.isEmpty()) notOperatingFacilities = facilityRepository.findAll();
         else notOperatingFacilities = facilityRepository.findAllByIdNotIn(facilityList.stream().map(Facility::getId).toList());
-        for(Facility facility : notOperatingFacilities) {
-            facility.setOperating(facility.getBuilding().isOperating()); // 건물 운영여부를 따라감
-        }
+
     }
 
     @Transactional
@@ -103,26 +100,40 @@ public class OperatingService {
             log.info("isOperating: {}", isOperating);
 
             if(operCondition.getBuilding() != null) {
-                log.info("building: {}", operCondition.getBuilding().getName());
-                operCondition.getBuilding().setOperating(isOperating);
-                changeNodeIsOperating(isOperating, operCondition.getBuilding());
+                Building building = operCondition.getBuilding();
+                building = entityManager.merge(building);
+                log.info("building: {}", building.getName());
+                if(building.isOperating() != isOperating) {
+                    building.setOperating(isOperating);
+                    changeNodeIsOperating(isOperating, building);
+                }
             }
             else if(operCondition.getClassroom() != null) {
-                log.info("classroom: {}", operCondition.getClassroom().getName());
-                operCondition.getClassroom().setOperating(isOperating);
+                Classroom classroom = operCondition.getClassroom();
+                classroom = entityManager.merge(classroom);
+                log.info("classroom: {}", classroom.getName());
+                if(classroom.isOperating() != isOperating) {
+                    classroom.setOperating(isOperating);
+                }
             }
             else if(operCondition.getFacility() != null) {
-                log.info("facility: {}", operCondition.getFacility().getName());
-                operCondition.getFacility().setOperating(isOperating);
+                Facility facility = operCondition.getFacility();
+                facility = entityManager.merge(facility);
+                log.info("facility: {}", facility.getName());
+                if(facility.isOperating() != isOperating) {
+                    facility.setOperating(isOperating);
+                }
             }
         }
 
         // 운영 조건에 포함되지 않은 강의실, 편의시설
         for(Classroom classroom : notOperatingClassrooms) {
+            classroom = entityManager.merge(classroom);
             classroom.setOperating(classroom.getBuilding().isOperating()); // 건물 운영여부를 따라감
         }
 
         for(Facility facility : notOperatingFacilities) {
+            facility = entityManager.merge(facility);
             facility.setOperating(facility.getBuilding().isOperating()); // 건물 운영여부를 따라감
         }
     }

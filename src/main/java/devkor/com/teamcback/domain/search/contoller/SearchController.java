@@ -62,7 +62,7 @@ public class SearchController {
     public CommonResponse<GlobalSearchListRes> globalSearch(
         @Parameter(name = "keyword", description = "검색 키워드", example = "애기능", required = true)
         @RequestParam(name = "keyword") String keyword) {
-        return CommonResponse.success(searchService.globalSearchTest(keyword));
+        return CommonResponse.success(searchService.globalSearchTest(keyword.trim()));
     }
 
     /**

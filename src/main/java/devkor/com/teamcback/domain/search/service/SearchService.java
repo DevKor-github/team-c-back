@@ -118,16 +118,35 @@ public class SearchService {
 
             if (!buildings.isEmpty()) { //building이 존재하는 경우
                 for (Building building : buildings) {
-                    facilities = getFacilities(placeWord, building);
-                    classrooms = getClassrooms(placeWord, building);
+                    if(!placeWord.isEmpty()) {
+                        facilities = getFacilities(placeWord, building);
+                        classrooms = getClassrooms(placeWord, building);
 
-                    for (Classroom classroom : classrooms) {
-                        list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
-                    }
-                    for (Facility facility : facilities) {
-                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                        for (Classroom classroom : classrooms) {
+                            list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                        }
+                        for (Facility facility : facilities) {
+                            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                        }
                     }
                 }
+
+                List<GlobalSearchRes> types = list.stream()
+                    .filter(res -> res.getPlaceType() == PlaceType.FACILITY && checkFacilityType(res.getName()))
+                    .toList();
+
+                list.removeAll(types);
+
+                list.addAll(types.stream()
+                    .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(
+                            GlobalSearchRes::getName,
+                            res -> res,
+                            (existing, replacement) -> existing,
+                            LinkedHashMap::new
+                        ),
+                        map -> new ArrayList<>(map.values())
+                    )));
                 return new GlobalSearchListRes(orderSequence(list, word, candidateBuilding));
             }
         }
@@ -418,13 +437,32 @@ public class SearchService {
             scores.put(res, baseScore + indexScore);
         }
 
-        return scores.entrySet().stream()
-            .sorted(Map.Entry.<GlobalSearchRes, Integer>comparingByValue().reversed())
-            .map(Map.Entry::getKey)
+        // 점수를 기준으로 그룹화
+        Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
+            .collect(Collectors.groupingBy(
+                Map.Entry::getValue,
+                Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+            ));
+
+        // 각 그룹 내의 리스트를 이름 기준으로 정렬
+        Map<Integer, List<GlobalSearchRes>> sortedGroupedByScore = groupedByScore.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().stream()
+                    .sorted(Comparator.comparing(GlobalSearchRes::getName))
+                    .collect(Collectors.toList()),
+                (existing, replacement) -> existing,
+                LinkedHashMap::new
+            ));
+
+        // 정렬된 그룹을 점수 순으로 재결합
+        return sortedGroupedByScore.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+            .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.toList());
     }
 
-    public static boolean checkFacilityType(String name) {
+    private static boolean checkFacilityType(String name) {
         return Arrays.stream(FacilityType.values())
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.suggestion.controller;
 
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
+import devkor.com.teamcback.domain.suggestion.dto.response.ModifySuggestionRes;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.suggestion.service.SuggestionService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -13,6 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,5 +57,26 @@ public class AdminSuggestionController {
         @RequestParam(value = "isSolved", required = false) Boolean isSolved
         ) {
         return CommonResponse.success(suggestionService.getSuggestions(page-1, size, sortBy, isAsc, type, isSolved));
+    }
+
+    /**
+     * 건의 해결 여부 수정
+     */
+    @Operation(summary = "건의 수정", description = "건의 해결 여부 수정")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "404", description = "건의를 찾을 수 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @PutMapping("/{suggestionId}")
+    public CommonResponse<ModifySuggestionRes> modifySuggestions(
+        @Parameter(description = "건의 ID")
+        @PathVariable Long suggestionId,
+        @Parameter(description = "해결 여부")
+        @RequestParam(value = "isSolved") boolean isSolved
+    ) {
+        return CommonResponse.success(suggestionService.modifySuggestions(suggestionId, isSolved));
     }
 }

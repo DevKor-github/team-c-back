@@ -1,11 +1,15 @@
 package devkor.com.teamcback.domain.suggestion.service;
 
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTION;
+
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
+import devkor.com.teamcback.domain.suggestion.dto.response.ModifySuggestionRes;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
+import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -53,5 +57,18 @@ public class SuggestionService {
         else {
             return suggestionRepository.findBySuggestionTypeAndIsSolved(pageable, type, isSolved).map(GetSuggestionRes::new);
         }
+    }
+
+    @Transactional
+    public ModifySuggestionRes modifySuggestions(Long suggestionId, boolean isSolved) {
+        Suggestion suggestion = findSuggestion(suggestionId);
+
+        suggestion.updateIsSolved(isSolved);
+
+        return new ModifySuggestionRes();
+    }
+
+    private Suggestion findSuggestion(Long id) {
+        return suggestionRepository.findById(id).orElseThrow(() ->new GlobalException(NOT_FOUND_SUGGESTION));
     }
 }

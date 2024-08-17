@@ -180,7 +180,6 @@ public class SearchService {
 
         return new SearchBuildingListRes(
             buildingList.stream()
-                .filter(building -> building.getId() != 0)
                 .map(building -> {
                     List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
                         .map(Facility::getType)

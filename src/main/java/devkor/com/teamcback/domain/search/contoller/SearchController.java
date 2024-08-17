@@ -33,7 +33,7 @@ public class SearchController {
      *
      */
     @GetMapping()
-    @Operation(summary = "입력 통한 후보 검색어 조회", description = "keyword가 포함된 장소 조회. 건물 Id가 없으면 전체 검색, 있으면 해당 건물에 속한 시설 검색")
+    @Operation(summary = "입력 통한 후보 검색어 조회 (태그O)", description = "keyword가 포함된 장소 조회. 건물 Id가 없으면 전체 검색, 있으면 해당 건물에 속한 시설 검색")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -45,6 +45,24 @@ public class SearchController {
         @Parameter(name = "keyword", description = "검색 키워드", example = "애기능", required = true)
         @RequestParam(name = "keyword") String keyword) {
         return CommonResponse.success(searchService.globalSearch(buildingId, keyword));
+    }
+
+    /***
+     * keyword가 포함된 장소 검색
+     * @param keyword 검색 단어
+     *
+     */
+    @GetMapping("/test")
+    @Operation(summary = "입력 통한 후보 검색어 조회 (태그X)", description = "keyword가 포함된 장소 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GlobalSearchListRes> globalSearch(
+        @Parameter(name = "keyword", description = "검색 키워드", example = "애기능", required = true)
+        @RequestParam(name = "keyword") String keyword) {
+        return CommonResponse.success(searchService.globalSearchTest(keyword));
     }
 
     /**

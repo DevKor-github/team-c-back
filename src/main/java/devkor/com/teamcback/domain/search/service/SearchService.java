@@ -23,6 +23,9 @@ import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,6 +96,57 @@ public class SearchService {
         }
 
         return new GlobalSearchListRes(list);
+    }
+
+    /**
+     * 검색어 자동 완성
+     */
+    @Transactional(readOnly = true)
+    public GlobalSearchListRes globalSearchTest(String word) {
+        List<GlobalSearchRes> list = new ArrayList<>();
+
+        List<Classroom> classrooms;
+        List<Facility> facilities;
+        List<Building> buildings;
+
+        // 건물이 입력됨
+        if(word.contains(" ")) {
+            String candidateBuilding = word.split(" ")[0];
+            String placeWord = word.substring(candidateBuilding.length()).trim();
+
+            buildings = getBuildings(candidateBuilding);
+
+            if (!buildings.isEmpty()) { //building이 존재하는 경우
+                for (Building building : buildings) {
+                    facilities = getFacilities(placeWord, building);
+                    classrooms = getClassrooms(placeWord, building);
+
+                    for (Classroom classroom : classrooms) {
+                        list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                    }
+                    for (Facility facility : facilities) {
+                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                    }
+                }
+                return new GlobalSearchListRes(orderSequence(list, word, candidateBuilding));
+            }
+        }
+
+        buildings = getBuildings(word);
+        facilities = getFacilities(word, null);
+        classrooms = getClassrooms(word, null);
+
+        for(Building building : buildings) {
+            list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
+        }
+        for(Classroom classroom : classrooms) {
+            list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+        }
+        for(Facility facility : facilities) {
+            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+        }
+
+        return new GlobalSearchListRes(orderSequence(list, word, null));
     }
 
     /**
@@ -342,19 +396,68 @@ public class SearchService {
             .toList();
     }
 
+    private List<GlobalSearchRes> orderSequence(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
+        Map<GlobalSearchRes, Integer> scores = new HashMap<>();
+        // 강의실, 특수명 편의시설은 baseScore = 0
+        int baseScore = 0;
+        int indexScore = 0;
+
+        for (GlobalSearchRes res : list) {
+            if (res.getPlaceType() == PlaceType.BUILDING) {
+                baseScore = 1000;
+                indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
+            }
+            if (res.getPlaceType() == PlaceType.FACILITY) {
+                baseScore = checkFacilityType(res.getName()) ? 500 : 0;
+                indexScore = calculateScoreByIndex(res.getName(), keyword);
+            }
+            if (res.getPlaceType() == PlaceType.CLASSROOM) {
+                baseScore = 0;
+                indexScore = calculateScoreByIndex(res.getName(), keyword);
+            }
+            scores.put(res, baseScore + indexScore);
+        }
+
+        return scores.entrySet().stream()
+            .sorted(Map.Entry.<GlobalSearchRes, Integer>comparingByValue().reversed())
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
+    }
+
+    public static boolean checkFacilityType(String name) {
+        return Arrays.stream(FacilityType.values())
+            .anyMatch(facilityType -> facilityType.getName().equals(name));
+    }
+
+    private int calculateScoreByIndex(String name, String keyword) {
+        int indexScore = 0;
+        String[] bracketWords = name.split("\\(", 2);
+        for (char c : keyword.toCharArray()) {
+            int index;
+            // 괄호 내부 값에 대해 더 높은 가중치 부여
+            index = (name.contains("(") && bracketWords[1].contains(String.valueOf(c))) ? bracketWords[1].indexOf(c) : name.indexOf(c);
+
+            if (index != -1) indexScore += (100 - index);
+        }
+        return indexScore;
+    }
+
     private List<Classroom> getClassrooms(String word, Building building) {
         List<Classroom> classrooms = new ArrayList<>();
         if(building != null) {
             classrooms = classroomRepository.findAllByBuilding(building);
         }
 
+        //응답 개수 제한
+        Pageable limit = PageRequest.of(0, 30, Sort.by("id").descending());
+
         // 강의실 조회
         List<ClassroomNickname> classroomNicknames = new ArrayList<>();
         if(building != null && !classrooms.isEmpty()) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomIn(word, classrooms);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomIn(word, classrooms, limit);
         }
         else if(building == null) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word, limit);
         }
 
 

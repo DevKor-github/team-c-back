@@ -30,7 +30,7 @@ public class Suggestion extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SuggestionType suggestionType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String content;
 
     @Column(nullable = false)

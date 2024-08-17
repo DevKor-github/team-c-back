@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.suggestion.entity;
 
+import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,4 +38,9 @@ public class Suggestion extends BaseEntity {
 
     // TODO: 로그인 개발 이후 User와 다대일 연관관계
 
+    public Suggestion(CreateSuggestionReq req) {
+        this.title = req.getTitle();
+        this.suggestionType = req.getType();
+        this.content = req.getContent();
+    }
 }

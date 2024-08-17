@@ -421,6 +421,11 @@ public class SearchService {
             scores.put(res, baseScore + indexScore);
         }
 
+//        return scores.entrySet().stream()
+//            .sorted(Map.Entry.<GlobalSearchRes, Integer>comparingByValue().reversed())
+//            .map(Map.Entry::getKey)
+//            .collect(Collectors.toList());
+
         // 점수를 기준으로 그룹화
         Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
             .collect(Collectors.groupingBy(
@@ -476,10 +481,10 @@ public class SearchService {
         // 강의실 조회
         List<ClassroomNickname> classroomNicknames = new ArrayList<>();
         if(building != null && !classrooms.isEmpty()) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomIn(word, classrooms, limit);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomInOrderByNickname(word, classrooms, limit);
         }
         else if(building == null) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word, limit);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingOrderByNickname(word, limit);
         }
 
 

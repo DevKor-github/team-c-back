@@ -34,8 +34,10 @@ public class SearchBuildingRes {
         this.address = building.getAddress();
         this.operatingTime = building.getOperatingTime();
         this.needStudentCard = building.isNeedStudentCard();
+        if(building.getId() != 0) {
         this.longitude = building.getNode().getLongitude();
         this.latitude = building.getNode().getLatitude();
+        }
         this.floor = building.getFloor();
         this.underFloor = building.getUnderFloor();
         this.facilityTypes = facilityTypes;

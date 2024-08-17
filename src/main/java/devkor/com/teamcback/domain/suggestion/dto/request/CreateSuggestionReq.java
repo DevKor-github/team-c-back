@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.suggestion.dto.request;
 
-import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

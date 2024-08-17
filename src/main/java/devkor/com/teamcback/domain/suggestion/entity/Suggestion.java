@@ -43,4 +43,8 @@ public class Suggestion extends BaseEntity {
         this.suggestionType = req.getType();
         this.content = req.getContent();
     }
+
+    public void updateIsSolved(boolean solved) {
+        this.isSolved = solved;
+    }
 }

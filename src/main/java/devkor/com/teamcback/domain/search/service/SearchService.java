@@ -118,16 +118,14 @@ public class SearchService {
 
             if (!buildings.isEmpty()) { //building이 존재하는 경우
                 for (Building building : buildings) {
-                    if(!placeWord.isEmpty()) {
-                        facilities = getFacilities(placeWord, building);
-                        classrooms = getClassrooms(placeWord, building);
+                    facilities = getFacilities(placeWord, building);
+                    classrooms = getClassrooms(placeWord, building);
 
-                        for (Classroom classroom : classrooms) {
-                            list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
-                        }
-                        for (Facility facility : facilities) {
-                            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
-                        }
+                    for (Classroom classroom : classrooms) {
+                        list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+                    }
+                    for (Facility facility : facilities) {
+                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
                     }
                 }
 
@@ -400,6 +398,7 @@ public class SearchService {
     }
 
     private List<GlobalSearchRes> orderSequence(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
+        //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
@@ -421,11 +420,6 @@ public class SearchService {
             scores.put(res, baseScore + indexScore);
         }
 
-//        return scores.entrySet().stream()
-//            .sorted(Map.Entry.<GlobalSearchRes, Integer>comparingByValue().reversed())
-//            .map(Map.Entry::getKey)
-//            .collect(Collectors.toList());
-
         // 점수를 기준으로 그룹화
         Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
             .collect(Collectors.groupingBy(
@@ -439,7 +433,7 @@ public class SearchService {
                 Map.Entry::getKey,
                 entry -> entry.getValue().stream()
                     .sorted(Comparator.comparing(GlobalSearchRes::getName))
-                    .collect(Collectors.toList()),
+                    .toList(),
                 (existing, replacement) -> existing,
                 LinkedHashMap::new
             ));
@@ -448,7 +442,7 @@ public class SearchService {
         return sortedGroupedByScore.entrySet().stream()
             .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
             .flatMap(entry -> entry.getValue().stream())
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private static boolean checkFacilityType(String name) {

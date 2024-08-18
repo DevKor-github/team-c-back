@@ -75,7 +75,7 @@ public class SearchService {
                 list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
             }
         }
 
@@ -91,7 +91,7 @@ public class SearchService {
                 list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
             }
             for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
             }
         }
 
@@ -125,9 +125,10 @@ public class SearchService {
                         list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
                     }
                     for (Facility facility : facilities) {
-                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
                     }
                 }
+
                 return new GlobalSearchListRes(orderSequence(list, word, candidateBuilding));
             }
         }
@@ -143,7 +144,7 @@ public class SearchService {
             list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
         }
         for(Facility facility : facilities) {
-            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY));
+            list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
         }
 
         return new GlobalSearchListRes(orderSequence(list, word, null));
@@ -397,6 +398,7 @@ public class SearchService {
     }
 
     private List<GlobalSearchRes> orderSequence(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
+        //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
@@ -418,13 +420,32 @@ public class SearchService {
             scores.put(res, baseScore + indexScore);
         }
 
-        return scores.entrySet().stream()
-            .sorted(Map.Entry.<GlobalSearchRes, Integer>comparingByValue().reversed())
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toList());
+        // 점수를 기준으로 그룹화
+        Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
+            .collect(Collectors.groupingBy(
+                Map.Entry::getValue,
+                Collectors.mapping(Map.Entry::getKey, Collectors.toList())
+            ));
+
+        // 각 그룹 내의 리스트를 이름 기준으로 정렬
+        Map<Integer, List<GlobalSearchRes>> sortedGroupedByScore = groupedByScore.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().stream()
+                    .sorted(Comparator.comparing(GlobalSearchRes::getName))
+                    .toList(),
+                (existing, replacement) -> existing,
+                LinkedHashMap::new
+            ));
+
+        // 정렬된 그룹을 점수 순으로 재결합
+        return sortedGroupedByScore.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
+            .flatMap(entry -> entry.getValue().stream())
+            .toList();
     }
 
-    public static boolean checkFacilityType(String name) {
+    private static boolean checkFacilityType(String name) {
         return Arrays.stream(FacilityType.values())
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }
@@ -454,10 +475,10 @@ public class SearchService {
         // 강의실 조회
         List<ClassroomNickname> classroomNicknames = new ArrayList<>();
         if(building != null && !classrooms.isEmpty()) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomIn(word, classrooms, limit);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingAndClassroomInOrderByNickname(word, classrooms, limit);
         }
         else if(building == null) {
-            classroomNicknames = classroomNicknameRepository.findByNicknameContaining(word, limit);
+            classroomNicknames = classroomNicknameRepository.findByNicknameContainingOrderByNickname(word, limit);
         }
 
 

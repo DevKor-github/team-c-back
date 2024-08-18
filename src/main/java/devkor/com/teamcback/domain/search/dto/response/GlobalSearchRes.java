@@ -1,10 +1,12 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.common.PlaceType;
 import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.facility.entity.FacilityType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -28,6 +30,8 @@ public class GlobalSearchRes {
     private Double latitude;
     @Schema(description = "건물 또는 시설 종류", example = "BUILDING")
     private PlaceType placeType;
+    @Schema(description = "편의시설 종류", example = "LOUNGE")
+    private FacilityType facilityType;
 
     public GlobalSearchRes(Building building, PlaceType placeType) {
         this.id = building.getId();
@@ -54,12 +58,15 @@ public class GlobalSearchRes {
         this.placeType = placeType;
     }
 
-    public GlobalSearchRes(Facility facility, PlaceType placeType) {
-        if (facility.getBuilding().getId() == 0 || facility.getType().getName().equals(facility.getName())) {
+    public GlobalSearchRes(Facility facility, PlaceType placeType, boolean hasBuilding) {
+        this.id = facility.getId();
+
+        if (facility.getBuilding().getId() == 0 || (facility.getType().getName().equals(facility.getName()) && !hasBuilding)) {
             this.name = facility.getName();
         } else {
             this.name = facility.getBuilding().getName() + " " + facility.getName();
         }
         this.placeType = placeType;
+        this.facilityType = facility.getType();
     }
 }

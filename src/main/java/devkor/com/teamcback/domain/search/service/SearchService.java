@@ -75,6 +75,7 @@ public class SearchService {
 
             if (!buildings.isEmpty()) { //building이 존재하는 경우
                 for (Building building : buildings) {
+                    list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
                     facilities = getFacilities(placeWord, building);
                     classrooms = getClassrooms(placeWord, building);
 
@@ -356,7 +357,7 @@ public class SearchService {
     }
 
     private List<GlobalSearchRes> orderSequence(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
-        //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기
+        //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기 -> baseScore = 5000
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
@@ -364,7 +365,7 @@ public class SearchService {
 
         for (GlobalSearchRes res : list) {
             if (res.getPlaceType() == PlaceType.BUILDING) {
-                baseScore = 1000;
+                baseScore = buildingKeyword == null ? 1000 : -500;
                 indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.FACILITY) {
@@ -375,6 +376,7 @@ public class SearchService {
                 baseScore = 0;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
+            System.out.println(res.getName() + " 점수점수: " + baseScore+indexScore);
             scores.put(res, baseScore + indexScore);
         }
 
@@ -409,15 +411,23 @@ public class SearchService {
     }
 
     private int calculateScoreByIndex(String name, String keyword) {
+        // 괄호() > 대학 > 관 (앞의 것이 존재한다면 해당 것을 기준으로 삼음)
+        String[] criteria = {"\\(", "대학", "관"};
         int indexScore = 0;
-        String[] bracketWords = name.split("\\(", 2);
-        for (char c : keyword.toCharArray()) {
-            int index;
-            // 괄호 내부 값에 대해 더 높은 가중치 부여
-            index = (name.contains("(") && bracketWords[1].contains(String.valueOf(c))) ? bracketWords[1].indexOf(c) : name.indexOf(c);
 
-            if (index != -1) indexScore += (100 - index);
+        for (String c : criteria) {
+            if(name.contains(c.replace("\\", ""))) {
+                String[] temp = name.split(c, 2);
+                if(!temp[1].isEmpty()) {
+                    name = temp[1];
+                    break;
+                }
+            }
         }
+
+        int index = name.indexOf(keyword.charAt(0));
+        if (index != -1) indexScore += (100 - index);
+
         return indexScore;
     }
 

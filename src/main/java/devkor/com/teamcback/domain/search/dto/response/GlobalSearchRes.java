@@ -37,6 +37,20 @@ public class GlobalSearchRes {
     @Schema(description = "building_id", example = "null/0/1")
     private Long buildingId;
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GlobalSearchRes that = (GlobalSearchRes) o;
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
     public GlobalSearchRes(Building building, PlaceType placeType) {
         this.id = building.getId();
         this.name = building.getName();

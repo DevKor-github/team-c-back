@@ -61,6 +61,7 @@ public class SearchService {
     @Transactional(readOnly = true)
     public GlobalSearchListRes globalSearch(String word) {
         List<GlobalSearchRes> list = new ArrayList<>();
+        Map<GlobalSearchRes, Integer> scores = new HashMap<>();
 
         List<Classroom> classrooms;
         List<Facility> facilities;
@@ -68,27 +69,21 @@ public class SearchService {
 
         // 건물이 입력됨
         if(word.contains(" ")) {
-            String candidateBuilding = word.split(" ")[0];
-            String placeWord = word.substring(candidateBuilding.length()).trim();
+            String firstBuildingWord = word.split(" ")[0];
+            String lastBuildingWord = word.split(" ")[word.split(" ").length - 1];
+            String firstPlaceWord = word.substring(firstBuildingWord.length()).trim();
+            String lastPlaceWord = word.substring(0, word.length() - lastBuildingWord.length()).trim();
 
-            buildings = getBuildings(candidateBuilding);
-
-            if (!buildings.isEmpty()) { //building이 존재하는 경우
-                for (Building building : buildings) {
-                    list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
-                    facilities = getFacilities(placeWord, building);
-                    classrooms = getClassrooms(placeWord, building);
-
-                    for (Classroom classroom : classrooms) {
-                        list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
-                    }
-                    for (Facility facility : facilities) {
-                        list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
-                    }
-                }
-
-                return new GlobalSearchListRes(orderSequence(list, word, candidateBuilding));
+            buildings = getBuildings(firstBuildingWord);
+            if(!buildings.isEmpty()) {
+                scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord));
             }
+
+            buildings = getBuildings(lastBuildingWord);
+            if(!buildings.isEmpty()) {
+                scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord));
+            }
+            return new GlobalSearchListRes(orderSequence(scores));
         }
 
         buildings = getBuildings(word);
@@ -105,7 +100,7 @@ public class SearchService {
             list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
         }
 
-        return new GlobalSearchListRes(orderSequence(list, word, null));
+        return new GlobalSearchListRes(orderSequence(calculateScore(list, word, null)));
     }
 
     /**
@@ -356,7 +351,27 @@ public class SearchService {
             .toList();
     }
 
-    private List<GlobalSearchRes> orderSequence(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
+    private Map<GlobalSearchRes, Integer> getScores(String word, List<Building> buildings, String placeWord, String buildingWord) {
+        List<GlobalSearchRes> list = new ArrayList<>();
+        List<Classroom> classrooms;
+        List<Facility> facilities;
+
+        for (Building building : buildings) {
+            list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
+            facilities = getFacilities(placeWord, building);
+            classrooms = getClassrooms(placeWord, building);
+
+            for (Classroom classroom : classrooms) {
+                list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
+            }
+            for (Facility facility : facilities) {
+                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
+            }
+        }
+        return calculateScore(list, word, buildingWord);
+    }
+
+    private Map<GlobalSearchRes, Integer> calculateScore(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
         //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기 -> baseScore = 5000
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
         // 강의실, 특수명 편의시설은 baseScore = 0
@@ -369,17 +384,23 @@ public class SearchService {
                 indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.FACILITY) {
-                baseScore = checkFacilityType(res.getName()) ? 500 : 0;
+                if(res.getName().contains(" ")) {
+                    baseScore = checkFacilityType(res.getName().split(" ", 2)[1]) ? 500 : 0;
+                } else {
+                    baseScore = 500;
+                }
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.CLASSROOM) {
                 baseScore = 0;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
-            System.out.println(res.getName() + " 점수점수: " + baseScore+indexScore);
             scores.put(res, baseScore + indexScore);
         }
+        return scores;
+    }
 
+    private static List<GlobalSearchRes> orderSequence(Map<GlobalSearchRes, Integer> scores) {
         // 점수를 기준으로 그룹화
         Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
             .collect(Collectors.groupingBy(

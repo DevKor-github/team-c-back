@@ -14,6 +14,7 @@ import lombok.Getter;
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GlobalSearchRes {
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @Schema(description = "건물 또는 시설 id", example = "1")
     private Long id;
     @Schema(description = "건물 또는 시설 이름", example = "애기능생활관")
@@ -32,6 +33,9 @@ public class GlobalSearchRes {
     private PlaceType placeType;
     @Schema(description = "편의시설 종류", example = "LOUNGE")
     private FacilityType facilityType;
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @Schema(description = "building_id", example = "null/0/1")
+    private Long buildingId;
 
     public GlobalSearchRes(Building building, PlaceType placeType) {
         this.id = building.getId();
@@ -59,11 +63,17 @@ public class GlobalSearchRes {
     }
 
     public GlobalSearchRes(Facility facility, PlaceType placeType, boolean hasBuilding) {
-        this.id = facility.getId();
-
-        if (facility.getBuilding().getId() == 0 || (facility.getType().getName().equals(facility.getName()) && !hasBuilding)) {
+        if(!hasBuilding && facility.getType().getName().equals(facility.getName())) { //야외태그
+            this.id = null;
+            this.buildingId = 0L;
             this.name = facility.getName();
-        } else {
+        } else if (hasBuilding && facility.getType().getName().equals(facility.getName())) { //내부태그
+            this.id = null;
+            this.buildingId = facility.getBuilding().getId();
+            this.name = facility.getBuilding().getName() + " " + facility.getName();
+        } else { //특정 시설
+            this.id = facility.getId();
+            this.buildingId = null;
             this.name = facility.getBuilding().getName() + " " + facility.getName();
         }
         this.placeType = placeType;

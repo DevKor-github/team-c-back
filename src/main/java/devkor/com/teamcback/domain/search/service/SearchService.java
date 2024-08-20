@@ -56,53 +56,10 @@ public class SearchService {
         FacilityType.SLEEPING_ROOM, FacilityType.SHOWER_ROOM, FacilityType.BANK, FacilityType.GYM);
 
     /**
-     * 검색어 자동 완성
+     * 통합 검색
      */
     @Transactional(readOnly = true)
-    public GlobalSearchListRes globalSearch(Long buildingId, String word) {
-        List<GlobalSearchRes> list = new ArrayList<>();
-
-        List<Classroom> classrooms;
-        List<Facility> facilities;
-
-        // 먼저 검색한 건물이 있을 때
-        if(buildingId != null) {
-            Building building = findBuilding(buildingId);
-            facilities = getFacilities(word, building);
-            classrooms = getClassrooms(word, building);
-
-            for(Classroom classroom : classrooms) {
-                list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
-            }
-            for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, true));
-            }
-        }
-
-        else {
-            List<Building> buildings = getBuildings(word);
-            facilities = getFacilities(word, null);
-            classrooms = getClassrooms(word, null);
-
-            for(Building building : buildings) {
-                list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
-            }
-            for(Classroom classroom : classrooms) {
-                list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
-            }
-            for(Facility facility : facilities) {
-                list.add(new GlobalSearchRes(facility, PlaceType.FACILITY, false));
-            }
-        }
-
-        return new GlobalSearchListRes(list);
-    }
-
-    /**
-     * 검색어 자동 완성
-     */
-    @Transactional(readOnly = true)
-    public GlobalSearchListRes globalSearchTest(String word) {
+    public GlobalSearchListRes globalSearch(String word) {
         List<GlobalSearchRes> list = new ArrayList<>();
 
         List<Classroom> classrooms;

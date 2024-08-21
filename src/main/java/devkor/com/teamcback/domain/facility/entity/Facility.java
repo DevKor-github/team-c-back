@@ -68,6 +68,12 @@ public class Facility extends BaseEntity {
         this.node = node;
     }
 
+    public Facility(FacilityType type, Building building) {
+        this.type = type;
+        this.name = type.getName();
+        this.building = building;
+    }
+
     public void update(ModifyFacilityReq req, Building building, Node node) {
         this.type = req.getType();
         this.name = req.getName();

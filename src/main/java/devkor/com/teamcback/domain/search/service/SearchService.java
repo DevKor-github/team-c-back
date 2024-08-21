@@ -50,6 +50,13 @@ public class SearchService {
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
 
+    // 점수 계산을 위한 상수
+    static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
+    static final int BASE_SCORE_BUILDING_WITH_KEYWORD = -500;
+    static final int BASE_SCORE_FACILITY_DEFAULT = 500;
+    static final int BASE_SCORE_FACILITY_SPECIAL = 0;
+    static final int BASE_SCORE_CLASSROOM_DEFAULT = 0;
+
     // 아이콘으로 표시할 편의시설 종류
     private final List<FacilityType> iconTypes = Arrays.asList(FacilityType.VENDING_MACHINE, FacilityType.PRINTER, FacilityType.LOUNGE,
         FacilityType.READING_ROOM, FacilityType.STUDY_ROOM, FacilityType.CAFE, FacilityType.CONVENIENCE_STORE, FacilityType.CAFETERIA,
@@ -357,8 +364,12 @@ public class SearchService {
 
         for (Building building : buildings) {
             list.add(new GlobalSearchRes(building, PlaceType.BUILDING));
-            facilities = getFacilities(placeWord, building);
             classrooms = getClassrooms(placeWord, building);
+            facilities = getFacilities(placeWord, building);
+            // 특수명 Facility만 가진 경우의 내부 태그 검색을 위해
+            for (FacilityType type : getFacilityType(placeWord)) {
+                facilities.add(new Facility(type, building));
+            };
 
             for (Classroom classroom : classrooms) {
                 list.add(new GlobalSearchRes(classroom, PlaceType.CLASSROOM));
@@ -379,21 +390,22 @@ public class SearchService {
 
         for (GlobalSearchRes res : list) {
             if (res.getPlaceType() == PlaceType.BUILDING) {
-                baseScore = buildingKeyword == null ? 1000 : -500;
+                baseScore = buildingKeyword == null ? BASE_SCORE_BUILDING_DEFAULT : BASE_SCORE_BUILDING_WITH_KEYWORD;
                 indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.FACILITY) {
                 if(res.getName().contains(" ")) {
-                    baseScore = checkFacilityType(res.getName().split(" ", 2)[1]) ? 500 : 0;
+                    baseScore = checkFacilityType(res.getName().split(" ", 2)[1]) ? BASE_SCORE_FACILITY_DEFAULT : BASE_SCORE_FACILITY_SPECIAL;
                 } else {
-                    baseScore = 500;
+                    baseScore = BASE_SCORE_FACILITY_DEFAULT;
                 }
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             if (res.getPlaceType() == PlaceType.CLASSROOM) {
-                baseScore = 0;
+                baseScore = BASE_SCORE_CLASSROOM_DEFAULT;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
+            System.out.println("여기: " + res.getName() + "  점수: " + baseScore+indexScore);
             scores.put(res, baseScore + indexScore);
         }
         return scores;
@@ -430,6 +442,13 @@ public class SearchService {
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }
 
+    private static List<FacilityType> getFacilityType(String name) {
+        return Arrays.stream(FacilityType.values())
+            .filter(facilityType -> facilityType.getName().contains(name))
+            .toList();
+    }
+
+
     private int calculateScoreByIndex(String name, String keyword) {
         // 괄호() > 대학 > 관 (앞의 것이 존재한다면 해당 것을 기준으로 삼음)
         String[] criteria = {"\\(", "대학", "관"};
@@ -438,14 +457,21 @@ public class SearchService {
         for (String c : criteria) {
             if(name.contains(c.replace("\\", ""))) {
                 String[] temp = name.split(c, 2);
-                if(!temp[1].isEmpty()) {
+                // 기준 부분이 keyword를 포함한다면 이를 새로운 name으로 설정
+                if(!temp[1].isEmpty() && temp[1].contains(String.valueOf(keyword.charAt(0)))) {
                     name = temp[1];
                     break;
                 }
             }
         }
 
-        int index = name.indexOf(keyword.charAt(0));
+        int index;
+        if(keyword.contains(" ")) {
+            String[] keywords = keyword.split(" ", 2);
+            index = Math.max(name.indexOf(keywords[0].charAt(0)), name.indexOf(keywords[1].charAt(0)));
+        } else {
+            index = name.indexOf(keyword.charAt(0));
+        }
         if (index != -1) indexScore += (100 - index);
 
         return indexScore;

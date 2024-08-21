@@ -66,17 +66,20 @@ public class SearchController {
     }
 
     /**
-     * 모든 건물 검색
+     * 모든 or 편의시설이 있는 건물 검색
      */
     @GetMapping("/buildings")
-    @Operation(summary = "모든 건물 조회 결과", description = "모든 건물의 상세 정보 조회")
+    @Operation(summary = "건물 조회 결과", description = "건물의 상세 정보 조회")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchBuildingListRes> searchAllBuildings() {
-        return CommonResponse.success(searchService.searchAllBuildings());
+    public CommonResponse<SearchBuildingListRes> searchBuildings(
+        @Parameter(name = "type", description = "검색하는 편의시설 종류가 있는 건물을 검색하는 경우", example = "TRASH_CAN")
+        @RequestParam(name = "type", required = false) FacilityType facilityType
+    ) {
+        return CommonResponse.success(searchService.searchBuildings(facilityType));
     }
 
     /**
@@ -91,7 +94,7 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchFacilityListRes> searchBuildingFacilityByType(
+    public CommonResponse<SearchBuildingFacilityListRes> searchBuildingFacilityByType(
         @Parameter(name = "buildingId", description = "편의시설이 위치한 건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "type", description = "찾고자 하는 편의시설 종류", example = "TRASH_CAN", required = true)
@@ -137,18 +140,18 @@ public class SearchController {
     }
 
     /**
-     * 편의시설이 있는 건물
+     * 특정 편의시설 리스트
      * @param facilityType 편의시설 종류
      */
-    @Operation(summary = "특정 종류의 편의시설이 있는 건물 내역 조회", description = "특정 종류의 편의시설이 있는 건물 내역 상세 조회")
+    @Operation(summary = "특정 종류의 편의시설 목록 조회", description = "특정 종류의 편의시설 목록 조회")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
     })
     @GetMapping("/facilities")
-    public CommonResponse<SearchBuildingListRes> searchBuildingWithFacilityType(
-        @Parameter(name = "type", description = "검색하는 편의시설 종류", example = "TRASH_CAN", required = true)
+    public CommonResponse<SearchFacilityListRes> searchFacilitiesWithType(
+        @Parameter(name = "type", description = "검색하는 편의시설 종류", example = "CAFE", required = true)
         @RequestParam(name = "type") FacilityType facilityType) {
-        return CommonResponse.success(searchService.searchBuildingWithFacilityType(facilityType));
+        return CommonResponse.success(searchService.searchFacilitiesWithType(facilityType));
     }
 
     /**

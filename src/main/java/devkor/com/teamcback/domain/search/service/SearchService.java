@@ -200,7 +200,7 @@ public class SearchService {
      */
     @Transactional(readOnly = true)
     public SearchFacilityListRes searchFacilitiesWithType(FacilityType facilityType) {
-        // TODO: type이 카페/식당/편의점이 아닌 경우에 예외를 발생할 것인지?
+        // TODO: 위경도 값이 null인 facility 예외 처리
         List<SearchFacilityRes> facilityList = facilityRepository.findAllByType(facilityType).stream().map(SearchFacilityRes::new).toList();
 
         return new SearchFacilityListRes(facilityList);

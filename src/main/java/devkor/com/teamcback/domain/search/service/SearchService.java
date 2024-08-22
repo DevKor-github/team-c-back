@@ -111,15 +111,28 @@ public class SearchService {
     }
 
     /**
-     * 모든 건물 검색
+     * 모든 or 편의시설에 해당하는 건물 검색
      */
     @Transactional(readOnly = true)
-    public SearchBuildingListRes searchAllBuildings() {
-        List<Building> buildingList = buildingRepository.findAll();
+    public SearchBuildingListRes searchBuildings(FacilityType type) {
+        List<Building> buildingList;
+        if(type == null) {
+            buildingList = buildingRepository.findAll();
+
+            buildingList = buildingList.stream()
+                .filter(building -> building.getId() != 0).toList();
+        }
+
+        else {
+            List<Facility> facilityList = getFacilitiesByType(type);
+            buildingList = facilityList.stream()
+                .map(Facility::getBuilding)
+                .distinct()
+                .toList();
+        }
 
         return new SearchBuildingListRes(
             buildingList.stream()
-            .filter(building -> building.getId() != 0)
             .map(building -> {
                 List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
                     .map(Facility::getType)
@@ -127,16 +140,16 @@ public class SearchService {
                     .toList();
                 return new SearchBuildingRes(building, containFacilityTypes);
             })
-            .collect(Collectors.toList()));
+            .toList());
     }
 
     /**
      * 건물 내 특정 종류의 편의시설 검색
      */
     @Transactional(readOnly = true)
-    public SearchFacilityListRes searchBuildingFacilityByType(Long buildingId, FacilityType facilityType) {
+    public SearchBuildingFacilityListRes searchBuildingFacilityByType(Long buildingId, FacilityType facilityType) {
         Building building = findBuilding(buildingId);
-        SearchFacilityListRes res = new SearchFacilityListRes(building, facilityType);
+        SearchBuildingFacilityListRes res = new SearchBuildingFacilityListRes(building, facilityType);
 
         List<Facility> facilities = getFacilitiesByBuildingAndType(building, facilityType);
 
@@ -183,26 +196,14 @@ public class SearchService {
     }
 
     /**
-     * 편의시설이 있는 건물
+     * 편의시설 목록 조회
      */
     @Transactional(readOnly = true)
-    public SearchBuildingListRes searchBuildingWithFacilityType(FacilityType facilityType) {
-        List<Facility> facilityList = getFacilitiesByType(facilityType);
-        List<Building> buildingList = facilityList.stream()
-            .map(Facility::getBuilding)
-            .distinct()
-            .toList();
+    public SearchFacilityListRes searchFacilitiesWithType(FacilityType facilityType) {
+        // TODO: 위경도 값이 null인 facility 예외 처리
+        List<SearchFacilityRes> facilityList = facilityRepository.findAllByType(facilityType).stream().map(SearchFacilityRes::new).toList();
 
-        return new SearchBuildingListRes(
-            buildingList.stream()
-                .map(building -> {
-                    List<FacilityType> containFacilityTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
-                        .map(Facility::getType)
-                        .distinct()
-                        .toList();
-                    return new SearchBuildingRes(building, containFacilityTypes);
-                })
-                .toList());
+        return new SearchFacilityListRes(facilityList);
     }
 
     /**

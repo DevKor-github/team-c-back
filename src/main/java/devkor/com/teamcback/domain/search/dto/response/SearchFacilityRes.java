@@ -31,6 +31,8 @@ public class SearchFacilityRes {
     private Double latitude;
     @Schema(description = "편의시설 설명", example = "남자화장실, 여자화장실")
     private String detail;
+    @Schema(description = "편의시설 건물 id", example = "1")
+    private Long buildingId;
     @Schema(description = "편의시설 층", example = "1")
     private int floor;
 
@@ -46,6 +48,7 @@ public class SearchFacilityRes {
         this.longitude = facility.getNode().getLongitude();
         this.latitude = facility.getNode().getLatitude();
         this.detail = facility.getDetail();
+        this.buildingId = facility.getBuilding().getId();
         this.floor = facility.getFloor().intValue();
     }
 }

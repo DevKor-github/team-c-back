@@ -11,6 +11,7 @@ import devkor.com.teamcback.domain.navigate.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.navigate.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.navigate.entity.*;
+import devkor.com.teamcback.domain.navigate.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class RouteService {
     private final BuildingRepository buildingRepository;
     private final ClassroomRepository classroomRepository;
     private final FacilityRepository facilityRepository;
+    private final CheckpointRepository checkpointRepository;
 
     /**
      * 메인 경로탐색 메서드
@@ -67,7 +69,7 @@ public class RouteService {
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-        if (route.getPath().isEmpty()) return new GetRouteRes("제공되는 경로가 없습니다.");
+        if (route.getPath().isEmpty()) return new GetRouteRes(1);
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
     }
 
@@ -119,9 +121,9 @@ public class RouteService {
                 : new PartialRouteRes(buildingId, floor, partialRoute);
 
             if (i + 1 == path.size()) {
-                partialRouteRes.setInfo(makeInfo(thisPath.get(0), null));
+                partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), null));
             } else {
-                partialRouteRes.setInfo(makeInfo(thisPath.get(0), path.get(i + 1).get(0)));
+                partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), path.get(i + 1).get(0)));
             }
 
             totalRoute.add(partialRouteRes);
@@ -187,8 +189,8 @@ public class RouteService {
             if (rawAdjacentNode == null || rawDistance == null) continue;
             String[] endNodeId = node.getAdjacentNode().split(",");
             String[] distance = node.getDistance().split(",");
-            //if (endNodeId.length != distance.length) throw new Error("노드"+node.getId()+"에 형식의 문제가 있습니다.");
-            if (endNodeId.length != distance.length) continue;
+            if (endNodeId.length != distance.length) throw new Error("노드"+node.getId()+"에 형식의 문제가 있습니다.");
+            //if (endNodeId.length != distance.length) continue;
 
             for (int i = 0; i < endNodeId.length; i++) {
                 // 시작끝 모두 Long으로 써서 경로 찾은 후, 해당 경로 대해서만 node 찾기
@@ -214,12 +216,14 @@ public class RouteService {
                 shortestDistance = thisDistance;
             }
         }
-
+        if (getEuclidDistance(latitude, longitude, nearestNode.getLatitude(), nearestNode.getLongitude()) > 0.003){
+            throw new GlobalException(COORDINATES_TOO_FAR);
+        }
         return nearestNode;
     }
 
     private double getEuclidDistance(double startX, double startY, double endX, double endY) {
-        return Math.pow((startX - endX), 2) + Math.pow((startY - endY), 2);
+        return Math.sqrt(Math.pow((startX - endX), 2) + Math.pow((startY - endY), 2));
     }
 
     /**
@@ -240,7 +244,7 @@ public class RouteService {
             nextNode = route.get(count + 1);
 
             // 새로운 건물로 이동할 때 경로 분할
-            if (!Objects.equals(thisNode.getBuilding(), nextNode.getBuilding())) {
+            if ((!Objects.equals(thisNode.getBuilding(), nextNode.getBuilding())) || (thisNode.getType() != nextNode.getType() && thisNode.getType() == NodeType.CHECKPOINT)) {
                 partialRoute.add(thisNode);
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
@@ -257,7 +261,8 @@ public class RouteService {
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
                 partialRoute.add(thisNode);  // 끝 층의 시작 노드를 새 경로로 추가
-            } else {
+            }
+            else {
                 partialRoute.add(thisNode);
             }
 
@@ -288,7 +293,11 @@ public class RouteService {
         Double nextNodeFloor = nextNode.getFloor();
 
         //건물이 같은 경우는 층 이동의 경우밖에 없음
-        if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){
+        if (prevNode.getType() == NodeType.CHECKPOINT){
+            String checkpointName = findCheckpoint(prevNode).getName();
+            return checkpointName + "(으)로 이동하세요.";
+        }
+        else if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){
             return nextNodeFloor.intValue() + "층으로 이동하세요.";
         }
         //바깥에서 안으로 들어가는 경우
@@ -326,6 +335,10 @@ public class RouteService {
 
     private Node findNode(Long nodeId) {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
+    }
+
+    private Checkpoint findCheckpoint(Node node){
+        return checkpointRepository.findByNode(node);
     }
 
     //다익스트라용 메서드

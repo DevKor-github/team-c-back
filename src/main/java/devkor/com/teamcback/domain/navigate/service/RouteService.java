@@ -176,6 +176,7 @@ public class RouteService {
                 graphNode.addAll(findNodeWithExceptions(i, nodeToBan));
             }
         }
+        if (!startNode.isOperating() || !endNode.isOperating()) throw new GlobalException(NOT_OPERATING);
         if (!graphNode.contains(startNode)){
             graphNode.add(startNode);
         }
@@ -186,7 +187,7 @@ public class RouteService {
             String rawAdjacentNode = node.getAdjacentNode();
             String rawDistance = node.getDistance();
             //추후 수정이 필요할 코드(에러핸들링)
-            if (rawAdjacentNode == null || rawDistance == null) continue;
+            if (rawAdjacentNode == null || rawDistance == null || rawAdjacentNode.isEmpty() || rawDistance.isEmpty()) continue;
             String[] endNodeId = node.getAdjacentNode().split(",");
             String[] distance = node.getDistance().split(",");
             if (endNodeId.length != distance.length) throw new Error("노드"+node.getId()+"에 형식의 문제가 있습니다.");

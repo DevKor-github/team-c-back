@@ -14,8 +14,13 @@ public class LinkedBuildingData {
         ...
          필요에 따라 위와 같은 식으로 다른 건물들의 연결 정보 추가
         */
-        linkedBuildings.put(15L, List.of(13L));
+        linkedBuildings.put(2L, List.of(26L));
+        linkedBuildings.put(12L, List.of(18L));
         linkedBuildings.put(13L, List.of(15L));
+        linkedBuildings.put(15L, List.of(13L));
+        linkedBuildings.put(26L, List.of(2L));
+        linkedBuildings.put(33L, List.of(14L, 26L, 41L, 43L));
+        linkedBuildings.put(49L, List.of(50L));
     }
 
     public static List<Long> getLinkedBuildings(Long buildingId) {

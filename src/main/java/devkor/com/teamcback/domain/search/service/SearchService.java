@@ -406,7 +406,6 @@ public class SearchService {
                 baseScore = BASE_SCORE_CLASSROOM_DEFAULT;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
-            System.out.println("여기: " + res.getName() + "  점수: " + baseScore+indexScore);
             scores.put(res, baseScore + indexScore);
         }
         return scores;
@@ -469,7 +468,10 @@ public class SearchService {
         int index;
         if(keyword.contains(" ")) {
             String[] keywords = keyword.split(" ", 2);
-            index = Math.max(name.indexOf(keywords[0].charAt(0)), name.indexOf(keywords[1].charAt(0)));
+            int index1 = name.indexOf(keywords[0].charAt(0));
+            int index2 = name.indexOf(keywords[1].charAt(0));
+
+            index = (index1 == -1) ? index2 : (index2 == -1) ? index1 : Math.min(index1, index2);
         } else {
             index = name.indexOf(keyword.charAt(0));
         }

@@ -5,12 +5,11 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum NodeType {
-    NORMAL("일반"),
-    ELEVATOR("엘리베이터"),
-    STAIR("계단"),
-    ENTRANCE("출입문"),
-    CHECKPOINT("경로");
+public enum BuildingIds {
+    aegineung(1L, "애기능생활관"),
+    woodang(2L, "우당교양관");
 
+    private final Long buildingId;
     private final String name;
+
 }

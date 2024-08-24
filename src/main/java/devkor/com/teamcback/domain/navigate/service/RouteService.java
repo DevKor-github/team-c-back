@@ -291,7 +291,8 @@ public class RouteService {
 
         Building prevNodeBuilding = prevNode.getBuilding();
         Building nextNodeBuilding = nextNode.getBuilding();
-        Double nextNodeFloor = nextNode.getFloor();
+        int nextNodeFloor = nextNode.getFloor().intValue();
+        String floor = nextNodeFloor >= 0 ? Integer.toString(nextNodeFloor) : "B" + Math.abs(nextNodeFloor);
 
         //건물이 같은 경우는 층 이동의 경우밖에 없음
         if (prevNode.getType() == NodeType.CHECKPOINT){
@@ -299,16 +300,16 @@ public class RouteService {
             return checkpointName + "(으)로 이동하세요.";
         }
         else if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){
-            return nextNodeFloor.intValue() + "층으로 이동하세요.";
+            return floor + "층으로 이동하세요.";
         }
         //바깥에서 안으로 들어가는 경우
         else if (prevNodeBuilding.getId() == 0L){
-            return nextNodeBuilding.getName() + " " + nextNodeFloor.intValue() + "층 출입구로 들어가세요.";
+            return nextNodeBuilding.getName() + " " + floor + "층 출입구로 들어가세요.";
         }
         //안에서 바깥으로 나가는 경우
         else{
             if (nextNodeBuilding.getId() == 0L) return "출입구를 통해 밖으로 나가세요";
-            else return "출입구를 통해 " + nextNodeBuilding.getName() + " " + nextNodeFloor.intValue() + "층으로 이동하세요.";
+            else return "출입구를 통해 " + nextNodeBuilding.getName() + " " + floor + "층으로 이동하세요.";
         }
     }
 

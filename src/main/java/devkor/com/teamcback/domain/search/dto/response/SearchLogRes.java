@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import devkor.com.teamcback.domain.common.PlaceType;
+import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -13,7 +13,7 @@ public class SearchLogRes {
     @Schema(description = "검색 시설 이름", example = "우정정보관 201호")
     private String name;
     @Schema(description = "검색 시설 종류", example = "CLASSROOM")
-    private PlaceType type;
+    private LocationType type;
     @Schema(description = "검색 일시", example = "2024-05-09")
     private String searchedAt;
 

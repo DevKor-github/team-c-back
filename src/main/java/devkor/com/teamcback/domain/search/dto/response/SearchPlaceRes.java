@@ -2,8 +2,8 @@ package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.common.PlaceType;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.entity.Place;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,7 +46,7 @@ public class SearchPlaceRes {
     @Schema(description = "강의실 내부지도 상 y좌표", example = "250")
     private Double yCoord;
     @Schema(description = "건물 또는 강의실 종류", example = "BUILDING")
-    private PlaceType placeType;
+    private LocationType locationType;
 
     public SearchPlaceRes(Building building) {
         this.id = building.getId();
@@ -61,24 +61,24 @@ public class SearchPlaceRes {
         this.needStudentCard = building.isNeedStudentCard();
         this.longitude = building.getNode().getLongitude();
         this.latitude = building.getNode().getLatitude();
-        this.placeType = PlaceType.BUILDING;
+        this.locationType = LocationType.BUILDING;
     }
 
-    public SearchPlaceRes(Classroom classroom) {
-        this.id = classroom.getId();
-        this.buildingId = classroom.getBuilding().getId();
-        this.buildingName = classroom.getBuilding().getName();
-        this.name = classroom.getName();
-        this.imageUrl = classroom.getImageUrl();
-        this.detail = classroom.getDetail();
-        this.operatingTime = classroom.getOperatingTime();
-        this.isOperating = classroom.isOperating();
-        this.floor = classroom.getFloor();
-        this.plugAvailability = classroom.isPlugAvailability();
-        this.longitude = classroom.getNode().getLongitude();
-        this.latitude = classroom.getNode().getLatitude();
-        this.xCoord = classroom.getNode().getXCoord();
-        this.yCoord = classroom.getNode().getYCoord();
-        this.placeType = PlaceType.CLASSROOM;
+    public SearchPlaceRes(Place place) {
+        this.id = place.getId();
+        this.buildingId = place.getBuilding().getId();
+        this.buildingName = place.getBuilding().getName();
+        this.name = place.getName();
+        this.imageUrl = place.getImageUrl();
+        this.detail = place.getDetail();
+        this.operatingTime = place.getOperatingTime();
+        this.isOperating = place.isOperating();
+        this.floor = place.getFloor();
+        this.plugAvailability = place.isPlugAvailability();
+        this.longitude = place.getNode().getLongitude();
+        this.latitude = place.getNode().getLatitude();
+        this.xCoord = place.getNode().getXCoord();
+        this.yCoord = place.getNode().getYCoord();
+        this.locationType = LocationType.PLACE;
     }
 }

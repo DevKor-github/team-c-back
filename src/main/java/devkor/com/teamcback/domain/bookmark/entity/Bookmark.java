@@ -1,11 +1,8 @@
 package devkor.com.teamcback.domain.bookmark.entity;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
-import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.common.LocationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +22,7 @@ public class Bookmark extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PlaceType placeType;
+    private LocationType locationType;
 
     @Column(nullable = false)
     private Long placeId;
@@ -37,7 +34,7 @@ public class Bookmark extends BaseEntity {
         //category_id, memo, placeType, 빌교편중1
         this.category = category;
         this.memo = req.getMemo();
-        this.placeType = req.getPlaceType();
+        this.locationType = req.getLocationType();
         this.placeId = req.getPlaceId();
 
     }

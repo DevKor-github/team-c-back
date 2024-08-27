@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -25,7 +25,7 @@ public class SearchBuildingDetailRes {
     @Schema(description = "북마크 저장 여부", example = "false")
     private boolean bookmarked;
     @Schema(description = "건물 내 시설 종류", example = "LOUNGE, GYM, ...")
-    private List<FacilityType> existTypes; //건물 내 facility 종류 리스트(아이콘용)
+    private List<PlaceType> existTypes; //건물 내 facility 종류 리스트(아이콘용)
     @Schema(description = "운영 여부", example = "false")
     private boolean isOperating;
     @Schema(description = "현재 열려있으면 닫는 시간, 닫혀있으면 다음으로 여는 시간 반환", example = "9:00")
@@ -33,7 +33,7 @@ public class SearchBuildingDetailRes {
     @Schema(description = "주요 시설 리스트")
     private List<SearchMainFacilityRes> mainFacilityList;
 
-    public SearchBuildingDetailRes(List<SearchMainFacilityRes> facilities, List<FacilityType> types, Building building, boolean bookmarked) {
+    public SearchBuildingDetailRes(List<SearchMainFacilityRes> facilities, List<PlaceType> types, Building building, boolean bookmarked) {
         this.buildingId = building.getId();
         this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.address = building.getAddress();

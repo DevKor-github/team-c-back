@@ -9,9 +9,9 @@ import lombok.Getter;
 @Getter
 public class SearchFacilityListRes {
     @Schema(description = "편의시설 조회 결과")
-    private List<SearchFacilityRes> facilities = new ArrayList<>();
+    private List<SearchPlaceRes> facilities = new ArrayList<>();
 
-    public SearchFacilityListRes(List<SearchFacilityRes> facilities) {
+    public SearchFacilityListRes(List<SearchPlaceRes> facilities) {
         this.facilities = facilities;
     }
 }

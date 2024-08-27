@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.bookmark.dto.response;
 
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
-import devkor.com.teamcback.domain.common.PlaceType;
+import devkor.com.teamcback.domain.common.LocationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ public class GetBookmarkRes {
     private Long bookmarkId;
 
     @Schema(description = "즐겨찾기 장소 타입", example = "CLASSROOM")
-    private PlaceType placeType;
+    private LocationType locationType;
 
     @Schema(description = "즐겨찾기 장소 Id", example = "5")
     private Long placeId;
@@ -22,7 +22,7 @@ public class GetBookmarkRes {
 
     public GetBookmarkRes(Bookmark bookmark) {
         this.bookmarkId = bookmark.getId();
-        this.placeType = bookmark.getPlaceType();
+        this.locationType = bookmark.getLocationType();
         this.placeId = bookmark.getPlaceId();
         this.memo = bookmark.getMemo();
     }

@@ -2,10 +2,8 @@ package devkor.com.teamcback.domain.navigate.service;
 
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
-import devkor.com.teamcback.domain.facility.entity.Facility;
-import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.navigate.dto.response.DijkstraRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.navigate.dto.response.GetRouteRes;
@@ -30,8 +28,8 @@ import static devkor.com.teamcback.global.response.ResultCode.*;
 public class RouteService {
     private final NodeRepository nodeRepository;
     private final BuildingRepository buildingRepository;
-    private final ClassroomRepository classroomRepository;
-    private final FacilityRepository facilityRepository;
+//    private final ClassroomRepository classroomRepository;
+    private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
 
     /**
@@ -154,8 +152,8 @@ public class RouteService {
         return switch (type) {
             case COORD -> findNearestNode(position.get(0), position.get(1));
             case BUILDING -> findBuilding(position.get(0).longValue()).getNode();
-            case FACILITY -> findFacility(position.get(0).longValue()).getNode();
-            case CLASSROOM -> findClassroom(position.get(0).longValue()).getNode();
+            case FACILITY -> findPlace(position.get(0).longValue()).getNode();
+//            case CLASSROOM -> findClassroom(position.get(0).longValue()).getNode();
             default -> throw new IllegalArgumentException("Invalid LocationType: " + type);
         };
     }
@@ -327,12 +325,8 @@ public class RouteService {
         return nodeRepository.findByBuildingAndRoutingAndTypeNot(building, true, nodeToBan);
     }
 
-    private Classroom findClassroom(Long classroomId) {
-        return classroomRepository.findById(classroomId).orElseThrow(() -> new GlobalException(NOT_FOUND_CLASSROOM));
-    }
-
-    private Facility findFacility(Long facilityId) {
-        return facilityRepository.findById(facilityId).orElseThrow(() -> new GlobalException(NOT_FOUND_FACILITY));
+    private Place findPlace(Long placeId) {
+        return placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
     }
 
     private Node findNode(Long nodeId) {

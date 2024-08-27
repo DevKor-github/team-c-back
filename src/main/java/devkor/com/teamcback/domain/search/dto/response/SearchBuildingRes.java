@@ -2,7 +2,7 @@ package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Getter;
@@ -24,9 +24,9 @@ public class SearchBuildingRes {
     private Double underFloor;
     private String nextBuildingTime; // 현재 열려있으면 닫는 시간, 닫혀있으면 다음으로 여는 시간 반환
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<FacilityType> facilityTypes;
+    private List<PlaceType> placeTypes;
 
-    public SearchBuildingRes(Building building, List<FacilityType> facilityTypes) {
+    public SearchBuildingRes(Building building, List<PlaceType> placeTypes) {
         this.buildingId = building.getId();
         this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.imageUrl = building.getImageUrl();
@@ -40,7 +40,7 @@ public class SearchBuildingRes {
         }
         this.floor = building.getFloor();
         this.underFloor = building.getUnderFloor();
-        this.facilityTypes = facilityTypes;
+        this.placeTypes = placeTypes;
         this.isOperating = building.isOperating();
         if(building.isOperating()) { // 운영 중이면 종료 시간
             this.nextBuildingTime = building.getOperatingTime().substring(6, 11);

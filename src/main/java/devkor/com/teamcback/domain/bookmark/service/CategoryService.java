@@ -10,9 +10,8 @@ import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -21,9 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
@@ -35,8 +32,7 @@ public class CategoryService {
     private final UserRepository userRepository;
     private final BookmarkRepository bookmarkRepository;
     private final BuildingRepository buildingRepository;
-    private final ClassroomRepository classroomRepository;
-    private final FacilityRepository facilityRepository;
+    private final PlaceRepository placeRepository;
 
     /**
      * 카테고리 생성
@@ -132,11 +128,11 @@ public class CategoryService {
         checkAuthority(user, category.getUser());
 
         //placeType & Id로 장소 존재 여부 확인
-        checkPlaceExists(req.getPlaceType(), req.getPlaceId());
+        checkPlaceExists(req.getLocationType(), req.getPlaceId());
 
         //장소 중복 확인하기
         //해당 카테고리안에 placeType, placeId가 모두 동일한 것이 있으면 중복
-        checkPlaceDuplication(category, req.getPlaceType(), req.getPlaceId());
+        checkPlaceDuplication(category, req.getLocationType(), req.getPlaceId());
 
         //즐겨찾기 생성
         Bookmark bookmark = bookmarkRepository.save(new Bookmark(req, category));
@@ -217,8 +213,8 @@ public class CategoryService {
         throw new GlobalException(NOT_FOUND_IN_CATEGORY);
     }
 
-    private void checkPlaceDuplication(Category category, PlaceType placeType, Long placeId) {
-        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByCategoryAndPlaceTypeAndPlaceId(category, placeType, placeId);
+    private void checkPlaceDuplication(Category category, LocationType locationType, Long placeId) {
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByCategoryAndLocationTypeAndPlaceId(category, locationType, placeId);
 
         // 같은 카테고리에 동일 북마크가 존재하는 경우
         if (optionalBookmark.isPresent()) {
@@ -226,13 +222,11 @@ public class CategoryService {
         }
     }
 
-    public void checkPlaceExists(PlaceType placeType, Long placeId) {
-        if (PlaceType.BUILDING.equals(placeType) && !buildingRepository.existsById(placeId)) {
+    public void checkPlaceExists(LocationType locationType, Long placeId) {
+        if (LocationType.BUILDING.equals(locationType) && !buildingRepository.existsById(placeId)) {
             throw new GlobalException(NOT_FOUND_BUILDING);
-        } else if (PlaceType.CLASSROOM.equals(placeType) && !classroomRepository.existsById(placeId)) {
-            throw new GlobalException(NOT_FOUND_CLASSROOM);
-        } else if (PlaceType.FACILITY.equals(placeType) && !facilityRepository.existsById(placeId)) {
-            throw new GlobalException(NOT_FOUND_FACILITY);
+        } else if (LocationType.PLACE.equals(locationType) && !placeRepository.existsById(placeId)) {
+            throw new GlobalException(NOT_FOUND_PLACE);
         }
     }
 

@@ -7,10 +7,8 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.classroom.repository.ClassroomRepository;
-import devkor.com.teamcback.domain.facility.entity.Facility;
-import devkor.com.teamcback.domain.facility.repository.FacilityRepository;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.navigate.dto.request.CreateNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.request.ModifyNodeReq;
 import devkor.com.teamcback.domain.navigate.dto.response.CreateNodeRes;
@@ -33,8 +31,7 @@ public class AdminRouteService {
     private final NodeRepository nodeRepository;
     private final BuildingRepository buildingRepository;
     private final BuildingImageRepository buildingImageRepository;
-    private final ClassroomRepository classroomRepository;
-    private final FacilityRepository facilityRepository;
+    private final PlaceRepository placeRepository;
 
     // 건물 id와 층에 해당하는 건물 사진, 노드 리스트 조회
     @Transactional(readOnly = true)
@@ -58,14 +55,14 @@ public class AdminRouteService {
 
         GetNodeDetailRes res =  new GetNodeDetailRes(node);
 
-        Classroom classroom = classroomRepository.findByNode(node);
-        Facility facility = facilityRepository.findByNode(node);
+//        Classroom classroom = classroomRepository.findByNode(node);
+        Place place = placeRepository.findByNode(node);
 
-        if(classroom != null) {
-            res.setClassroomPlace(classroom);
-        }
-        else if(facility != null) {
-            res.setFacilityPlace(facility);
+//        if(classroom != null) {
+//            res.setClassroomPlace(classroom);
+//        }
+        if(place != null) {
+            res.setFacilityPlace(place);
         }
 
         return res;

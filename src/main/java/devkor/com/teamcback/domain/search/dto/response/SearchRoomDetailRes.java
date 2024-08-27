@@ -2,17 +2,15 @@ package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.facility.entity.Facility;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import lombok.Getter;
 
 @Getter
 public class SearchRoomDetailRes {
-    private String type;
     private Long id;
     @JsonInclude(Include.NON_NULL)
-    private FacilityType facilityType;
+    private PlaceType placeType;
     private String name;
     private String detail;
     @JsonInclude(Include.NON_NULL)
@@ -27,37 +25,20 @@ public class SearchRoomDetailRes {
     private double yCoord;
     private Integer maskIndex;
 
-    public SearchRoomDetailRes(Classroom classroom) {
-        this.type = "CLASSROOM";
-        this.id = classroom.getId();
-        this.name = classroom.getName();
-        this.detail = classroom.getDetail();
-        this.plugAvailability = classroom.isPlugAvailability();
-        this.imageUrl = classroom.getImageUrl();
-        this.operatingTime = classroom.getOperatingTime();
-        this.isOperating = classroom.isOperating();
-        this.longitude = classroom.getNode().getLongitude();
-        this.latitude = classroom.getNode().getLatitude();
-        this.xCoord = classroom.getNode().getXCoord();
-        this.yCoord = classroom.getNode().getYCoord();
-        this.maskIndex = classroom.getMaskIndex();
-    }
-
-    public SearchRoomDetailRes(Facility facility) {
-        this.type = "FACILITY";
-        this.id = facility.getId();
-        this.facilityType = facility.getType();
-        this.name = facility.getName();
-        this.detail = facility.getDetail();
-        this.availability = facility.isAvailability();
-        this.plugAvailability = facility.isPlugAvailability();
-        this.imageUrl = facility.getImageUrl();
-        this.operatingTime = facility.getOperatingTime();
-        this.isOperating = facility.isOperating();
-        this.longitude = facility.getNode().getLongitude();
-        this.latitude = facility.getNode().getLatitude();
-        this.xCoord = facility.getNode().getXCoord();
-        this.yCoord = facility.getNode().getYCoord();
-        this.maskIndex = facility.getMaskIndex();
+    public SearchRoomDetailRes(Place place) {
+        this.id = place.getId();
+        this.placeType = place.getType();
+        this.name = place.getName();
+        this.detail = place.getDetail();
+        this.availability = place.isAvailability();
+        this.plugAvailability = place.isPlugAvailability();
+        this.imageUrl = place.getImageUrl();
+        this.operatingTime = place.getOperatingTime();
+        this.isOperating = place.isOperating();
+        this.longitude = place.getNode().getLongitude();
+        this.latitude = place.getNode().getLatitude();
+        this.xCoord = place.getNode().getXCoord();
+        this.yCoord = place.getNode().getYCoord();
+        this.maskIndex = place.getMaskIndex();
     }
 }

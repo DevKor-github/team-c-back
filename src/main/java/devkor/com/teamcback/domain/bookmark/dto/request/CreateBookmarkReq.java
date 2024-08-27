@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.bookmark.dto.request;
 
-import devkor.com.teamcback.domain.common.PlaceType;
+import devkor.com.teamcback.domain.common.LocationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -9,7 +9,7 @@ import lombok.Getter;
 public class CreateBookmarkReq {
 
     @Schema(description = "장소타입", example = "BUILDING")
-    private PlaceType placeType;
+    private LocationType locationType;
 
     @Schema(description = "장소 id", example = "5")
     private Long placeId;

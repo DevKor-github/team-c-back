@@ -114,7 +114,6 @@ public class SearchService {
             buildingList = buildingList.stream()
                 .filter(building -> building.getId() != 0).toList();
         }
-
         else {
             List<Place> placeList = getFacilitiesByType(type);
             buildingList = placeList.stream()

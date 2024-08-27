@@ -165,6 +165,7 @@ public class SearchService {
         List<Place> facilities = placeRepository.findAllByBuilding(building);
         List<PlaceType> placeTypeList = facilities.stream()
             .map(Place::getType)
+            .filter(placeType -> placeType != PlaceType.CLASSROOM)
             .distinct()
             .toList();
 

@@ -22,4 +22,11 @@ public class GetNodeListRes {
         this.floor = floor;
         this.nodeList = nodeList;
     }
+
+    public GetNodeListRes(Building building, Double floor, List<GetNodeRes> nodeList) {
+        this.buildingId = building.getId();
+        this.buildingName = building.getName();
+        this.floor = floor;
+        this.nodeList = nodeList;
+    }
 }

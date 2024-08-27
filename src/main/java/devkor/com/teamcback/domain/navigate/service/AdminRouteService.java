@@ -42,8 +42,13 @@ public class AdminRouteService {
         Building building = findBuilding(buildingId);
         BuildingImage buildingImage = findBuildingImage(building, floor);
         List<GetNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloor(building, floor).stream().map(node -> new GetNodeRes(node)).toList();
+        if (buildingImage == null){
+            return new GetNodeListRes(building, floor, nodeList);
+        }
+        else{
+            return new GetNodeListRes(building, floor, buildingImage, nodeList);
+        }
 
-        return new GetNodeListRes(building, floor, buildingImage, nodeList);
     }
 
     // 노드 단일 조회

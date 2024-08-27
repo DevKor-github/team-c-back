@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.place.repository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
-import devkor.com.teamcback.domain.navigate.entity.Node;
+import devkor.com.teamcback.domain.routes.entity.Node;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;

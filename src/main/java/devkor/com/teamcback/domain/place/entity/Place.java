@@ -4,7 +4,7 @@ import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.navigate.entity.Node;
+import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,13 +1,13 @@
 package devkor.com.teamcback.domain.operatingtime.service;
 
-import static devkor.com.teamcback.domain.navigate.entity.NodeType.ENTRANCE;
+import static devkor.com.teamcback.domain.routes.entity.NodeType.ENTRANCE;
 
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
-import devkor.com.teamcback.domain.navigate.entity.Node;
-import devkor.com.teamcback.domain.navigate.repository.NodeRepository;
+import devkor.com.teamcback.domain.routes.entity.Node;
+import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;

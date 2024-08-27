@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LoggingAspect {
 
-    @Pointcut("execution(* devkor.com.teamcback.domain.navigate.controller..*(..))")
+    @Pointcut("execution(* devkor.com.teamcback.domain.routes.controller..*(..))")
     private void navigation() {}
 
     @Pointcut("execution(* devkor.com.teamcback.domain.search.contoller.*.globalSearch(..))")

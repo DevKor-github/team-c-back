@@ -28,12 +28,8 @@ public class OperatingCondition extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "classroom_id")
-//    private Classroom classroom;
 
     @ManyToOne
-    @JoinColumn(name = "facility_id")
+    @JoinColumn(name = "place_id")
     private Place place;
 }

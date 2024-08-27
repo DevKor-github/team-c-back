@@ -54,7 +54,7 @@ public class SearchController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<SearchBuildingListRes> searchBuildings(
-        @Parameter(name = "type", description = "검색하는 편의시설 종류가 있는 건물을 검색하는 경우", example = "TRASH_CAN")
+        @Parameter(name = "placeType", description = "검색하는 편의시설 종류가 있는 건물을 검색하는 경우", example = "TRASH_CAN")
         @RequestParam(name = "placeType", required = false) PlaceType placeType
     ) {
         return CommonResponse.success(searchService.searchBuildings(placeType));

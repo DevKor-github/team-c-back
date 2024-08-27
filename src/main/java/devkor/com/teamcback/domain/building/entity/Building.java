@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.building.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.navigate.entity.Node;
+import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

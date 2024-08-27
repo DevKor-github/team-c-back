@@ -43,7 +43,6 @@ public class OperatingService {
     @Transactional
     public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean evenWeek) {
         List<Building> buildingList = new ArrayList<>();
-//        List<Classroom> classroomList = new ArrayList<>();
         List<Place> placeList = new ArrayList<>();
 
         operatingConditionList  = findOperatingCondition(dayOfWeek, isHoliday, isVacation, evenWeek);
@@ -67,10 +66,6 @@ public class OperatingService {
                 operatingCondition.getBuilding().setOperatingTime(newOperatingTime);
                 buildingList.add(operatingCondition.getBuilding());
             }
-//            else if(operatingCondition.getClassroom() != null) {
-//                operatingCondition.getClassroom().setOperatingTime(newOperatingTime);
-//                classroomList.add(operatingCondition.getClassroom());
-//            }
             else if(operatingCondition.getPlace() != null) {
                 operatingCondition.getPlace().setOperatingTime(newOperatingTime);
                 placeList.add(operatingCondition.getPlace());
@@ -82,9 +77,6 @@ public class OperatingService {
         for(Building building : notOperatingBuildings) {
             if(building.getId() != 0) building.setOperating(false);
         }
-
-//        if(classroomList.isEmpty()) notOperatingClassrooms = classroomRepository.findAll();
-//        else notOperatingClassrooms = classroomRepository.findAllByIdNotIn(classroomList.stream().map(Classroom::getId).toList());
 
         if(placeList.isEmpty()) notOperatingFacilities = placeRepository.findAll();
         else notOperatingFacilities = placeRepository.findAllByIdNotIn(placeList.stream().map(Place::getId).toList());
@@ -106,14 +98,6 @@ public class OperatingService {
                     changeNodeIsOperating(isOperating, building);
                 }
             }
-//            else if(operCondition.getClassroom() != null) {
-//                Classroom classroom = operCondition.getClassroom();
-//                classroom = entityManager.merge(classroom);
-//                log.info("classroom: {}", classroom.getName());
-//                if(classroom.isOperating() != isOperating) {
-//                    classroom.setOperating(isOperating);
-//                }
-//            }
             else if(operCondition.getPlace() != null) {
                 Place place = operCondition.getPlace();
                 place = entityManager.merge(place);
@@ -125,11 +109,6 @@ public class OperatingService {
         }
 
         // 운영 조건에 포함되지 않은 강의실, 편의시설
-//        for(Classroom classroom : notOperatingClassrooms) {
-//            classroom = entityManager.merge(classroom);
-//            classroom.setOperating(classroom.getBuilding().isOperating()); // 건물 운영여부를 따라감
-//        }
-
         for(Place place : notOperatingFacilities) {
             place = entityManager.merge(place);
             place.setOperating(place.getBuilding().isOperating()); // 건물 운영여부를 따라감

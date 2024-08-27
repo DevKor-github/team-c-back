@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashMap;
 import java.util.List;
@@ -17,12 +17,12 @@ public class SearchBuildingFacilityListRes {
     @Schema(description = "편의시설이 위치한 건물 이름", example = "애기능생활관")
     private String buildingName;
     @Schema(description = "편의시설 종류", example = "TRASH_CAN")
-    private FacilityType type;
+    private PlaceType type;
     @Schema(description = "각 층별 편의시설 조회 결과")
     @Setter
     private Map<Double, List<SearchFacilityRes>> facilities = new HashMap<>();
 
-    public SearchBuildingFacilityListRes(Building building, FacilityType type) {
+    public SearchBuildingFacilityListRes(Building building, PlaceType type) {
         this.buildingId = building.getId();
         this.buildingName = building.getName();
         this.type = type;

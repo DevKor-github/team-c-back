@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.search.contoller;
 
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.service.SearchService;
@@ -29,7 +29,6 @@ public class SearchController {
     /***
      * keyword가 포함된 장소 검색
      * @param keyword 검색 단어
-     *
      */
     @GetMapping()
     @Operation(summary = "입력 통한 후보 검색어 조회 (태그X)", description = "keyword가 포함된 장소 조회")
@@ -56,15 +55,15 @@ public class SearchController {
     })
     public CommonResponse<SearchBuildingListRes> searchBuildings(
         @Parameter(name = "type", description = "검색하는 편의시설 종류가 있는 건물을 검색하는 경우", example = "TRASH_CAN")
-        @RequestParam(name = "type", required = false) FacilityType facilityType
+        @RequestParam(name = "placeType", required = false) PlaceType placeType
     ) {
-        return CommonResponse.success(searchService.searchBuildings(facilityType));
+        return CommonResponse.success(searchService.searchBuildings(placeType));
     }
 
     /**
      * 건물에 있는 특정 종류의 편의시설 검색
      * @param buildingId 건물 id
-     * @param facilityType 편의시설 종류
+     * @param placeType 편의시설 종류
      */
     @GetMapping("/buildings/{buildingId}/facilities")
     @Operation(summary = "건물 내 특정 종류의 편의시설 조회 결과", description = "건물 내 특정 종류의 편의시설에 대한 상세 정보 조회")
@@ -77,8 +76,8 @@ public class SearchController {
         @Parameter(name = "buildingId", description = "편의시설이 위치한 건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "type", description = "찾고자 하는 편의시설 종류", example = "TRASH_CAN", required = true)
-        @RequestParam(name = "type") FacilityType facilityType) {
-        return CommonResponse.success(searchService.searchBuildingFacilityByType(buildingId, facilityType));
+        @RequestParam(name = "placeType") PlaceType placeType) {
+        return CommonResponse.success(searchService.searchBuildingFacilityByType(buildingId, placeType));
     }
 
     /**
@@ -110,17 +109,17 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchRoomRes> searchRoomByBuildingFloor(
+    public CommonResponse<SearchRoomRes> searchPlaceByBuildingFloor(
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)
         @PathVariable int floor) {
-        return CommonResponse.success(searchService.searchRoomByBuildingFloor(buildingId, floor));
+        return CommonResponse.success(searchService.searchPlaceByBuildingFloor(buildingId, floor));
     }
 
     /**
      * 특정 편의시설 리스트
-     * @param facilityType 편의시설 종류
+     * @param placeType 편의시설 종류
      */
     @Operation(summary = "특정 종류의 편의시설 목록 조회", description = "특정 종류의 편의시설 목록 조회")
     @ApiResponses(value = {
@@ -129,8 +128,8 @@ public class SearchController {
     @GetMapping("/facilities")
     public CommonResponse<SearchFacilityListRes> searchFacilitiesWithType(
         @Parameter(name = "type", description = "검색하는 편의시설 종류", example = "CAFE", required = true)
-        @RequestParam(name = "type") FacilityType facilityType) {
-        return CommonResponse.success(searchService.searchFacilitiesWithType(facilityType));
+        @RequestParam(name = "placeType") PlaceType placeType) {
+        return CommonResponse.success(searchService.searchFacilitiesWithType(placeType));
     }
 
     /**
@@ -138,9 +137,8 @@ public class SearchController {
      * @param buildingId 건물 id
      * @param floor 건물 층
      * @param maskIndex 교실 mask index
-     * @param type 장소 종류
      */
-    @Operation(summary = "Mask Index 대응 교실 조회", description = "Room의 mask index에 대응되는 교실 id를 반환")
+    @Operation(summary = "Mask Index 대응 장소 조회", description = "Room의 mask index에 대응되는 장소 id를 반환")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -153,18 +151,15 @@ public class SearchController {
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)
         @PathVariable int floor,
         @Parameter(name = "maskIndex", description = "교실 mask index", example = "5", required = true)
-        @PathVariable Integer maskIndex,
-        @Parameter(name = "type", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
-        @RequestParam PlaceType type) {
-        return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, maskIndex, type));
+        @PathVariable Integer maskIndex) {
+        return CommonResponse.success(searchService.searchPlaceByMaskIndex(buildingId, floor, maskIndex));
     }
 
     /**
      * place 대응 Mask Index 반환
      * @param placeId 장소 id
-     * @param placeType 장소 종류
      */
-    @Operation(summary = "장소 대응 Mask Index 조회", description = "Room의 id, placeType에 대응되는 mask index를 반환")
+    @Operation(summary = "장소 대응 Mask Index 조회", description = "Place의 id에 대응되는 mask index를 반환")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -173,10 +168,8 @@ public class SearchController {
     @GetMapping("/place/{placeId}/mask")
     public CommonResponse<SearchMaskIndexByPlaceRes> searchMaskIndexByPlace(
         @Parameter(name = "placeId", description = "classroom_id 또는 facility_id", example = "1", required = true)
-        @PathVariable Long placeId,
-        @Parameter(name = "placeType", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
-        @RequestParam PlaceType placeType) {
-        return CommonResponse.success(searchService.searchMaskIndexByPlace(placeId, placeType));
+        @PathVariable Long placeId) {
+        return CommonResponse.success(searchService.searchMaskIndexByPlace(placeId));
     }
 
     /**
@@ -201,12 +194,11 @@ public class SearchController {
     }
 
     /**
-     * 장소(교실, 편의시설) 상세 정보 조회
-     * @param placeType 장소 종류
+     * 장소 상세 정보 조회
      * @param placeId 장소 id
      * @param userDetail 사용자 정보
      */
-    @Operation(summary = "장소(교실 or 시설) 상세 정보 조회", description = "장소(교실 or 시설) 상세 정보 조회")
+    @Operation(summary = "장소 상세 정보 조회", description = "장소 상세 정보 조회")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
@@ -216,12 +208,10 @@ public class SearchController {
     public CommonResponse<SearchPlaceDetailRes> searchPlaceDetail(
         @Parameter(description = "사용자정보", required = false)
         @AuthenticationPrincipal UserDetailsImpl userDetail,
-        @Parameter(name = "placeId", description = "classroom_id 또는 facility_id", example = "1", required = true)
-        @PathVariable Long placeId,
-        @Parameter(name = "placeType", description = "CLASSROOM 또는 FACILITY", example = "CLASSROOM", required = true)
-        @RequestParam PlaceType placeType) {
+        @Parameter(name = "placeId", description = "placeId", example = "1", required = true)
+        @PathVariable Long placeId) {
         Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
-        return CommonResponse.success(searchService.searchPlaceDetail(userId, placeId, placeType));
+        return CommonResponse.success(searchService.searchPlaceDetail(userId, placeId));
     }
 
     /**

@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.place.entity.Place;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -36,19 +36,19 @@ public class SearchFacilityRes {
     @Schema(description = "편의시설 층", example = "1")
     private int floor;
 
-    public SearchFacilityRes(Facility facility) {
-        this.facilityId = facility.getId();
-        this.name = facility.getName();
-        this.availability = facility.isAvailability();
-        this.operatingTime = facility.getOperatingTime();
-        this.isOperating = facility.isOperating();
-        this.imageUrl = facility.getImageUrl();
-        this.xCoord = facility.getNode().getXCoord();
-        this.yCoord = facility.getNode().getYCoord();
-        this.longitude = facility.getNode().getLongitude();
-        this.latitude = facility.getNode().getLatitude();
-        this.detail = facility.getDetail();
-        this.buildingId = facility.getBuilding().getId();
-        this.floor = facility.getFloor().intValue();
+    public SearchFacilityRes(Place place) {
+        this.facilityId = place.getId();
+        this.name = place.getName();
+        this.availability = place.isAvailability();
+        this.operatingTime = place.getOperatingTime();
+        this.isOperating = place.isOperating();
+        this.imageUrl = place.getImageUrl();
+        this.xCoord = place.getNode().getXCoord();
+        this.yCoord = place.getNode().getYCoord();
+        this.longitude = place.getNode().getLongitude();
+        this.latitude = place.getNode().getLatitude();
+        this.detail = place.getDetail();
+        this.buildingId = place.getBuilding().getId();
+        this.floor = place.getFloor().intValue();
     }
 }

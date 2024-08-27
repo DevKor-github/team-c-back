@@ -75,7 +75,7 @@ public class SearchController {
     public CommonResponse<SearchBuildingFacilityListRes> searchBuildingFacilityByType(
         @Parameter(name = "buildingId", description = "편의시설이 위치한 건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
-        @Parameter(name = "type", description = "찾고자 하는 편의시설 종류", example = "TRASH_CAN", required = true)
+        @Parameter(name = "placeType", description = "찾고자 하는 편의시설 종류", example = "TRASH_CAN", required = true)
         @RequestParam(name = "placeType") PlaceType placeType) {
         return CommonResponse.success(searchService.searchBuildingFacilityByType(buildingId, placeType));
     }
@@ -127,7 +127,7 @@ public class SearchController {
     })
     @GetMapping("/facilities")
     public CommonResponse<SearchFacilityListRes> searchFacilitiesWithType(
-        @Parameter(name = "type", description = "검색하는 편의시설 종류", example = "CAFE", required = true)
+        @Parameter(name = "placeType", description = "검색하는 편의시설 종류", example = "CAFE", required = true)
         @RequestParam(name = "placeType") PlaceType placeType) {
         return CommonResponse.success(searchService.searchFacilitiesWithType(placeType));
     }
@@ -167,7 +167,7 @@ public class SearchController {
     })
     @GetMapping("/place/{placeId}/mask")
     public CommonResponse<SearchMaskIndexByPlaceRes> searchMaskIndexByPlace(
-        @Parameter(name = "placeId", description = "classroom_id 또는 facility_id", example = "1", required = true)
+        @Parameter(name = "placeId", description = "placeId", example = "1", required = true)
         @PathVariable Long placeId) {
         return CommonResponse.success(searchService.searchMaskIndexByPlace(placeId));
     }

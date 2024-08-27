@@ -1,10 +1,9 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.entity.Facility;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,10 +12,10 @@ import lombok.NoArgsConstructor;
 public class SearchPlaceDetailRes {
     private Long buildingId;
     private int floor;
-    private PlaceType type;
+    private LocationType type;
     private Long placeId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private FacilityType facilityType;
+    private PlaceType placeType;
     private String name;
     private String detail;
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -33,63 +32,34 @@ public class SearchPlaceDetailRes {
     private boolean isOperating;
     private String nextPlaceTime;
 
-    public SearchPlaceDetailRes(Classroom classroom, boolean bookmarked) {
-        this.buildingId = classroom.getBuilding().getId();
-        this.floor = classroom.getFloor().intValue();
-        this.type = PlaceType.CLASSROOM;
-        this.placeId = classroom.getId();
-        if(classroom.getBuilding().getId() == 0) {
-            this.name = classroom.getName();
-            this.longitude = classroom.getNode().getLongitude();
-            this.latitude = classroom.getNode().getLatitude();
+    public SearchPlaceDetailRes(Place place, boolean bookmarked) {
+        this.buildingId = place.getBuilding().getId();
+        this.floor = place.getFloor().intValue();
+        this.type = LocationType.PLACE;
+        this.placeId = place.getId();
+        this.placeType = place.getType();
+        if(place.getBuilding().getId() == 0) {
+            this.name = place.getName();
+            this.longitude = place.getNode().getLongitude();
+            this.latitude = place.getNode().getLatitude();
         } else {
-            this.name = classroom.getBuilding().getName() + " " + classroom.getName();
-            this.xCoord = classroom.getNode().getXCoord();
-            this.yCoord = classroom.getNode().getYCoord();
+            this.name = place.getBuilding().getName() + " " + place.getName();
+            this.xCoord = place.getNode().getXCoord();
+            this.yCoord = place.getNode().getYCoord();
         }
-        this.detail = classroom.getDetail();
-        this.plugAvailability = classroom.isPlugAvailability();
-        this.imageUrl = classroom.getImageUrl();
-        this.operatingTime = classroom.getOperatingTime();
-        this.maskIndex = classroom.getMaskIndex();
+        this.detail = place.getDetail();
+        this.availability = place.isAvailability();
+        this.plugAvailability = place.isPlugAvailability();
+        this.imageUrl = place.getImageUrl();
+        this.operatingTime = place.getOperatingTime();
+        this.maskIndex = place.getMaskIndex();
         this.bookmarked = bookmarked;
-        this.isOperating = classroom.isOperating();
-        if(classroom.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = classroom.getOperatingTime().substring(6, 11);
+        this.isOperating = place.isOperating();
+        if(place.isOperating()) { // 운영 중이면 종료 시간
+            this.nextPlaceTime = place.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간
-            this.nextPlaceTime = classroom.getOperatingTime().substring(0, 5);
-        }
-    }
-
-    public SearchPlaceDetailRes(Facility facility, boolean bookmarked) {
-        this.buildingId = facility.getBuilding().getId();
-        this.floor = facility.getFloor().intValue();
-        this.type = PlaceType.FACILITY;
-        this.placeId = facility.getId();
-        this.facilityType = facility.getType();
-        if(facility.getBuilding().getId() == 0) {
-            this.name = facility.getName();
-            this.longitude = facility.getNode().getLongitude();
-            this.latitude = facility.getNode().getLatitude();
-        } else {
-            this.name = facility.getBuilding().getName() + " " + facility.getName();
-            this.xCoord = facility.getNode().getXCoord();
-            this.yCoord = facility.getNode().getYCoord();
-        }
-        this.detail = facility.getDetail();
-        this.availability = facility.isAvailability();
-        this.plugAvailability = facility.isPlugAvailability();
-        this.imageUrl = facility.getImageUrl();
-        this.operatingTime = facility.getOperatingTime();
-        this.maskIndex = facility.getMaskIndex();
-        this.bookmarked = bookmarked;
-        this.isOperating = facility.isOperating();
-        if(facility.isOperating()) { // 운영 중이면 종료 시간
-            this.nextPlaceTime = facility.getOperatingTime().substring(6, 11);
-        }
-        else { // 운영 종료인 경우 여는 시간
-            this.nextPlaceTime = facility.getOperatingTime().substring(0, 5);
+            this.nextPlaceTime = place.getOperatingTime().substring(0, 5);
         }
     }
 }

@@ -1,8 +1,7 @@
 package devkor.com.teamcback.domain.navigate.dto.response;
 
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.entity.Facility;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.navigate.entity.Node;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -41,15 +40,15 @@ public class GetNodeDetailRes {
         this.buildingName = node.getBuilding().getName();
     }
 
-    public void setClassroomPlace(Classroom classroom) {
-        this.placeType = PlaceType.CLASSROOM.toString();
-        this.placeId = classroom.getId();
-        this.placeName = classroom.getName();
-    }
+//    public void setClassroomPlace(Classroom classroom) {
+//        this.placeType = LocationType.CLASSROOM.toString();
+//        this.placeId = classroom.getId();
+//        this.placeName = classroom.getName();
+//    }
 
-    public void setFacilityPlace(Facility facility) {
-        this.placeType = PlaceType.FACILITY.toString();
-        this.placeId = facility.getId();
-        this.placeName = facility.getName();
+    public void setFacilityPlace(Place place) {
+        this.placeType = LocationType.PLACE.toString();
+        this.placeId = place.getId();
+        this.placeName = place.getName();
     }
 }

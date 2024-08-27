@@ -1,12 +1,10 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.classroom.entity.Classroom;
-import devkor.com.teamcback.domain.common.PlaceType;
-import devkor.com.teamcback.domain.facility.entity.Facility;
-import devkor.com.teamcback.domain.facility.entity.FacilityType;
+import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -30,9 +28,9 @@ public class GlobalSearchRes {
     @Schema(description = "건물 또는 시설 위도", example = "37.5844829")
     private Double latitude;
     @Schema(description = "건물 또는 시설 종류", example = "BUILDING")
-    private PlaceType placeType;
+    private LocationType locationType;
     @Schema(description = "편의시설 종류", example = "LOUNGE")
-    private FacilityType facilityType;
+    private PlaceType placeType;
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @Schema(description = "building_id", example = "null/0/1")
     private Long buildingId;
@@ -51,46 +49,44 @@ public class GlobalSearchRes {
         return name.hashCode();
     }
 
-    public GlobalSearchRes(Building building, PlaceType placeType) {
+    public GlobalSearchRes(Building building, LocationType locationType) {
         this.id = building.getId();
         this.name = building.getName();
         this.address = building.getAddress();
         this.longitude = building.getNode().getLongitude();
         this.latitude = building.getNode().getLatitude();
-        this.placeType = placeType;
+        this.locationType = locationType;
     }
 
-    public GlobalSearchRes(Classroom classroom, PlaceType placeType) {
-        this.id = classroom.getId();
-        if (classroom.getBuilding().getId() == 0) {
-            this.name = classroom.getName();
-        } else {
-            this.name = classroom.getBuilding().getName() + " " + classroom.getName();
-        }
-        this.floor = classroom.getFloor();
-        if (!classroom.getDetail().equals(".")) {
-            this.detail = classroom.getDetail();
-        }
-        this.longitude = classroom.getNode().getLongitude();
-        this.latitude = classroom.getNode().getLatitude();
-        this.placeType = placeType;
-    }
-
-    public GlobalSearchRes(Facility facility, PlaceType placeType, boolean hasBuilding) {
-        if(!hasBuilding && facility.getType().getName().equals(facility.getName())) { //야외태그
+    public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding) {
+        if(place.getType().equals(PlaceType.CLASSROOM)) { //일반 교실들
+            this.id = place.getId();
+            this.buildingId = place.getBuilding().getId();
+            this.floor = place.getFloor();
+            if(!place.getDetail().equals(".")) this.detail = place.getDetail();
+            if(place.getBuilding().getId() == 0) {
+                this.name = place.getName();
+            } else {
+                this.name = place.getBuilding().getName() + " " + place.getName();
+            }
+        } else if(!hasBuilding && place.getType().getName().equals(place.getName())) { //야외태그(편의시설)
             this.id = null;
             this.buildingId = 0L;
-            this.name = facility.getName();
-        } else if (hasBuilding && facility.getType().getName().equals(facility.getName())) { //내부태그
+            this.name = place.getName();
+        } else if (hasBuilding && place.getType().getName().equals(place.getName())) { //내부태그(편의시설)
             this.id = null;
-            this.buildingId = facility.getBuilding().getId();
-            this.name = facility.getBuilding().getName() + " " + facility.getName();
+            this.buildingId = place.getBuilding().getId();
+            this.name = place.getBuilding().getName() + " " + place.getName();
         } else { //특정 시설
-            this.id = facility.getId();
+            this.id = place.getId();
             this.buildingId = null;
-            this.name = facility.getBuilding().getName() + " " + facility.getName();
+            this.floor = place.getFloor();
+            this.name = place.getBuilding().getName() + " " + place.getName();
+            if(!place.getDetail().equals(".")) this.detail = place.getDetail();
         }
-        this.placeType = placeType;
-        this.facilityType = facility.getType();
+        this.longitude = place.getNode().getLongitude();
+        this.latitude = place.getNode().getLatitude();
+        this.locationType = locationType;
+        this.placeType = place.getType();
     }
 }

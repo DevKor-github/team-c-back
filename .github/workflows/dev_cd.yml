@@ -1,4 +1,4 @@
-name: CI/CD using github actions & docker
+name: Dev CI/CD using github actions & docker
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         run: |
           cd ./src/main/resources
           touch ./application-prod.yml
-          echo "${{ secrets.YML_PROD }}" > ./application-prod.yml
+          echo "${{ secrets.YML_DEV }}" > ./application-prod.yml
         shell: bash
 
       - name: Grant execute permission for gradlew
@@ -81,7 +81,7 @@ jobs:
         if: contains(github.ref, 'develop') || contains(github.ref, 'main')
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST_NAME }}
+          host: ${{ secrets.DEV_HOST_NAME }}
           username: ${{ secrets.USER_NAME }}
           key: ${{ secrets.AWS_PRIVATE_KEY }}
           port: ${{ secrets.AWS_PORT }}
@@ -96,5 +96,5 @@ jobs:
           aws ec2 revoke-security-group-ingress --group-name ${{ env.AWS_SG_NAME }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrs.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}

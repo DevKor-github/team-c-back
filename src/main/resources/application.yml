@@ -108,7 +108,7 @@ springdoc:
 
 default:
   image:
-    url: https://kodaero.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
+    url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
 
 data:
   api:

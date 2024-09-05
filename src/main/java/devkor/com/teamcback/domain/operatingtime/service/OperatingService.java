@@ -120,7 +120,8 @@ public class OperatingService {
             OperatingCondition operatingCondition = findOperatingConditionOfPlace(dayOfWeek, isHoliday, isVacation, isEvenWeek, place);
             place = em.merge(place);
             log.info("is managed: {}", em.contains(place));
-            place.setOperating(checkIsOperating(operatingCondition, now));
+//            place.setOperating(checkIsOperating(operatingCondition, now)); // 중간에 쉬는 시간에 운영 여부를 false로 표시
+            place.setOperating(checkIsOperating(place.getOperatingTime(), now)); // 중간에 쉬는 시간에도 운영 여부를 true로 표시
         }
     }
 
@@ -177,25 +178,25 @@ public class OperatingService {
         return operatingConditionList;
     }
 
-    // 운영 시간 확인
-    private boolean checkIsOperating(OperatingCondition operatingCondition, LocalTime now) {
-        int hour = now.getHour();
-        int minute = now.getMinute();
-        log.info("hour: {}", hour);
-        log.info("minute: {}", minute);
-
-        List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
-
-        // 운영 여부 판단
-        for(OperatingTime operatingTime : operatingTimeList) {
-            if((hour > operatingTime.getStartHour() && hour < operatingTime.getEndHour()) ||
-                (hour == operatingTime.getStartHour() && minute >= operatingTime.getStartMinute()) ||
-                (hour == operatingTime.getEndHour() && minute < operatingTime.getEndMinute())) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    // 운영 조건으로 운영 여부 확인
+//    private boolean checkIsOperating(OperatingCondition operatingCondition, LocalTime now) {
+//        int hour = now.getHour();
+//        int minute = now.getMinute();
+//        log.info("hour: {}", hour);
+//        log.info("minute: {}", minute);
+//
+//        List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(operatingCondition);
+//
+//        // 운영 여부 판단
+//        for(OperatingTime operatingTime : operatingTimeList) {
+//            if((hour > operatingTime.getStartHour() && hour < operatingTime.getEndHour()) ||
+//                (hour == operatingTime.getStartHour() && minute >= operatingTime.getStartMinute()) ||
+//                (hour == operatingTime.getEndHour() && minute < operatingTime.getEndMinute())) {
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     private String formatTimeRange(LocalTime start, LocalTime end) {
         // 포맷을 "HH:mm" 형식으로 지정

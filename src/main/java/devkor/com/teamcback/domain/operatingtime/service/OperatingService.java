@@ -220,6 +220,7 @@ public class OperatingService {
                 place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
                 place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
                 place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());
+                place.setOperating(place.getBuilding().isOperating());
             }
         }
     }

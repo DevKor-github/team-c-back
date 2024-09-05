@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.building.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,7 +35,11 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private String address;
 
-    private String operatingTime;
+    private String operatingTime; // 오늘의 운영 시간
+
+    private String weekdayOperatingTime;
+    private String saturdayOperatingTime;
+    private String sundayOperatingTime;
 
     private boolean isOperating = true;
 
@@ -52,13 +57,15 @@ public class Building extends BaseEntity {
     private Node node;
 
     public void setOperating(boolean operating) {
-        isOperating = operating;
+        this.isOperating = operating;
     }
 
-    public void setOperatingTime(String operatingTime) {
-        String remainingString = "";
-        if(this.operatingTime.length() > 11) remainingString = this.operatingTime.substring(11);
-        this.operatingTime = operatingTime + remainingString;
+    public void updateOperatingTime(DayOfWeek dayOfWeek) {
+        switch(dayOfWeek) {
+            case SUNDAY -> this.operatingTime = sundayOperatingTime;
+            case SATURDAY -> this.operatingTime = saturdayOperatingTime;
+            case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
+        }
     }
 
     @Override

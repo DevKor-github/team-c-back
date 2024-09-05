@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.place.entity;
 
+import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -40,6 +41,10 @@ public class Place extends BaseEntity {
     private String imageUrl;
 
     private String operatingTime;
+
+    private String weekdayOperatingTime;
+    private String saturdayOperatingTime;
+    private String sundayOperatingTime;
 
     private boolean isOperating;
 
@@ -90,12 +95,18 @@ public class Place extends BaseEntity {
     }
 
     public void setOperating(boolean operating) {
-        isOperating = operating;
+        this.isOperating = operating;
     }
 
-    public void setOperatingTime(String operatingTime) {
-        String remainingString = "";
-        if(this.operatingTime.length() > 11) remainingString = this.operatingTime.substring(11);
-        this.operatingTime = operatingTime + remainingString;
+    public void updateOperatingTime(DayOfWeek dayOfWeek) {
+        switch(dayOfWeek) {
+            case SUNDAY -> this.operatingTime = sundayOperatingTime;
+            case SATURDAY -> this.operatingTime = saturdayOperatingTime;
+            case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
+        }
+
+        if(this.operatingTime == null) {
+            this.operatingTime = this.building.getOperatingTime();
+        }
     }
 }

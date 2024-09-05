@@ -214,12 +214,15 @@ public class OperatingService {
     @Transactional
     public void updatePlaceOperatingTime() {
         List<Place> places = placeRepository.findAll();
+        List<Place> otherPlaces = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
+        log.info("otherPlaces: {}", otherPlaces.size());
 
         for(Place place : places) {
-            if(placesWithCondition.contains(place)) continue;
-            place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
-            place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
-            place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());
+            if(!otherPlaces.contains(place)) {
+                place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
+                place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
+                place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());
+            }
         }
     }
 }

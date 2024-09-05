@@ -35,6 +35,7 @@ public class OperatingService {
     private final PlaceRepository placeRepository;
     private final EntityManager em;
     private static List<Place> placesWithCondition; // 운영 조건을 가진 장소
+    public static final String OPERATING_TIME_PATTERN = "^([0-1]?\\d|2[0-3]):[0-5]\\d-([0-1]?\\d|2[0-3]):[0-5]\\d$";
     private static final List<Long> alwaysOpenBuildings = List.of(0L, 23L, 27L, 60L);
     private static final List<String> nonAlwaysOpenState = List.of("출입 신청 필요", "경비해제 시 오픈", "자체 관리");
 

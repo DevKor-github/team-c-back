@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.search.contoller;
 
-import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;

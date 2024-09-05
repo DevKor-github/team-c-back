@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
@@ -11,7 +10,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "건물 및 강의실 조회 결과")
 @Getter
 @NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchPlaceRes {
     @Schema(description = "건물 또는 강의실 id", example = "1")
     private Long id;
@@ -29,8 +27,12 @@ public class SearchPlaceRes {
     private Double floor;
     @Schema(description = "건물 주소", example = "서울특별시 성북구 안암로 145 고려대학교 애기능생활관")
     private String address;
-    @Schema(description = "건물 운영 시간", example = "00:00~00:00")
-    private String operatingTime;
+    @Schema(description = " 평일 운영 시간", example = "9:00-22:00")
+    private String weekdayOperatingTime;
+    @Schema(description = " 토요일 운영 시간", example = "9:00-22:00")
+    private String saturdayOperatingTime;
+    @Schema(description = " 일요일 운영 시간", example = "9:00-22:00")
+    private String sundayOperatingTime;
     @Schema(description = "건물 운영 여부", example = "true")
     private boolean isOperating;
     @Schema(description = "건물 출입 시 학생증 필요 여부", example = "false")
@@ -56,7 +58,9 @@ public class SearchPlaceRes {
         this.imageUrl = building.getImageUrl();
         this.detail = building.getDetail();
         this.address = building.getAddress();
-        this.operatingTime = building.getOperatingTime();
+        this.weekdayOperatingTime = building.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = building.getSaturdayOperatingTime();
+        this.sundayOperatingTime = building.getSundayOperatingTime();
         this.isOperating = building.isOperating();
         this.needStudentCard = building.isNeedStudentCard();
         this.longitude = building.getNode().getLongitude();
@@ -71,7 +75,9 @@ public class SearchPlaceRes {
         this.name = place.getName();
         this.imageUrl = place.getImageUrl();
         this.detail = place.getDetail();
-        this.operatingTime = place.getOperatingTime();
+        this.weekdayOperatingTime = place.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = place.getSaturdayOperatingTime();
+        this.sundayOperatingTime = place.getSundayOperatingTime();
         this.isOperating = place.isOperating();
         this.floor = place.getFloor();
         this.plugAvailability = place.isPlugAvailability();

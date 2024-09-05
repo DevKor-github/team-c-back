@@ -45,8 +45,6 @@ public class OperatingScheduler {
 
         dayOfWeek = findDayOfWeek(now);
         log.info("dayOfWeek: {}", dayOfWeek.toString());
-
-        // 나중에 사용할 수 있어서 남겨둠
         isHoliday = isHoliday(now); // 공휴일 여부
         log.info("isHoliday: {}", isHoliday);
         isVacation = isVacation(now); // 방학 여부

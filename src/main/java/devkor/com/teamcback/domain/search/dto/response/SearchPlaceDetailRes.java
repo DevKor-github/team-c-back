@@ -1,9 +1,13 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
+import static devkor.com.teamcback.domain.operatingtime.service.OperatingService.OPERATING_TIME_PATTERN;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +26,9 @@ public class SearchPlaceDetailRes {
     private boolean availability;  //사용 가능 여부
     private boolean plugAvailability;
     private String imageUrl;
-    private String operatingTime;
+    private String weekdayOperatingTime;
+    private String saturdayOperatingTime;
+    private String sundayOperatingTime;
     private Double longitude;
     private Double latitude;
     private double xCoord;
@@ -51,11 +57,16 @@ public class SearchPlaceDetailRes {
         this.availability = place.isAvailability();
         this.plugAvailability = place.isPlugAvailability();
         this.imageUrl = place.getImageUrl();
-        this.operatingTime = place.getOperatingTime();
+        this.weekdayOperatingTime = place.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = place.getSaturdayOperatingTime();
+        this.sundayOperatingTime = place.getSundayOperatingTime();
         this.maskIndex = place.getMaskIndex();
         this.bookmarked = bookmarked;
         this.isOperating = place.isOperating();
-        if(place.isOperating()) { // 운영 중이면 종료 시간
+        if(place.getOperatingTime() == null || !Pattern.matches(OPERATING_TIME_PATTERN, place.getOperatingTime())) {
+            this.nextPlaceTime = null;
+        }
+        else if(place.isOperating()) { // 운영 중이면 종료 시간
             this.nextPlaceTime = place.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간

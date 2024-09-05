@@ -66,6 +66,8 @@ public class Building extends BaseEntity {
             case SATURDAY -> this.operatingTime = saturdayOperatingTime;
             case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
         }
+
+
     }
 
     @Override

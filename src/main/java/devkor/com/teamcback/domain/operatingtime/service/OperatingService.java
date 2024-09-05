@@ -55,7 +55,6 @@ public class OperatingService {
         }
 
         // 오늘에 해당하는 운영 조건을 가진 장소들
-        List<Place> placeList = new ArrayList<>();
         List<OperatingCondition> operatingConditions = findOperatingConditionList(dayOfWeek, isHoliday, isVacation, isEvenWeek);
 
         for(OperatingCondition operatingCondition : operatingConditions) {
@@ -79,11 +78,11 @@ public class OperatingService {
             String newOperatingTime = formatTimeRange(startTime, endTime);
 
             operatingCondition.getPlace().setOperatingTime(newOperatingTime);
-            placeList.add(operatingCondition.getPlace());
 
         }
 
-        placesWithCondition = placeList;
+        // 장소만의 운영 시간을 가진 장소들
+        placesWithCondition = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();;
     }
 
     @Transactional
@@ -214,11 +213,9 @@ public class OperatingService {
     @Transactional
     public void updatePlaceOperatingTime() {
         List<Place> places = placeRepository.findAll();
-        List<Place> otherPlaces = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
-        log.info("otherPlaces: {}", otherPlaces.size());
 
         for(Place place : places) {
-            if(!otherPlaces.contains(place)) {
+            if(!placesWithCondition.contains(place)) {
                 place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
                 place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
                 place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());

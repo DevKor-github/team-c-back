@@ -102,6 +102,10 @@ public class Place extends BaseEntity {
         this.isOperating = operating;
     }
 
+    public void setOperatingTime(String operatingTime) {
+        this.operatingTime = operatingTime;
+    }
+
     public void updateOperatingTime(DayOfWeek dayOfWeek) {
         switch(dayOfWeek) {
             case SUNDAY -> this.operatingTime = sundayOperatingTime;

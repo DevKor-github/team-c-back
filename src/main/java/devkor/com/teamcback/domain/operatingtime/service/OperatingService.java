@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,8 @@ public class OperatingService {
     private final EntityManager em;
     private static List<Place> placesWithCondition; // 운영 조건을 가진 장소
     public static final String OPERATING_TIME_PATTERN = "^([0-1]?\\d|2[0-3]):[0-5]\\d-([0-1]?\\d|2[0-3]):[0-5]\\d$";
+    // 상시 개방 건물
     private static final List<Long> alwaysOpenBuildings = List.of(0L, 23L, 27L, 60L);
-    private static final List<String> nonAlwaysOpenState = List.of("출입 신청 필요", "경비해제 시 오픈", "자체 관리");
 
     @Transactional
     public void updateOperatingTime(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean isEvenWeek) {
@@ -54,8 +55,35 @@ public class OperatingService {
         }
 
         // 오늘에 해당하는 운영 조건을 가진 장소들
+        List<Place> placeList = new ArrayList<>();
         List<OperatingCondition> operatingConditions = findOperatingConditionList(dayOfWeek, isHoliday, isVacation, isEvenWeek);
-        placesWithCondition = operatingConditions.stream().map(OperatingCondition::getPlace).distinct().toList();
+
+        for(OperatingCondition operatingCondition : operatingConditions) {
+            List<OperatingTime> operatingTimeList = operatingTimeRepository.findAllByOperatingCondition(
+                operatingCondition);
+
+            LocalTime endTime = LocalTime.of(0, 0);
+            LocalTime startTime = LocalTime.of(23, 59);
+
+            for (OperatingTime operatingTime : operatingTimeList) {
+                LocalTime end = LocalTime.of(operatingTime.getEndHour(),
+                    operatingTime.getEndMinute());
+                LocalTime start = LocalTime.of(operatingTime.getStartHour(),
+                    operatingTime.getStartMinute());
+                if (endTime.isBefore(end))
+                    endTime = end;
+                if (startTime.isAfter(start))
+                    startTime = start;
+            }
+
+            String newOperatingTime = formatTimeRange(startTime, endTime);
+
+            operatingCondition.getPlace().setOperatingTime(newOperatingTime);
+            placeList.add(operatingCondition.getPlace());
+
+        }
+
+        placesWithCondition = placeList;
     }
 
     @Transactional
@@ -65,7 +93,7 @@ public class OperatingService {
             // 상시 개방이 아닌 건물만 확인
             if(!alwaysOpenBuildings.contains(building.getId())) {
                 // 운영 시간이 아닌 다른 문자열 혹은 null인 건물은 false
-                if(building.getOperatingTime() == null || nonAlwaysOpenState.contains(building.getOperatingTime())) {
+                if(building.getOperatingTime() == null || !Pattern.matches(OPERATING_TIME_PATTERN, building.getOperatingTime())) {
                     building.setOperating(false);
                 }
                 // 운영 중인지 확인
@@ -168,6 +196,18 @@ public class OperatingService {
             }
         }
         return false;
+    }
+
+    private String formatTimeRange(LocalTime start, LocalTime end) {
+        // 포맷을 "HH:mm" 형식으로 지정
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        // 각각의 LocalTime을 포맷된 문자열로 변환
+        String startFormatted = start.format(formatter);
+        String endFormatted = end.format(formatter);
+
+        // 두 시간 문자열을 "HH:mm-HH:mm" 형식으로 연결
+        return startFormatted + "-" + endFormatted;
     }
 
     // 장소 운영 시간 저장(건물 운영 시간 변동이 있을 경우에만)

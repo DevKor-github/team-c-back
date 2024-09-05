@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -42,8 +43,11 @@ public class Place extends BaseEntity {
 
     private String operatingTime;
 
+    @Setter
     private String weekdayOperatingTime;
+    @Setter
     private String saturdayOperatingTime;
+    @Setter
     private String sundayOperatingTime;
 
     private boolean isOperating;

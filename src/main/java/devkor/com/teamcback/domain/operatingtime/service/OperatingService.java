@@ -168,4 +168,17 @@ public class OperatingService {
         }
         return false;
     }
+
+    // 장소 운영 시간 저장(건물 운영 시간 변동이 있을 경우에만)
+    @Transactional
+    public void updatePlaceOperatingTime() {
+        List<Place> places = placeRepository.findAll();
+
+        for(Place place : places) {
+            if(placesWithCondition.contains(place)) continue;
+            place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
+            place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
+            place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());
+        }
+    }
 }

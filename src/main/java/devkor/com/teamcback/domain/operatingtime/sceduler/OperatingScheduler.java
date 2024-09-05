@@ -69,6 +69,14 @@ public class OperatingScheduler {
         operatingService.updateIsOperating(nowTime, dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
+    // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
+//    @Scheduled(cron = "0 15 * * * *") // 테스트용
+    public void updatePlaceOperatingTime() {
+        log.info("장소 운영 시간 업데이트");
+
+        operatingService.updatePlaceOperatingTime();
+    }
+
     private DayOfWeek findDayOfWeek(LocalDate date) {
         switch (date.getDayOfWeek()) {
             case SATURDAY -> {

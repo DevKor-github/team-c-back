@@ -25,9 +25,9 @@ public class OperatingCondition extends BaseEntity {
 
     private Boolean isVacation; // 방학, 학기 중
 
-    @ManyToOne
-    @JoinColumn(name = "building_id")
-    private Building building;
+//    @ManyToOne
+//    @JoinColumn(name = "building_id")
+//    private Building building;
 
     @ManyToOne
     @JoinColumn(name = "place_id")

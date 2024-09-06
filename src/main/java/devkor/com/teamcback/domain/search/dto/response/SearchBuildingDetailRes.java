@@ -1,8 +1,11 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
+import static devkor.com.teamcback.domain.operatingtime.service.OperatingService.OPERATING_TIME_PATTERN;
+
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.regex.Pattern;
 import lombok.Getter;
 
 import java.util.List;
@@ -18,8 +21,12 @@ public class SearchBuildingDetailRes {
     private String address;
     @Schema(description = "건물 사진 url", example = "building_url")
     private String imageUrl;
-    @Schema(description = "운영 시간", example = "9:00-22:00")
-    private String operatingTime;
+    @Schema(description = " 평일 운영 시간", example = "9:00-22:00")
+    private String weekdayOperatingTime;
+    @Schema(description = " 토요일 운영 시간", example = "9:00-22:00")
+    private String saturdayOperatingTime;
+    @Schema(description = " 일요일 운영 시간", example = "9:00-22:00")
+    private String sundayOperatingTime;
     @Schema(description = "건물 정보(TMI)", example = "애기능생활관이다.")
     private String details;
     @Schema(description = "북마크 저장 여부", example = "false")
@@ -38,13 +45,18 @@ public class SearchBuildingDetailRes {
         this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.address = building.getAddress();
         this.imageUrl = building.getImageUrl();
-        this.operatingTime = building.getOperatingTime();
+        this.weekdayOperatingTime = building.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = building.getSaturdayOperatingTime();
+        this.sundayOperatingTime = building.getSundayOperatingTime();
         this.details = building.getDetail();
         this.bookmarked = bookmarked;
         this.existTypes = types;
         this.mainFacilityList = facilities;
         this.isOperating = building.isOperating();
-        if(building.isOperating()) { // 운영 중이면 종료 시간
+        if(building.getOperatingTime() == null || !Pattern.matches(OPERATING_TIME_PATTERN, building.getOperatingTime())) {
+            this.nextBuildingTime = null;
+        }
+        else if(building.isOperating()) { // 운영 중이면 종료 시간
             this.nextBuildingTime = building.getOperatingTime().substring(6, 11);
         }
         else { // 운영 종료인 경우 여는 시간

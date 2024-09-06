@@ -1,13 +1,11 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.place.entity.Place;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Schema(description = "편의시설 정보")
 @Getter
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchFacilityRes {
     @Schema(description = "편의시설 ID", example = "1")
     private Long facilityId;
@@ -15,8 +13,12 @@ public class SearchFacilityRes {
     private String name;
     @Schema(description = "편의시설 이용 가능 여부", example = "true")
     private Boolean availability;
-    @Schema(description = "운영 시간", example = "08:30-17:00")
-    private String operatingTime;
+    @Schema(description = " 평일 운영 시간", example = "9:00-22:00")
+    private String weekdayOperatingTime;
+    @Schema(description = " 토요일 운영 시간", example = "9:00-22:00")
+    private String saturdayOperatingTime;
+    @Schema(description = " 일요일 운영 시간", example = "9:00-22:00")
+    private String sundayOperatingTime;
     @Schema(description = "운영 여부", example = "true")
     private boolean isOperating;
     @Schema(description = "편의시설 image url", example = "url")
@@ -40,7 +42,9 @@ public class SearchFacilityRes {
         this.facilityId = place.getId();
         this.name = place.getName();
         this.availability = place.isAvailability();
-        this.operatingTime = place.getOperatingTime();
+        this.weekdayOperatingTime = place.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = place.getSaturdayOperatingTime();
+        this.sundayOperatingTime = place.getSundayOperatingTime();
         this.isOperating = place.isOperating();
         this.imageUrl = place.getImageUrl();
         this.xCoord = place.getNode().getXCoord();

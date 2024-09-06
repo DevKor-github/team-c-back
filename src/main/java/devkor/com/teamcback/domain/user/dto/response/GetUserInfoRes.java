@@ -1,10 +1,14 @@
 package devkor.com.teamcback.domain.user.dto.response;
 
+import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.Comparator;
 
 @Getter
 @Schema(description = "마이페이지 정보")
@@ -20,7 +24,7 @@ public class GetUserInfoRes {
     @Schema(description = "role", example = "USER")
     private Role role;
     @Schema(description = "level", example = "1")
-    private int level;
+    private Level level;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
@@ -32,18 +36,16 @@ public class GetUserInfoRes {
         this.profileUrl = user.getProfileUrl();
         this.provider = user.getProvider();
         this.role = user.getRole();
-        if(user.getScore() < LevelConstraint.LEVEL_TWO_LIMIT) {
-            this.level = 1;
-        } else if (user.getScore() < LevelConstraint.LEVEL_THREE_LIMIT) {
-            this.level = 2;
-        } else {
-            this.level = 3;
-        }
+        this.level = calculateLevel(user.getScore());
         this.categoryCount = categoryCount;
     }
 
-    public class LevelConstraint { // 굳이 상수 변수 필요 있을 지 생각해보기...
-        private static final int LEVEL_TWO_LIMIT = 5;
-        private static final int LEVEL_THREE_LIMIT = 15;
+    private Level calculateLevel(Long score) {
+        // score >= minScore 인 경우 중 가장 높은 레벨 반환
+        return Arrays.stream(Level.values())
+            .sorted(Comparator.comparingInt(Level::getMinScore).reversed())
+            .filter(level -> score >= level.getMinScore())
+            .findFirst()
+            .orElse(Level.LEVEL1);
     }
 }

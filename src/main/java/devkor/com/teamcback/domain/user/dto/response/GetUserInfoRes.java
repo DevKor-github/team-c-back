@@ -30,7 +30,6 @@ public class GetUserInfoRes {
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
     public GetUserInfoRes(User user, Long categoryCount) {
-
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.profileUrl = user.getProfileUrl();
@@ -43,9 +42,8 @@ public class GetUserInfoRes {
     private Level calculateLevel(Long score) {
         // score >= minScore 인 경우 중 가장 높은 레벨 반환
         return Arrays.stream(Level.values())
-            .sorted(Comparator.comparingInt(Level::getMinScore).reversed())
             .filter(level -> score >= level.getMinScore())
-            .findFirst()
+            .max(Comparator.comparingInt(Level::getMinScore))
             .orElse(Level.LEVEL1);
     }
 }

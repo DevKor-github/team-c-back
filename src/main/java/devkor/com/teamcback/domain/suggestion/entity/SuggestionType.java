@@ -13,9 +13,9 @@ public enum SuggestionType {
     INCORRECT_ROUTE("잘못된 경로 안내"),
     ADDITIONAL_INFORMATION("추가하고 싶은 정보"),
     FUNCTIONAL_ERROR("기능 오류"),
-    FEATURE_SUGGESTION("기능 추가 요청"),
-    INCONVENIENCE("불편한 점"),
-    QUESTION("궁금한 점"),
+    FEATURE_SUGGESTION("추천 기능"),
+    INCONVENIENCE("불편 사항"),
+    QUESTION("질의 사항"),
     OTHER("기타");
     private final String type;
 }

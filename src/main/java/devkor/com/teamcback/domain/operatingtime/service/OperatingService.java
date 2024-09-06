@@ -34,8 +34,6 @@ public class OperatingService {
     private final NodeRepository nodeRepository;
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
-    private final EntityManager em;
-    private static List<Place> placesWithCondition = new ArrayList<>(); // 운영 조건을 가진 장소
     public static final String OPERATING_TIME_PATTERN = "^([0-1]?\\d|2[0-3]):[0-5]\\d-([0-1]?\\d|2[0-3]):[0-5]\\d$";
     // 상시 개방 건물
     private static final List<Long> alwaysOpenBuildings = List.of(0L, 23L, 27L, 60L);
@@ -81,13 +79,13 @@ public class OperatingService {
 
         }
 
-        // 장소만의 운영 시간을 가진 장소들
-        placesWithCondition = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
     }
 
     @Transactional
     public void updateIsOperating(LocalTime now, DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean isEvenWeek) {
         List<Building> buildings = buildingRepository.findAll();
+        List<Place> placesWithCondition = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
+
         for(Building building : buildings) {
             // 상시 개방이 아닌 건물만 확인
             if(!alwaysOpenBuildings.contains(building.getId())) {
@@ -118,8 +116,6 @@ public class OperatingService {
         // 운영 조건을 가진 장소 운영 시간 변경
         for(Place place : placesWithCondition) {
             OperatingCondition operatingCondition = findOperatingConditionOfPlace(dayOfWeek, isHoliday, isVacation, isEvenWeek, place);
-            place = em.merge(place);
-            log.info("is managed: {}", em.contains(place));
             place.setOperating(checkIsOperating(operatingCondition, now)); // 중간에 쉬는 시간에 운영 여부를 false로 표시
 //            place.setOperating(checkIsOperating(place.getOperatingTime(), now)); // 중간에 쉬는 시간에도 운영 여부를 true로 표시
         }
@@ -214,6 +210,7 @@ public class OperatingService {
     @Transactional
     public void updatePlaceOperatingTime() {
         List<Place> places = placeRepository.findAll();
+        List<Place> placesWithCondition = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
 
         for(Place place : places) {
             if(!placesWithCondition.contains(place)) {

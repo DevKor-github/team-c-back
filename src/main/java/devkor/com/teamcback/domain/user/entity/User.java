@@ -37,11 +37,15 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Provider provider;
 
-    public User(String username, String email, String profileUrl, Role role, Provider provider) {
+    @Column(nullable = false)
+    private Long score;
+
+    public User(String username, String email, String profileUrl, Role role, Provider provider, Long score) {
         this.username = username;
         this.email = email;
         this.profileUrl = profileUrl;
         this.role = role;
         this.provider = provider;
+        this.score = score;
     }
 }

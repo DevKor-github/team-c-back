@@ -58,9 +58,17 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-//    @Scheduled(cron = "30 8 * * * *") // 테스트용
-    @Scheduled(cron = "0 0,30 * * * *") // 매일 30분마다
-    public void updateIsOperating() {
+//    @Scheduled(cron = "30 50 * * * *") // 테스트용
+    @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
+    public void updateOperatingDuringPeakHour() {
+        log.info("운영 여부 업데이트");
+        LocalTime nowTime = LocalTime.now();
+
+        operatingService.updateIsOperating(nowTime, dayOfWeek, isHoliday, isVacation, isEvenWeek);
+    }
+
+    @Scheduled(cron = "0 0,30 0-8,19-23 * * *") // 30분마다
+    public void updateOperating() {
         log.info("운영 여부 업데이트");
         LocalTime nowTime = LocalTime.now();
 

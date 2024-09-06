@@ -49,7 +49,10 @@ public enum ResultCode {
     NOT_FOUND_IN_CATEGORY(HttpStatus.NOT_FOUND, 7004, "카테고리 내에 해당 즐겨찾기가 존재하지 않습니다."),
 
     // 건의함 8000번대
-    NOT_FOUND_SUGGESTION(HttpStatus.NOT_FOUND, 8000, "건의를 찾을 수 없습니다.")
+    NOT_FOUND_SUGGESTION(HttpStatus.NOT_FOUND, 8000, "건의를 찾을 수 없습니다."),
+
+    // 운영 시간 10000번대
+    OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다.")
     ;
 
     private final HttpStatus status;

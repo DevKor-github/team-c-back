@@ -17,7 +17,9 @@ public class SearchRoomDetailRes {
     private boolean availability;
     private boolean plugAvailability;
     private String imageUrl;
-    private String operatingTime;
+    private String weekdayOperatingTime;
+    private String saturdayOperatingTime;
+    private String sundayOperatingTime;
     private boolean isOperating;
     private Double longitude;
     private Double latitude;
@@ -33,7 +35,9 @@ public class SearchRoomDetailRes {
         this.availability = place.isAvailability();
         this.plugAvailability = place.isPlugAvailability();
         this.imageUrl = place.getImageUrl();
-        this.operatingTime = place.getOperatingTime();
+        this.weekdayOperatingTime = place.getWeekdayOperatingTime();
+        this.saturdayOperatingTime = place.getSaturdayOperatingTime();
+        this.sundayOperatingTime = place.getSundayOperatingTime();
         this.isOperating = place.isOperating();
         this.longitude = place.getNode().getLongitude();
         this.latitude = place.getNode().getLatitude();

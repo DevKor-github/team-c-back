@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,21 +36,20 @@ public class OperatingScheduler {
     private static Boolean isVacation = null;
     private static Boolean isEvenWeek = null;
 
-//    @Scheduled(cron = "0 * * * * *") // 테스트용 1분마다
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
         log.info("운영 시간 업데이트");
+
         LocalDate now = LocalDate.now();
 
         dayOfWeek = findDayOfWeek(now);
         log.info("dayOfWeek: {}", dayOfWeek.toString());
-        isHoliday = isHoliday(now);
+        isHoliday = isHoliday(now); // 공휴일 여부
         log.info("isHoliday: {}", isHoliday);
-        isVacation = isVacation(now);
+        isVacation = isVacation(now); // 방학 여부
         log.info("isVacation: {}", isVacation);
-
-        isEvenWeek = false;
+        isEvenWeek = false; // 토요일 짝수 주 여부
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
             isEvenWeek = isEvenWeek(now);
             log.info("isEvenWeek: {}", isEvenWeek);
@@ -58,13 +58,21 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-//    @Scheduled(cron = "*/30 * * * * *") // 테스트용 30초마다
+//    @Scheduled(cron = "30 8 * * * *") // 테스트용
     @Scheduled(cron = "0 0,30 * * * *") // 매일 30분마다
     public void updateIsOperating() {
         log.info("운영 여부 업데이트");
-        LocalDateTime nowTime = LocalDateTime.now();
+        LocalTime nowTime = LocalTime.now();
 
-        operatingService.updateIsOperating(nowTime);
+        operatingService.updateIsOperating(nowTime, dayOfWeek, isHoliday, isVacation, isEvenWeek);
+    }
+
+    // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
+//    @Scheduled(cron = "0 15 * * * *") // 테스트용
+    public void updatePlaceOperatingTime() {
+        log.info("장소 운영 시간 업데이트");
+
+        operatingService.updatePlaceOperatingTime();
     }
 
     private DayOfWeek findDayOfWeek(LocalDate date) {

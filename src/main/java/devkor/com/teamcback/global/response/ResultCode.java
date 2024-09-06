@@ -49,7 +49,10 @@ public enum ResultCode {
     NOT_FOUND_IN_CATEGORY(HttpStatus.NOT_FOUND, 7004, "카테고리 내에 해당 즐겨찾기가 존재하지 않습니다."),
 
     // 건의함 8000번대
-    NOT_FOUND_SUGGESTION(HttpStatus.NOT_FOUND, 8000, "건의를 찾을 수 없습니다.")
+    NOT_FOUND_SUGGESTION(HttpStatus.NOT_FOUND, 8000, "건의를 찾을 수 없습니다."),
+
+    // 특수 9000번대
+    NOT_FOUND_KOYEON(HttpStatus.NOT_FOUND, 9000, "고연전 정보를 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

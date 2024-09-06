@@ -22,10 +22,10 @@ public class SearchMyInfoRes {
     @Schema(description = "level", example = "1")
     private int level;
     @Schema(description = "categoryCount", example = "2")
-    private int categoryCount;
+    private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
-    public SearchMyInfoRes(User user, int categoryCount) {
+    public SearchMyInfoRes(User user, Long categoryCount) {
 
         this.username = user.getUsername();
         this.email = user.getEmail();

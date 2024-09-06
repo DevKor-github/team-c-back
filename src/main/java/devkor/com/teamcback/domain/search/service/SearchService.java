@@ -326,7 +326,7 @@ public class SearchService {
      */
     public SearchMyInfoRes searchUserInfo(Long userId) {
         User user = findUser(userId);
-        return new SearchMyInfoRes(user, categoryRepository.findAllByUser(user).size());
+        return new SearchMyInfoRes(user, categoryRepository.countAllByUser(user));
     }
 
     private List<Building> getBuildings(String word) {

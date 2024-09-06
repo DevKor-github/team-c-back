@@ -321,6 +321,13 @@ public class SearchService {
 
         searchLogRedis.opsForList().leftPush(key, searchLog);
     }
+    /**
+     * 마이페이지 정보 조회
+     */
+    public SearchMyInfoRes searchUserInfo(Long userId) {
+        User user = findUser(userId);
+        return new SearchMyInfoRes(user, categoryRepository.findAllByUser(user).size());
+    }
 
     private List<Building> getBuildings(String word) {
         // 건물 조회

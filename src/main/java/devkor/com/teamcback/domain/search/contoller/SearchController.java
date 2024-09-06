@@ -264,22 +264,4 @@ public class SearchController {
         searchService.saveSearchLog(userDetail.getUser().getUserId(), req);
         return CommonResponse.success(new SaveSearchLogRes());
     }
-
-    /**
-     * 마이페이지 정보 조회
-     * @param userDetail 사용자 정보
-     */
-    @Operation(summary = "마이페이지 정보 조회", description = "마이페이지 정보 조회")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-        @ApiResponse(responseCode = "404", description = "Not Found",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-    })
-    @GetMapping("/users/mypage")
-    public CommonResponse<SearchMyInfoRes> searchUserInfo(
-        @Parameter(description = "사용자정보", required = true)
-        @AuthenticationPrincipal UserDetailsImpl userDetail) {
-        return CommonResponse.success(searchService.searchUserInfo(userDetail.getUser().getUserId()));
-    }
-
 }

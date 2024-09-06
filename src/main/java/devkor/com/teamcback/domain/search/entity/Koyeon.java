@@ -3,8 +3,6 @@ package devkor.com.teamcback.domain.search.entity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-
 
 @Entity
 @Getter

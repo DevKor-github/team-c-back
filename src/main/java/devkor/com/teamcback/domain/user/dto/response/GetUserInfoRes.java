@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.search.dto.response;
+package devkor.com.teamcback.domain.user.dto.response;
 
 import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
@@ -8,7 +8,7 @@ import lombok.Getter;
 
 @Getter
 @Schema(description = "마이페이지 정보")
-public class SearchMyInfoRes {
+public class GetUserInfoRes {
     @Schema(description = "username", example = "호랑이asdf")
     private String username;
     @Schema(description = "email", example = "abc1234@naver.com")
@@ -25,7 +25,7 @@ public class SearchMyInfoRes {
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
-    public SearchMyInfoRes(User user, Long categoryCount) {
+    public GetUserInfoRes(User user, Long categoryCount) {
 
         this.username = user.getUsername();
         this.email = user.getEmail();

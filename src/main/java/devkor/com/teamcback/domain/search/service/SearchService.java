@@ -15,7 +15,9 @@ import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
+import devkor.com.teamcback.domain.search.entity.Koyeon;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
+import devkor.com.teamcback.domain.search.repository.KoyeonRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -46,6 +48,8 @@ public class SearchService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final KoyeonRepository koyeonRepository;
+
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -58,6 +62,14 @@ public class SearchService {
     private final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA,
         PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM, PlaceType.BANK, PlaceType.GYM);
+
+    /**
+     * 고연전 여부 확인
+     */
+    @Transactional(readOnly = true)
+    public Koyeon isKoyeon() {
+        return koyeonRepository.findById(1L).orElseThrow(() -> new GlobalException(NOT_FOUND_KOYEON));
+    }
 
     /**
      * 통합 검색

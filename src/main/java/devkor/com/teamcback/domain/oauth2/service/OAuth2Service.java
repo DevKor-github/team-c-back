@@ -62,7 +62,7 @@ public class OAuth2Service extends DefaultOAuth2UserService {
     }
 
     private User save(OAuth2UserInfo oAuth2UserInfo) {
-        User user = new User(makeRandomName(), oAuth2UserInfo.getEmail(), defaultProfileImageUrl, Role.USER, oAuth2UserInfo.getProvider());
+        User user = new User(makeRandomName(), oAuth2UserInfo.getEmail(), defaultProfileImageUrl, Role.USER, oAuth2UserInfo.getProvider(), 0L);
 
         return userRepository.save(user);
     }

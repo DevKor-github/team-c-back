@@ -269,7 +269,7 @@ public class SearchController {
      * 마이페이지 정보 조회
      * @param userDetail 사용자 정보
      */
-    @Operation(summary = "건물 상세 정보 조회", description = "건물 상세 정보 조회")
+    @Operation(summary = "마이페이지 정보 조회", description = "마이페이지 정보 조회")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",

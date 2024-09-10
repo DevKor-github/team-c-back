@@ -11,7 +11,9 @@ import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.*;
 import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
+import devkor.com.teamcback.domain.routes.repository.ShuttletimeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
+import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.util.*;
+import java.time.LocalTime;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
@@ -30,6 +33,7 @@ public class RouteService {
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
+    private final ShuttletimeRepository shuttletimeRepository;
 
     /**
      * 메인 경로탐색 메서드
@@ -160,7 +164,11 @@ public class RouteService {
     /**
      * 그래프 요소 찾기(node, edge 묶음)
      */
+
+    //그래프 생성할 때, 현재 시간 조사하여 주말인지 주중인지 확인할 필요성이 있다(주말이면 shuttle 이용 불가, 아예 차단)
+    //또한, nodeToBan을 List<NodeType>으로 받을 필요가 있다
     private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, NodeType nodeToBan){
+        //List<Node> searchNode = new ArrayList<>(nodeRepository.findAll());
         List<Node> graphNode = new ArrayList<>();
         List<Edge> graphEdge = new ArrayList<>();
         if (nodeToBan == null){
@@ -192,10 +200,20 @@ public class RouteService {
 
             for (int i = 0; i < endNodeId.length; i++) {
                 // 시작끝 모두 Long으로 써서 경로 찾은 후, 해당 경로 대해서만 node 찾기
-                graphEdge.add(new Edge(Integer.parseInt(distance[i]), node.getId(), Long.parseLong(endNodeId[i])));
+                //이거 좀 효율높게 할 필요가 있다. 현재 서칭용 전체 때려박은다음에 일일히 찾으면 4초정도 걸림. 추릴 수 있는 방법...?
+                graphEdge.add(new Edge(Integer.parseInt(distance[i]), node, findNodeByList(graphNode, Long.parseLong(endNodeId[i]))));
             }
         }
         return new GetGraphRes(graphNode, graphEdge);
+    }
+
+    private Node findNodeByList(List<Node> nodeList, Long nodeId){
+        for (Node node: nodeList){
+            if (Objects.equals(node.getId(), nodeId)){
+                return node;
+            }
+        }
+        throw new Error("노드 탐색 안됨");
     }
 
     /**
@@ -227,6 +245,7 @@ public class RouteService {
     /**
      * 전체 경로 리스트를 받아 층별, 건물별로 끊기
      */
+    //SHUTTLE로 변경될 때 끊을 필요가 있다
     private List<List<Node>> cutRoute(List<Node> route, boolean isStartBuilding, boolean isEndBuilding) {
         if (route.isEmpty()) throw new Error("파싱할 리스트가 비었습니다.");
 
@@ -283,6 +302,7 @@ public class RouteService {
      * 나눠진 기준으로 두 노드를 받아 비교하여 간단한 설명 생성
      * nextNode에 null이 들어오면 경로 안내가 끝난 상황이라고 판단
      */
+    //SHUTTLE로 변경될 때 경로안내 필요
     private String makeInfo(Node prevNode, Node nextNode){
         if (nextNode == null) return "도착";
 
@@ -328,6 +348,10 @@ public class RouteService {
         return placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
     }
 
+    private Place findPlaceByNode(Node node){
+        return placeRepository.findByNode(node);
+    }
+
     private Node findNode(Long nodeId) {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
     }
@@ -336,12 +360,16 @@ public class RouteService {
         return checkpointRepository.findByNode(node);
     }
 
+    private List<Shuttletime> findShuttletime(Place place, boolean summerSession){
+        return shuttletimeRepository.findAllByPlaceIdAndSummerSession(place, summerSession);
+    }
+
     //다익스트라용 메서드
     private static class NodeDistancePair implements Comparable<NodeDistancePair> {
-        Long node;
+        Node node;
         Long distance;
 
-        public NodeDistancePair(Long node, Long distance) {
+        public NodeDistancePair(Node node, Long distance) {
             this.node = node;
             this.distance = distance;
         }
@@ -351,43 +379,51 @@ public class RouteService {
             return Long.compare(this.distance, other.distance);
         }
     }
+
     private DijkstraRes dijkstra(List<Node> nodes, List<Edge> edges, Node startNode, Node endNode) {
-        Map<Long, Long> distances = new HashMap<>();
-        Map<Long, Long> previousNodes = new HashMap<>();
+        Map<Node, Long> distances = new HashMap<>();
+        Map<Node, Node> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
-        Set<Long> visitedNodes = new HashSet<>();
+        Set<Node> visitedNodes = new HashSet<>();
 
         // 모든 노드를 초기화합니다.
         for (Node node : nodes) {
             if (node.equals(startNode)) {
-                distances.put(node.getId(), 0L);
-                priorityQueue.add(new NodeDistancePair(node.getId(), 0L));
+                distances.put(node, 0L);
+                priorityQueue.add(new NodeDistancePair(node, 0L));
             } else {
-                distances.put(node.getId(), Long.MAX_VALUE);
+                distances.put(node, Long.MAX_VALUE);
             }
-            previousNodes.put(node.getId(), null);
+            previousNodes.put(node, null);
         }
 
         while (!priorityQueue.isEmpty()) {
             NodeDistancePair currentPair = priorityQueue.poll();
-            Long currentNode = currentPair.node;
+            Node currentNode = currentPair.node;
 
             if (!visitedNodes.add(currentNode)) {
                 continue;
             }
 
-            if (currentNode.equals(endNode.getId())) {
+            if (currentNode.equals(endNode)) {
                 break;
             }
 
             for (Edge edge : edges) {
                 if (edge.getStartNode().equals(currentNode)) {
-                    Long neighbor = edge.getEndNode();
+                    Node neighbor = edge.getEndNode();
                     Long currentDistance = distances.get(currentNode);
                     if (currentDistance == null) {
                         continue; // currentNode가 distances에 존재하지 않는 경우를 대비
                     }
                     Long newDist = currentDistance + edge.getDistance();
+
+                    if (currentNode.getType() != NodeType.SHUTTLE && neighbor.getType() == NodeType.SHUTTLE){
+                        Place currentPlace = findPlaceByNode(currentNode);
+                        //나중에 일자 비교해서 리팩토링 필요한 코드. 여름방학 시즌일 때 true, 나머지 false 넣도록.
+                        List<Shuttletime> shuttletimeList = findShuttletime(currentPlace, false);
+                        newDist += findNearestTimeDiff(shuttletimeList, currentDistance, 40L);
+                    }
 
                     Long neighborDist = distances.get(neighbor);
                     if (neighborDist == null || newDist < neighborDist) {
@@ -400,18 +436,39 @@ public class RouteService {
         }
 
         List<Node> path = new ArrayList<>();
-        Long finalDistance = distances.get(endNode.getId());
+        Long finalDistance = distances.get(endNode);
         if (finalDistance == Long.MAX_VALUE) {
             return new DijkstraRes(-1L, Collections.emptyList()); // 경로가 존재하지 않을 때
         }
 
-        for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
-            Optional<Node> node = nodeRepository.findById(at);
-            node.ifPresent(path::add);
+        for (Node at = endNode; at != null; at = previousNodes.get(at)) {
+            path.add(at);
         }
         Collections.reverse(path);
 
         return new DijkstraRes(finalDistance, path);
+    }
+
+
+    /**
+    * shuttletime의 리스트, 해당 노드까지 가는데 걸린 시간, 여유시간(자유 설정)을 받아 가장 가까운 미래 셔틀 도착 대기시간을 계산해 주는 메서드
+    */
+    private Long findNearestTimeDiff(List<Shuttletime> shuttletimeList, Long distance, Long flex){
+        LocalTime now = LocalTime.of(8,23,0).plusSeconds(distance).plusSeconds(flex);
+        LocalTime returnTime = null;
+        Long timeDiff = Long.MAX_VALUE;
+        for (Shuttletime shuttletime: shuttletimeList){
+            if(shuttletime.getTime().isAfter(now) && ChronoUnit.SECONDS.between(now, shuttletime.getTime()) < timeDiff){
+                returnTime = shuttletime.getTime();
+                timeDiff = ChronoUnit.SECONDS.between(now, shuttletime.getTime());
+            }
+        }
+        if (returnTime == null){
+            return 43200L;
+        }
+        else{
+            return timeDiff;
+        }
     }
 
 }

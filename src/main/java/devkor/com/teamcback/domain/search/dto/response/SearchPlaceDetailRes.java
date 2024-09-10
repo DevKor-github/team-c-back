@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,8 +37,11 @@ public class SearchPlaceDetailRes {
     private boolean bookmarked;
     private boolean isOperating;
     private String nextPlaceTime;
+    private String description;
+    private double starAverage;
+    private List<SearchPlaceImageRes> placeImages;
 
-    public SearchPlaceDetailRes(Place place, boolean bookmarked) {
+    public SearchPlaceDetailRes(Place place, boolean bookmarked, List<SearchPlaceImageRes> placeImages) {
         this.buildingId = place.getBuilding().getId();
         this.floor = place.getFloor().intValue();
         this.type = LocationType.PLACE;
@@ -72,5 +75,8 @@ public class SearchPlaceDetailRes {
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = place.getOperatingTime().substring(0, 5);
         }
+        this.description = place.getDescription();
+        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
+        this.placeImages = placeImages;
     }
 }

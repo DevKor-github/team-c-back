@@ -30,8 +30,11 @@ public class Place extends BaseEntity {
     @Column(nullable = false)
     private Double floor;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // 장소 다른 이름
     private String detail;
+
+    @Column(nullable = false, length = 500) // 상세 정보
+    private String description = "";
 
     @Column(nullable = false)
     private boolean availability;
@@ -41,18 +44,28 @@ public class Place extends BaseEntity {
 
     private String imageUrl;
 
+    @Setter
     private String operatingTime;
 
     @Setter
     private String weekdayOperatingTime;
+
     @Setter
     private String saturdayOperatingTime;
+
     @Setter
     private String sundayOperatingTime;
 
+    @Column(nullable = false)
     private boolean isOperating;
 
     private Integer maskIndex;
+
+    @Column(nullable = false)
+    private Integer starSum = 0;
+
+    @Column(nullable = false)
+    private Integer starNum = 0;
 
     @ManyToOne
     @JoinColumn(name = "building_id")
@@ -75,6 +88,7 @@ public class Place extends BaseEntity {
         this.maskIndex = req.getMaskIndex();
         this.building = building;
         this.node = node;
+        this.description = req.getDescription();
     }
 
     public Place(PlaceType type, Building building) {
@@ -96,14 +110,11 @@ public class Place extends BaseEntity {
         this.maskIndex = req.getMaskIndex();
         this.building = building;
         this.node = node;
+        this.description = req.getDescription();
     }
 
     public void setOperating(boolean operating) {
         this.isOperating = operating;
-    }
-
-    public void setOperatingTime(String operatingTime) {
-        this.operatingTime = operatingTime;
     }
 
     public void updateOperatingTime(DayOfWeek dayOfWeek) {

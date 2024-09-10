@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Getter
@@ -26,6 +27,9 @@ public class SearchRoomDetailRes {
     private double xCoord;
     private double yCoord;
     private Integer maskIndex;
+    private String description;
+    private double starAverage;
+
 
     public SearchRoomDetailRes(Place place) {
         this.id = place.getId();
@@ -44,5 +48,7 @@ public class SearchRoomDetailRes {
         this.xCoord = place.getNode().getXCoord();
         this.yCoord = place.getNode().getYCoord();
         this.maskIndex = place.getMaskIndex();
+        this.description = place.getDescription();
+        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
     }
 }

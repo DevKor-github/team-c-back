@@ -11,6 +11,7 @@ import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
+import devkor.com.teamcback.domain.place.repository.PlaceImageRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
@@ -49,7 +50,7 @@ public class SearchService {
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
     private final KoyeonRepository koyeonRepository;
-
+    private final PlaceImageRepository placeImageRepository;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -273,7 +274,6 @@ public class SearchService {
      */
     @Transactional(readOnly = true)
     public SearchPlaceDetailRes searchPlaceDetail(Long userId, Long placeId) {
-        SearchPlaceDetailRes res = new SearchPlaceDetailRes();
         List<Category> categories = new ArrayList<>();
         boolean bookmarked = false;
 
@@ -287,7 +287,7 @@ public class SearchService {
         if(bookmarkRepository.existsByLocationTypeAndPlaceIdAndCategoryIn(LocationType.PLACE, place.getId(), categories)) {
             bookmarked = true;
         }
-        return new SearchPlaceDetailRes(place, bookmarked);
+        return new SearchPlaceDetailRes(place, bookmarked, placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList());
     }
 
     /**

@@ -19,6 +19,8 @@ public class GetPlaceRes {
     private boolean plugAvailability;
     private boolean isOperating;
     private Integer maskIndex;
+    private String description;
+    private double starAverage;
 
     public GetPlaceRes(Place place) {
         this.placeId = place.getId();
@@ -32,6 +34,8 @@ public class GetPlaceRes {
         this.plugAvailability = place.isPlugAvailability();
         this.isOperating = place.isOperating();
         this.maskIndex = place.getMaskIndex();
+        this.description = place.getDescription();
+        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
     }
 
 }

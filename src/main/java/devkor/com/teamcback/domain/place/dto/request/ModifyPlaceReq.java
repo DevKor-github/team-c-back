@@ -33,4 +33,6 @@ public class ModifyPlaceReq {
     private boolean isOperating;
     @Schema(description = "편의시설 사용 가능 여부", example = "true")
     private boolean availability;
+    @Schema(description = "장소 추가 정보", example = "문의: 02-xxxx-xxxx")
+    private String description;
 }

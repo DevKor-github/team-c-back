@@ -49,24 +49,10 @@ public class SearchPlaceRes {
     private Double yCoord;
     @Schema(description = "건물 또는 강의실 종류", example = "BUILDING")
     private LocationType locationType;
-
-    public SearchPlaceRes(Building building) {
-        this.id = building.getId();
-        this.buildingId = building.getId();
-        this.buildingName = building.getName();
-        this.name = building.getName();
-        this.imageUrl = building.getImageUrl();
-        this.detail = building.getDetail();
-        this.address = building.getAddress();
-        this.weekdayOperatingTime = building.getWeekdayOperatingTime();
-        this.saturdayOperatingTime = building.getSaturdayOperatingTime();
-        this.sundayOperatingTime = building.getSundayOperatingTime();
-        this.isOperating = building.isOperating();
-        this.needStudentCard = building.isNeedStudentCard();
-        this.longitude = building.getNode().getLongitude();
-        this.latitude = building.getNode().getLatitude();
-        this.locationType = LocationType.BUILDING;
-    }
+    @Schema(description = "편의시설 부가 설명", example = "문의: xx-xxx-xxxx")
+    private String description;
+    @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
+    private double starAverage;
 
     public SearchPlaceRes(Place place) {
         this.id = place.getId();
@@ -86,5 +72,7 @@ public class SearchPlaceRes {
         this.xCoord = place.getNode().getXCoord();
         this.yCoord = place.getNode().getYCoord();
         this.locationType = LocationType.PLACE;
+        this.description = place.getDescription();
+        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
     }
 }

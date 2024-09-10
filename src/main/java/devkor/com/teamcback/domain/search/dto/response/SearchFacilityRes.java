@@ -37,6 +37,10 @@ public class SearchFacilityRes {
     private Long buildingId;
     @Schema(description = "편의시설 층", example = "1")
     private int floor;
+    @Schema(description = "편의시설 부가 설명", example = "문의: xx-xxx-xxxx")
+    private String description;
+    @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
+    private double starAverage;
 
     public SearchFacilityRes(Place place) {
         this.facilityId = place.getId();
@@ -54,5 +58,7 @@ public class SearchFacilityRes {
         this.detail = place.getDetail();
         this.buildingId = place.getBuilding().getId();
         this.floor = place.getFloor().intValue();
+        this.description = place.getDescription();
+        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
     }
 }

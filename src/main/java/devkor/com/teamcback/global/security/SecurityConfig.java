@@ -1,7 +1,5 @@
 package devkor.com.teamcback.global.security;
 
-import devkor.com.teamcback.domain.oauth2.handler.OAuth2LoginSuccessHandler;
-import devkor.com.teamcback.domain.oauth2.service.OAuth2Service;
 import devkor.com.teamcback.global.exception.CustomAccessDeniedHandler;
 import devkor.com.teamcback.global.exception.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
@@ -30,8 +28,6 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RedisUtil redisUtil;
     private final UserDetailsService userDetailsService;
-    private final OAuth2Service oAuth2Service;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final LogoutHandler logoutHandler;
     private final LogoutSuccessHandler logoutSuccessHandler;
 
@@ -81,13 +77,6 @@ public class SecurityConfig {
         ).exceptionHandling((exceptionHandling) -> exceptionHandling
             .accessDeniedHandler(customAccessDeniedHandler())
         );
-
-        http.oauth2Login(
-            (oauth2) ->
-                oauth2
-                    .userInfoEndpoint(
-                        userInfoEndpointConfig -> userInfoEndpointConfig.userService(oAuth2Service))
-                    .successHandler(oAuth2LoginSuccessHandler));
 
         http.logout(
             logout -> {

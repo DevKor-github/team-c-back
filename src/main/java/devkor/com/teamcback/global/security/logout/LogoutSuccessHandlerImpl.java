@@ -30,11 +30,4 @@ public class LogoutSuccessHandlerImpl implements LogoutSuccessHandler {
 
         response.getWriter().write(new ObjectMapper().writeValueAsString(CommonResponse.success(new UserLogoutRes())));
     }
-
-    private void deleteCookie(HttpServletResponse response, String header) {
-        Cookie cookie = new Cookie(header, null);
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-    }
 }

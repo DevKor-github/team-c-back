@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.user.service;
 
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
-import devkor.com.teamcback.domain.oauth2.dto.OAuth2UserInfo;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
@@ -10,7 +9,6 @@ import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
-import devkor.com.teamcback.global.response.CommonResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +49,7 @@ public class UserService {
             user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
         }
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getEmail(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getEmail(), user.getRole().getAuthority()));
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUsername(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUsername(), user.getRole().getAuthority()));
     }
 
     private User findUser(Long userId) {

@@ -29,7 +29,7 @@ public class User extends BaseEntity {
     private String email;
 
     @Column(nullable = false)
-    private String profileUrl;
+    private String profileUrl = "";
 
     @Column(nullable = false)
     private Role role;
@@ -39,21 +39,11 @@ public class User extends BaseEntity {
     private Provider provider;
 
     @Column(nullable = false)
-    private Long score;
-
-    public User(String username, String email, String profileUrl, Role role, Provider provider, Long score) {
-        this.username = username;
-        this.email = email;
-        this.profileUrl = profileUrl;
-        this.role = role;
-        this.provider = provider;
-        this.score = score;
-    }
+    private Long score = 0L;
 
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;
         this.email = email;
-        profileUrl = "";
         this.role = role;
         this.provider = provider;
         this.score = 0L;

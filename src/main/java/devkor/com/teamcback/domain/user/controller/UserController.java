@@ -61,7 +61,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    @PostMapping()
+    @PatchMapping()
     public CommonResponse<ModifyUsernameRes> modifyUsername(
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail,

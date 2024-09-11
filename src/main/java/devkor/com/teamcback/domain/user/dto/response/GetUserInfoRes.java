@@ -20,7 +20,7 @@ public class GetUserInfoRes {
     private Provider provider;
     @Schema(description = "role", example = "USER")
     private Role role;
-    @Schema(description = "level", example = "1")
+    @Schema(description = "level", example = "LEVEL1")
     private Level level;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;

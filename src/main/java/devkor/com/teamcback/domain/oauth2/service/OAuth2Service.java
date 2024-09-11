@@ -6,29 +6,21 @@ import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import jakarta.transaction.Transactional;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
 public class OAuth2Service extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
-
-    @Value("${default.image.url}")
-    private String defaultProfileImageUrl;
 
     private static final String DEFAULT_NAME = "호랑이";
 
@@ -62,8 +54,7 @@ public class OAuth2Service extends DefaultOAuth2UserService {
     }
 
     private User save(OAuth2UserInfo oAuth2UserInfo) {
-        User user = new User(makeRandomName(), oAuth2UserInfo.getEmail(), defaultProfileImageUrl, Role.USER, oAuth2UserInfo.getProvider(), 0L);
-
+        User user = new User(makeRandomName(), oAuth2UserInfo.getEmail(), Role.USER, oAuth2UserInfo.getProvider(), 0L);
         return userRepository.save(user);
     }
 

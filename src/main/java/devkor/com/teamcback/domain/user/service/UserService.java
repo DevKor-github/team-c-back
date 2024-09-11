@@ -46,6 +46,8 @@ public class UserService {
         String username = makeRandomName();
         User user = userRepository.findByEmail(loginUserReq.getEmail());
         // TODO: 이메일 예외 처리
+        // TODO: 소셜 검증
+        log.info("social-token: {}", loginUserReq.getToken());
         if(user == null) {
             user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
         }

@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -35,6 +36,7 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private String address;
 
+    @Setter
     private String operatingTime; // 오늘의 운영 시간
 
     private String weekdayOperatingTime;
@@ -58,16 +60,6 @@ public class Building extends BaseEntity {
 
     public void setOperating(boolean operating) {
         this.isOperating = operating;
-    }
-
-    public void updateOperatingTime(DayOfWeek dayOfWeek) {
-        switch(dayOfWeek) {
-            case SUNDAY -> this.operatingTime = sundayOperatingTime;
-            case SATURDAY -> this.operatingTime = saturdayOperatingTime;
-            case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
-        }
-
-
     }
 
     @Override

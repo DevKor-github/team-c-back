@@ -53,6 +53,7 @@ public class User extends BaseEntity {
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;
         this.email = email;
+        profileUrl = "";
         this.role = role;
         this.provider = provider;
         this.score = 0L;

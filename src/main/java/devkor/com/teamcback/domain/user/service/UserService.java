@@ -13,7 +13,6 @@ import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,26 +31,13 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private static final String DEFAULT_NAME = "호랑이";
 
-    // profile 이미지 링크
-    @Value("${profile.image.lv1-url}")
-    private String lv1Url;
-    @Value("${profile.image.lv2-url}")
-    private String lv2Url;
-    @Value("${profile.image.lv3-url}")
-    private String lv3Url;
-    @Value("${profile.image.lv4-url}")
-    private String lv4Url;
-    @Value("${profile.image.lv5-url}")
-    private String lv5Url;
-
     /**
      * 마이페이지 정보 조회
      */
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
-        int level = getLevel(user.getScore());
-
-        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level, getProfileUrl(level));
+        Level level = getLevel(user.getScore());
+        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), level.getProfileImage());
     }
 
     /**
@@ -75,55 +61,37 @@ public class UserService {
      */
     @Transactional
     public ModifyUsernameRes modifyUsername(Long userId, String username) {
-        User user = findUser(userId);
+        if(username.isEmpty()) {  // username이 입력되지 않은 경우
+            throw new GlobalException(EMPTY_USERNAME);
+        }
 
-        // 유저명 중목 확인
-        checkDuplicatedUsername(user, username);
+        // 사용자명 사용 가능 여부 확인
+        User user = findUser(userId);
+        checkUsernameAvailability(user, username);
 
         user.update(username);
 
         return new ModifyUsernameRes();
     }
 
-    private void checkDuplicatedUsername(User user, String username) {
-        User usingUser = userRepository.findByUsername(username);
+    private void checkUsernameAvailability(User user, String username) {
+        // 본인이 현재 사용 중인 닉네임과 동일한 경우
+        if(username.equals(user.getUsername())) {
+            throw new GlobalException(USERNAME_IN_USE);
+        }
 
-        if(usingUser != null) {
-            // 본인이 현재 사용 중인 닉네임과 동일한 경우
-            if(usingUser.equals(user)) {
-                throw new GlobalException(USERNAME_IN_USE);
-            }
-            // 다른 사용자가 해당 별명을 사용 중인 경우
+        // 다른 사용자가 해당 별명을 사용 중인 경우
+        if(userRepository.existsByUsernameAndUserIdNot(username, user.getUserId())) {
             throw new GlobalException(DUPLICATED_USERNAME);
         }
     }
 
-    private int getLevel(Long score) {
+    private Level getLevel(Long score) {
         // score >= minScore 인 경우 중 가장 높은 레벨 반환
-        Level level = Arrays.stream(Level.values())
+        return Arrays.stream(Level.values())
             .filter(lv -> score >= lv.getMinScore())
             .max(Comparator.comparingInt(Level::getMinScore))
             .orElse(Level.LEVEL1);
-
-        return switch (level) {
-            case LEVEL1 -> 1;
-            case LEVEL2 -> 2;
-            case LEVEL3 -> 3;
-            case LEVEL4 -> 4;
-            case LEVEL5 -> 5;
-        };
-    }
-
-    private String getProfileUrl(int level) {
-        //레벨에 맞는 profile 이미지 반환
-        return switch (level) {
-            case 1 -> lv1Url;
-            case 2 -> lv2Url;
-            case 3 -> lv3Url;
-            case 4 -> lv4Url;
-            case 5 -> lv5Url;
-            default -> throw new GlobalException(INCORRECT_LEVEL);
-        };
     }
 
     private User findUser(Long userId) {

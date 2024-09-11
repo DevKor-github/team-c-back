@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.user.service;
 
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
+import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -10,11 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
 @Service
@@ -43,6 +45,34 @@ public class UserService {
         Level level = getLevel(user.getScore());
 
         return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level, getProfileUrl(level));
+    }
+
+    /**
+     * 사용자 별명 수정
+     */
+    @Transactional
+    public ModifyUsernameRes modifyUsername(Long userId, String username) {
+        User user = findUser(userId);
+
+        // 유저명 중목 확인
+        checkDuplicatedUsername(user, username);
+
+        user.update(username);
+
+        return new ModifyUsernameRes();
+    }
+
+    private void checkDuplicatedUsername(User user, String username) {
+        User usingUser = userRepository.findByUsername(username);
+
+        if(usingUser != null) {
+            // 본인이 현재 사용 중인 닉네임과 동일한 경우
+            if(usingUser.equals(user)) {
+                throw new GlobalException(USERNAME_IN_USE);
+            }
+            // 다른 사용자가 해당 별명을 사용 중인 경우
+            throw new GlobalException(DUPLICATED_USERNAME);
+        }
     }
 
     private Level getLevel(Long score) {

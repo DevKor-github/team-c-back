@@ -38,7 +38,7 @@ public class SearchPlaceDetailRes {
     private boolean isOperating;
     private String nextPlaceTime;
     private String description;
-    private double starAverage;
+    private String starAverage;
     private List<SearchPlaceImageRes> placeImages;
 
     public SearchPlaceDetailRes(Place place, boolean bookmarked, List<SearchPlaceImageRes> placeImages) {
@@ -76,7 +76,7 @@ public class SearchPlaceDetailRes {
             this.nextPlaceTime = place.getOperatingTime().substring(0, 5);
         }
         this.description = place.getDescription();
-        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
+        this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
         this.placeImages = placeImages;
     }
 }

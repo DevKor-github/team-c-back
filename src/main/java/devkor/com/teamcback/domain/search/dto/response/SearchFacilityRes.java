@@ -40,7 +40,7 @@ public class SearchFacilityRes {
     @Schema(description = "편의시설 부가 설명", example = "문의: xx-xxx-xxxx")
     private String description;
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
-    private double starAverage;
+    private String starAverage;
 
     public SearchFacilityRes(Place place) {
         this.facilityId = place.getId();
@@ -59,6 +59,6 @@ public class SearchFacilityRes {
         this.buildingId = place.getBuilding().getId();
         this.floor = place.getFloor().intValue();
         this.description = place.getDescription();
-        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
+        this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
     }
 }

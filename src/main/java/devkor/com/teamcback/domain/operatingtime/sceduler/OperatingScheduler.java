@@ -58,8 +58,8 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-//    @Scheduled(cron = "30 50 * * * *") // 테스트용
-    @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
+    @Scheduled(cron = "30 16 * * * *") // 테스트용
+//    @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
         log.info("운영 여부 업데이트");
         LocalTime nowTime = LocalTime.now();

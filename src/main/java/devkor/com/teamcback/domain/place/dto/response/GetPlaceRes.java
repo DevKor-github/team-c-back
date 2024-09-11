@@ -20,7 +20,7 @@ public class GetPlaceRes {
     private boolean isOperating;
     private Integer maskIndex;
     private String description;
-    private double starAverage;
+    private String starAverage;
 
     public GetPlaceRes(Place place) {
         this.placeId = place.getId();
@@ -35,7 +35,7 @@ public class GetPlaceRes {
         this.isOperating = place.isOperating();
         this.maskIndex = place.getMaskIndex();
         this.description = place.getDescription();
-        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
+        this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
     }
 
 }

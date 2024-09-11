@@ -52,7 +52,7 @@ public class SearchPlaceRes {
     @Schema(description = "편의시설 부가 설명", example = "문의: xx-xxx-xxxx")
     private String description;
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
-    private double starAverage;
+    private String starAverage;
 
     public SearchPlaceRes(Place place) {
         this.id = place.getId();
@@ -73,6 +73,6 @@ public class SearchPlaceRes {
         this.yCoord = place.getNode().getYCoord();
         this.locationType = LocationType.PLACE;
         this.description = place.getDescription();
-        this.starAverage = ((double) place.getStarSum()) / place.getStarNum();
+        this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
     }
 }

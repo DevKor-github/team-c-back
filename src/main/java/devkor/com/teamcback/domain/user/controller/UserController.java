@@ -1,7 +1,9 @@
 package devkor.com.teamcback.domain.user.controller;
 
+import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
+import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.service.UserService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -36,6 +38,16 @@ public class UserController {
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail) {
         return CommonResponse.success(userService.getUserInfo(userDetail.getUser().getUserId()));
+    }
+
+    /**
+     * 로그인
+     */
+    @PostMapping("/login")
+    public CommonResponse<LoginUserRes> login(
+        @RequestBody LoginUserReq loginUserReq
+    ) {
+        return CommonResponse.success(userService.login(loginUserReq));
     }
 
     /**

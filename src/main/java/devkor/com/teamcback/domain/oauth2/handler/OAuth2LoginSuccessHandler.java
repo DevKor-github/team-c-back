@@ -7,6 +7,7 @@ import devkor.com.teamcback.global.jwt.JwtUtil;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +22,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final JwtUtil jwtUtil;
-
+    private static final String REDIRECT_URL = "myapp://callback";
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+        throws IOException {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         String email = userDetails.getUser().getEmail();
 
@@ -34,7 +36,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String accessToken = jwtUtil.createAccessToken(email, String.valueOf(role));
         String refreshToken = jwtUtil.createRefreshToken(email, String.valueOf(role));
 
-        response.setHeader(ACCESS_TOKEN_HEADER, accessToken);
-        response.setHeader(REFRESH_TOKEN_HEADER, refreshToken);
+        // FE URL로 리디렉션
+        String redirectUrl = REDIRECT_URL + "?accessToken=" + accessToken + "&refreshToken=" + refreshToken;
+        response.sendRedirect(redirectUrl);
+//
+//        response.setHeader(ACCESS_TOKEN_HEADER, accessToken);
+//        response.setHeader(REFRESH_TOKEN_HEADER, refreshToken);
     }
 }

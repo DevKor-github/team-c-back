@@ -70,7 +70,7 @@ public class SecurityConfig {
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
                 .requestMatchers("/api/search/**").permitAll()
                 .requestMatchers("/api/routes/**").permitAll()
-                .requestMatchers("/api/user/login").permitAll()
+                .requestMatchers("/api/users/login").permitAll()
                 .requestMatchers("/api/suggestions/**").permitAll()
                 .requestMatchers("/api/admin/**").permitAll() // TODO: 이후 아래로 변경
 //                .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용

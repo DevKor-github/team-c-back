@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.user.dto.response;
 
-import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
@@ -22,6 +21,8 @@ public class GetUserInfoRes {
     private Role role;
     @Schema(description = "level", example = "1")
     private int level;
+    @Schema(description = "score", example = "15")
+    private Long score;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
@@ -33,6 +34,7 @@ public class GetUserInfoRes {
         this.provider = user.getProvider();
         this.role = user.getRole();
         this.level = level;
+        this.score = user.getScore();
         this.categoryCount = categoryCount;
     }
 }

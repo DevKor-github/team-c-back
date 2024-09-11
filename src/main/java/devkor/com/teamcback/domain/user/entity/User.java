@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -48,4 +49,13 @@ public class User extends BaseEntity {
         this.provider = provider;
         this.score = score;
     }
+
+    public User(String username, String email, Role role, Provider provider) {
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.provider = provider;
+        this.score = 0L;
+    }
+
 }

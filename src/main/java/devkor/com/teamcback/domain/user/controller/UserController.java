@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.user.controller;
 
+import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
+import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.service.UserService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -13,6 +15,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,5 +41,15 @@ public class UserController {
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail) {
         return CommonResponse.success(userService.getUserInfo(userDetail.getUser().getUserId()));
+    }
+
+    /**
+     * 로그인
+     */
+    @PostMapping("/login")
+    public CommonResponse<LoginUserRes> login(
+        @RequestBody LoginUserReq loginUserReq
+    ) {
+        return CommonResponse.success(userService.login(loginUserReq));
     }
 }

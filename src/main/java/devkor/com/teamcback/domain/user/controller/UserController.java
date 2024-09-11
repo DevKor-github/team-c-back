@@ -2,8 +2,8 @@ package devkor.com.teamcback.domain.user.controller;
 
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
-import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
+import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.service.UserService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;

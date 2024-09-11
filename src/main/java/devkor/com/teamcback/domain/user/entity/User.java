@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

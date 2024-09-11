@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.user.dto.response;
 
-import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;

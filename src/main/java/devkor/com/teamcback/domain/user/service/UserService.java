@@ -1,19 +1,16 @@
 package devkor.com.teamcback.domain.user.service;
 
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
-import devkor.com.teamcback.domain.oauth2.dto.OAuth2UserInfo;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
+import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.entity.Level;
-import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
-import devkor.com.teamcback.global.response.CommonResponse;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.UUID;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 

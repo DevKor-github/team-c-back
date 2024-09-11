@@ -21,12 +21,12 @@ public class GetUserInfoRes {
     @Schema(description = "role", example = "USER")
     private Role role;
     @Schema(description = "level", example = "1")
-    private Level level;
+    private int level;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
-    public GetUserInfoRes(User user, Long categoryCount, Level level, String profileUrl) {
+    public GetUserInfoRes(User user, Long categoryCount, int level, String profileUrl) {
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.profileUrl = profileUrl;

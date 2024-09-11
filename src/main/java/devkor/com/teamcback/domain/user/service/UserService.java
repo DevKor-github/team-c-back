@@ -51,9 +51,25 @@ public class UserService {
      */
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
-        Level level = getLevel(user.getScore());
+        int level = getLevel(user.getScore());
 
         return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level, getProfileUrl(level));
+    }
+
+    /**
+     * 로그인
+     */
+    public LoginUserRes login(LoginUserReq loginUserReq) {
+        String username = makeRandomName();
+        User user = userRepository.findByEmail(loginUserReq.getEmail());
+        // TODO: 이메일 예외 처리
+        // TODO: 소셜 검증
+        log.info("social-token: {}", loginUserReq.getToken());
+        if(user == null) {
+            user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
+        }
+
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getEmail(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getEmail(), user.getRole().getAuthority()));
     }
 
     /**
@@ -84,43 +100,36 @@ public class UserService {
         }
     }
 
-    private Level getLevel(Long score) {
+    private int getLevel(Long score) {
         // score >= minScore 인 경우 중 가장 높은 레벨 반환
-        return Arrays.stream(Level.values())
-            .filter(level -> score >= level.getMinScore())
+        Level level = Arrays.stream(Level.values())
+            .filter(lv -> score >= lv.getMinScore())
             .max(Comparator.comparingInt(Level::getMinScore))
             .orElse(Level.LEVEL1);
+
+        return switch (level) {
+            case LEVEL1 -> 1;
+            case LEVEL2 -> 2;
+            case LEVEL3 -> 3;
+            case LEVEL4 -> 4;
+            case LEVEL5 -> 5;
+        };
     }
 
-    private String getProfileUrl(Level level) {
+    private String getProfileUrl(int level) {
         //레벨에 맞는 profile 이미지 반환
         return switch (level) {
-            case LEVEL1 -> lv1Url;
-            case LEVEL2 -> lv2Url;
-            case LEVEL3 -> lv3Url;
-            case LEVEL4 -> lv4Url;
-            case LEVEL5 -> lv5Url;
+            case 1 -> lv1Url;
+            case 2 -> lv2Url;
+            case 3 -> lv3Url;
+            case 4 -> lv4Url;
+            case 5 -> lv5Url;
+            default -> throw new GlobalException(INCORRECT_LEVEL);
         };
     }
 
     private User findUser(Long userId) {
         return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
-    }
-
-    /**
-     * 로그인
-     */
-    public LoginUserRes login(LoginUserReq loginUserReq) {
-        String username = makeRandomName();
-        User user = userRepository.findByEmail(loginUserReq.getEmail());
-        // TODO: 이메일 예외 처리
-        // TODO: 소셜 검증
-        log.info("social-token: {}", loginUserReq.getToken());
-        if(user == null) {
-            user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
-        }
-
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getEmail(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getEmail(), user.getRole().getAuthority()));
     }
 
     private String makeRandomName() {

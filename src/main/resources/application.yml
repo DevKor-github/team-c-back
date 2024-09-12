@@ -110,6 +110,18 @@ default:
   image:
     url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
 
+default:
+  image:
+    url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
+
+profile:
+  image:
+    lv1-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv1.jpg
+    lv2-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv2.jpg
+    lv3-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv3.jpg
+    lv4-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv4.jpg
+    lv5-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv5.jpg
+
 data:
   api:
     holiday:

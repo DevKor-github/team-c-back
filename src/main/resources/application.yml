@@ -110,10 +110,6 @@ default:
   image:
     url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
 
-default:
-  image:
-    url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/default_profile_image.jpg
-
 profile:
   image:
     lv1-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv1.jpg

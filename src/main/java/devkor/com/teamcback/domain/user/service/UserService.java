@@ -61,9 +61,7 @@ public class UserService {
      */
     @Transactional
     public ModifyUsernameRes modifyUsername(Long userId, String username) {
-        if(username.isEmpty()) {  // username이 입력되지 않은 경우
-            throw new GlobalException(EMPTY_USERNAME);
-        }
+        checkInvalidUsername(username);
 
         // 사용자명 사용 가능 여부 확인
         User user = findUser(userId);
@@ -72,6 +70,13 @@ public class UserService {
         user.update(username);
 
         return new ModifyUsernameRes();
+    }
+
+    private void checkInvalidUsername(String username) {
+        // username이 입력되지 않은 경우
+        if(username.isEmpty()) {
+            throw new GlobalException(EMPTY_USERNAME);
+        }
     }
 
     private void checkUsernameAvailability(User user, String username) {

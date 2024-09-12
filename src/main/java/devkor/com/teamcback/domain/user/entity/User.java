@@ -1,7 +1,14 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -28,15 +35,7 @@ public class User extends BaseEntity {
     private Provider provider;
 
     @Column(nullable = false)
-    private Long score;
-
-    public User(String username, String email, Role role, Provider provider, Long score) {
-        this.username = username;
-        this.email = email;
-        this.role = role;
-        this.provider = provider;
-        this.score = score;
-    }
+    private Long score = 0L;
 
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;

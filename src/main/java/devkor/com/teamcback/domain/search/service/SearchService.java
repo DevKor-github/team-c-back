@@ -312,9 +312,20 @@ public class SearchService {
         SearchLog searchLog = new SearchLog(req.getId(), req.getName(), req.getType(), searchedAt);
         String key = String.valueOf(userId);
 
+        List<SearchLog> existingLogs = searchLogRedis.opsForList().range(key, 0, -1);
+
+        // 중복되는 기존 로그 삭제
+        if (existingLogs != null) {
+            for (SearchLog log : existingLogs) {
+                if (log.getId().equals(req.getId()) && log.getType().equals(req.getType())) {
+                    searchLogRedis.opsForList().remove(key, 1, log);
+                    break; // 이미 기존에 중복값이 없으므로 첫 번째만 제거
+                }
+            }
+        }
+
         Long size = searchLogRedis.opsForList().size(key);
 
-        // TODO: 중복되는 검색 기록 제거
         if(size != null && size.equals(10L)) {
             searchLogRedis.opsForList().rightPop(key);
         }

@@ -58,8 +58,8 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-    @Scheduled(cron = "30 16 * * * *") // 테스트용
-//    @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
+//    @Scheduled(cron = "30 16 * * * *") // 테스트용
+    @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
         log.info("운영 여부 업데이트");
         LocalTime nowTime = LocalTime.now();
@@ -76,7 +76,7 @@ public class OperatingScheduler {
     }
 
     // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
-//    @Scheduled(cron = "0 15 * * * *") // 테스트용
+//    @EventListener(ApplicationReadyEvent.class)
     public void updatePlaceOperatingTime() {
         log.info("장소 운영 시간 업데이트");
 

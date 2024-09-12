@@ -26,13 +26,13 @@ public class HolidayService {
 
     private final HolidayRepository holidayRepository;
 
-    @Value("${data.api.holiday.end-point}")
+    @Value("${date.api.holiday.end-point}")
     private String endPoint;
 
-    @Value("${data.api.holiday.encoded-key}")
+    @Value("${date.api.holiday.encoded-key}")
     private String encodedKey;
 
-    @Value("${data.api.holiday.decoded-key}")
+    @Value("${date.api.holiday.decoded-key}")
     private String decodedKey;
 
     public void updateHolidays(int year, int month) throws URISyntaxException {

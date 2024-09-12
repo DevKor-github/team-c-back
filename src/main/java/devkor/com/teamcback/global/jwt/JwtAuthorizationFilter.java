@@ -45,7 +45,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         // access token 검증
         switch(jwtUtil.validateToken(accessToken)) {
-            case VALID -> setAuthentication(jwtUtil.getUserEmailFromToken(accessToken));
+            case VALID -> setAuthentication(jwtUtil.getUsernameFromToken(accessToken));
             case INVALID -> throw new GlobalException(UNAUTHORIZED);
             case EXPIRED -> authenticateRefreshToken(request, response);
         }
@@ -56,8 +56,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     /**
      * 인증 처리 (인증 객체를 생성하여 context에 설정)
      */
-    private void setAuthentication(String email) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+    private void setAuthentication(String username) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities());
         context.setAuthentication(authentication);
@@ -90,12 +90,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
      * Access token 재발급 후 요청 처리
      */
     private void renewAccessToken(HttpServletResponse response, String refreshToken) {
-        String email = jwtUtil.getUserEmailFromToken(refreshToken);
+        String username = jwtUtil.getUsernameFromToken(refreshToken);
         String role = jwtUtil.getRoleFromToken(refreshToken);
 
-        String accessToken = jwtUtil.createAccessToken(email, role);
+        String accessToken = jwtUtil.createAccessToken(username, role);
         response.addHeader(ACCESS_TOKEN_HEADER, accessToken);
 
-        setAuthentication(email);
+        setAuthentication(username);
     }
 }

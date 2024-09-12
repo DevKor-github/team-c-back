@@ -1,15 +1,7 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -29,9 +21,6 @@ public class User extends BaseEntity {
     private String email;
 
     @Column(nullable = false)
-    private String profileUrl;
-
-    @Column(nullable = false)
     private Role role;
 
     @Column(nullable = false)
@@ -41,10 +30,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Long score;
 
-    public User(String username, String email, String profileUrl, Role role, Provider provider, Long score) {
+    public User(String username, String email, Role role, Provider provider, Long score) {
         this.username = username;
         this.email = email;
-        this.profileUrl = profileUrl;
         this.role = role;
         this.provider = provider;
         this.score = score;
@@ -53,10 +41,12 @@ public class User extends BaseEntity {
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;
         this.email = email;
-        profileUrl = "";
         this.role = role;
         this.provider = provider;
         this.score = 0L;
     }
 
+    public void update(String username) {
+        this.username = username;
+    }
 }

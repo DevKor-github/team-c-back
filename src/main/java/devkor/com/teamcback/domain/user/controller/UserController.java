@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.user.controller;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
+import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.service.UserService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -14,11 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,5 +53,25 @@ public class UserController {
         @RequestBody LoginUserReq loginUserReq
     ) {
         return CommonResponse.success(userService.login(loginUserReq));
+    }
+
+    /**
+     * 사용자 별명 수정
+     * @param userDetail 사용자 정보
+     * @param username 새로운 사용자명
+     */
+    @Operation(summary = "사용자 별명 수정", description = "사용자 별명 수정")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @PatchMapping("/username")
+    public CommonResponse<ModifyUsernameRes> modifyUsername(
+        @Parameter(description = "사용자정보", required = true)
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
+        @Parameter(description = "사용자명", required = true)
+        @RequestParam String username) {
+        return CommonResponse.success(userService.modifyUsername(userDetail.getUser().getUserId(), username));
     }
 }

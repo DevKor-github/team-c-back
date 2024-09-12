@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
-import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -29,9 +28,6 @@ public class User extends BaseEntity {
     private String email;
 
     @Column(nullable = false)
-    private String profileUrl = "";
-
-    @Column(nullable = false)
     private Role role;
 
     @Column(nullable = false)
@@ -49,4 +45,7 @@ public class User extends BaseEntity {
         this.score = 0L;
     }
 
+    public void update(String username) {
+        this.username = username;
+    }
 }

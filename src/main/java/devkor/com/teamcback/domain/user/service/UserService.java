@@ -4,6 +4,8 @@ import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
+import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
+import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -15,7 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
+import java.util.Arrays;
+import java.util.Comparator;
+
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
 @Service
@@ -32,7 +37,8 @@ public class UserService {
     @Transactional(readOnly = true)
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
-        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user));
+        Level level = getLevel(user.getScore());
+        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), level.getProfileImage());
     }
 
     /**
@@ -50,6 +56,49 @@ public class UserService {
         }
 
         return new LoginUserRes(jwtUtil.createAccessToken(user.getUsername(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUsername(), user.getRole().getAuthority()));
+    }
+
+    /**
+     * 사용자 별명 수정
+     */
+    @Transactional
+    public ModifyUsernameRes modifyUsername(Long userId, String username) {
+        checkInvalidUsername(username);
+
+        // 사용자명 사용 가능 여부 확인
+        User user = findUser(userId);
+        checkUsernameAvailability(user, username);
+
+        user.update(username);
+
+        return new ModifyUsernameRes();
+    }
+
+    private void checkInvalidUsername(String username) {
+        // username이 입력되지 않은 경우
+        if(username.isEmpty()) {
+            throw new GlobalException(EMPTY_USERNAME);
+        }
+    }
+
+    private void checkUsernameAvailability(User user, String username) {
+        // 본인이 현재 사용 중인 닉네임과 동일한 경우
+        if(username.equals(user.getUsername())) {
+            throw new GlobalException(USERNAME_IN_USE);
+        }
+
+        // 다른 사용자가 해당 별명을 사용 중인 경우
+        if(userRepository.existsByUsernameAndUserIdNot(username, user.getUserId())) {
+            throw new GlobalException(DUPLICATED_USERNAME);
+        }
+    }
+
+    private Level getLevel(Long score) {
+        // score >= minScore 인 경우 중 가장 높은 레벨 반환
+        return Arrays.stream(Level.values())
+            .filter(lv -> score >= lv.getMinScore())
+            .max(Comparator.comparingInt(Level::getMinScore))
+            .orElse(Level.LEVEL1);
     }
 
     private User findUser(Long userId) {

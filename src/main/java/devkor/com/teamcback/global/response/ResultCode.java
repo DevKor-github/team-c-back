@@ -21,6 +21,10 @@ public enum ResultCode {
 
     // 사용자 2000번대
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, 2000, "사용자를 찾을 수 없습니다."),
+    DUPLICATED_USERNAME(HttpStatus.IM_USED, 2001, "이미 사용 중인 별명입니다."),
+    USERNAME_IN_USE(HttpStatus.IM_USED, 2002, "현재 설정된 별명과 다른 별명을 입력해주세요."),
+    INCORRECT_LEVEL(HttpStatus.BAD_REQUEST, 2003, "존재하지 않는 레벨입니다."),
+    EMPTY_USERNAME(HttpStatus.BAD_REQUEST, 2004, "별명을 입력해주세요."),
 
     // 건물 3000번대
     NOT_FOUND_BUILDING(HttpStatus.NOT_FOUND, 3000, "건물을 찾을 수 없습니다."),

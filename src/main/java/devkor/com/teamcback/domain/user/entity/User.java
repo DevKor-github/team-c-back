@@ -46,7 +46,10 @@ public class User extends BaseEntity {
         this.score = 0L;
     }
 
-    public void update(String username) {
+    public void updateUsername(String username) {
         this.username = username;
+    }
+    public void updateScore(Long score) {
+        this.score = score;
     }
 }

@@ -67,7 +67,7 @@ public class UserService {
         User user = findUser(userId);
         checkUsernameAvailability(user, username);
 
-        user.update(username);
+        user.updateUsername(username);
 
         return new ModifyUsernameRes();
     }

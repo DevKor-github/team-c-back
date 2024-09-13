@@ -7,8 +7,10 @@ import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.entity.UserBookmarkLog;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
+import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
@@ -33,6 +35,7 @@ public class CategoryService {
     private final BookmarkRepository bookmarkRepository;
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
+    private final UserBookmarkLogRepository userBookmarkLogRepository;
 
     /**
      * 카테고리 생성
@@ -134,6 +137,9 @@ public class CategoryService {
         //해당 카테고리안에 placeType, placeId가 모두 동일한 것이 있으면 중복
         checkPlaceDuplication(category, req.getLocationType(), req.getLocationId());
 
+        // 첫 저장이면 Score 증가
+        addScoreIfNewBookmarkLog(user, req);
+
         //즐겨찾기 생성
         Bookmark bookmark = bookmarkRepository.save(new Bookmark(req, category));
         return new CreateBookmarkRes(bookmark);
@@ -230,4 +236,11 @@ public class CategoryService {
         }
     }
 
+    private void addScoreIfNewBookmarkLog(User user, CreateBookmarkReq req) {
+        // log에 없으면 Score 1점 증가
+        if(!userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+            user.updateScore(user.getScore() + 1);
+            userBookmarkLogRepository.save(new UserBookmarkLog(req.getLocationId(), req.getLocationType(), user));
+        }
+    }
 }

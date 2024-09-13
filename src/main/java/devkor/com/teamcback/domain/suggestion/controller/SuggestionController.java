@@ -33,13 +33,17 @@ public class SuggestionController {
     @Operation(summary = "건의 작성", description = "건의 작성")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "401", description = "권한이 없는 사용자입니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
         @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @PostMapping
     public CommonResponse<CreateSuggestionRes> createSuggestion(
+        @Parameter(description = "사용자정보", required = true)
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(description = "건의 제목, 분류, 내용", required = true)
         @RequestBody CreateSuggestionReq req) {
-        return CommonResponse.success(suggestionService.createSuggestion(req));
+        return CommonResponse.success(suggestionService.createSuggestion(userDetail.getUser().getUserId(), req));
     }
 }

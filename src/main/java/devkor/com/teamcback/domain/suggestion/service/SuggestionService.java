@@ -29,6 +29,7 @@ public class SuggestionService {
      */
     @Transactional
     public CreateSuggestionRes createSuggestion(CreateSuggestionReq req) {
+        // TODO: 건의 생성 시 user의 score += 3
         Suggestion suggestion = new Suggestion(req);
 
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);

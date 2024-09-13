@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,6 +33,10 @@ public class OperatingTime {
 
     @Column(nullable = false)
     private int endMinute;
+
+    private LocalTime startTime;
+
+    private LocalTime endTime;
 
     @ManyToOne
     @JoinColumn(name = "operating_condition_id")

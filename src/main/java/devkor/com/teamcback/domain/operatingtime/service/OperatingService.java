@@ -80,11 +80,9 @@ public class OperatingService {
             LocalTime startTime = LocalTime.of(23, 59);
 
             for (OperatingTime operatingTime : operatingTimeList) {
-                LocalTime end = LocalTime.of(operatingTime.getEndHour(), operatingTime.getEndMinute());
-                LocalTime start = LocalTime.of(operatingTime.getStartHour(), operatingTime.getStartMinute());
-                if (startTime.isAfter(start)) {
-                    startTime = start;
-                    endTime = end;
+                if (startTime.isAfter(operatingTime.getStartTime())) {
+                    startTime = operatingTime.getStartTime();
+                    endTime = operatingTime.getEndTime();
                 }
             }
 
@@ -141,9 +139,7 @@ public class OperatingService {
             for(OperatingTime op : operatingTimeList) {
                 if(!isOperating && isInOperatingTime(now, op)) { // 운영 시간에 포함되는 경우
                     isOperating = true;
-                    LocalTime start = LocalTime.of(op.getStartHour(), op.getStartMinute());
-                    LocalTime end = LocalTime.of(op.getEndHour(), op.getEndMinute());
-                    operatingTime = formatTimeRange(start, end); // 포함되는 운영 시간으로 설정
+                    operatingTime = formatTimeRange(op.getStartTime(), op.getEndTime()); // 포함되는 운영 시간으로 설정
                 }
             }
 
@@ -153,9 +149,7 @@ public class OperatingService {
             // 운영 중이지 않을 경우
             if(!isOperating) {
                 OperatingTime op = getNextOperatingTime(operatingTimeList, now);
-                LocalTime start = LocalTime.of(op.getStartHour(), op.getStartMinute());
-                LocalTime end = LocalTime.of(op.getEndHour(), op.getEndMinute());
-                operatingTime = formatTimeRange(start, end); // 다음 운영 시간으로 설정
+                operatingTime = formatTimeRange(op.getStartTime(), op.getEndTime()); // 다음 운영 시간으로 설정
             }
 
             place.setOperatingTime(operatingTime);
@@ -171,16 +165,13 @@ public class OperatingService {
     private OperatingTime getNextOperatingTime(List<OperatingTime> operatingTimeList, LocalTime now) {
         // 현재 시간 이후에 시작해서 종료하는 시간을 찾음
         Optional<OperatingTime> nextOperatingTime = operatingTimeList.stream()
-            .filter(ot -> {
-                LocalTime start = LocalTime.of(ot.getStartHour(), ot.getStartMinute());
-                return start.isAfter(now);
-            })
-            .min(Comparator.comparing(ot -> LocalTime.of(ot.getStartHour(), ot.getStartMinute())));
+            .filter(ot -> ot.getStartTime().isAfter(now))
+            .min(Comparator.comparing(OperatingTime::getStartTime));
 
         // 없으면 가장 처음 시작하는 시간을 선택
         if (nextOperatingTime.isEmpty()) {
             nextOperatingTime = operatingTimeList.stream()
-                .min(Comparator.comparing(ot -> LocalTime.of(ot.getStartHour(), ot.getStartMinute())));
+                .min(Comparator.comparing(OperatingTime::getStartTime));
         }
 
         return nextOperatingTime.orElseThrow(() -> new GlobalException(OPER_CONDITION_HAS_NO_OPER_TIME));
@@ -258,12 +249,7 @@ public class OperatingService {
 
     // 현재가 운영 시간에 포함되는지 판단
     private boolean isInOperatingTime(LocalTime now, OperatingTime operatingTime) {
-        int hour = now.getHour();
-        int minute = now.getMinute();
-
-        return (hour > operatingTime.getStartHour() && hour < operatingTime.getEndHour()) ||
-            (hour == operatingTime.getStartHour() && minute >= operatingTime.getStartMinute()) ||
-            (hour == operatingTime.getEndHour() && minute < operatingTime.getEndMinute());
+        return now.isAfter(operatingTime.getStartTime()) && now.isBefore(operatingTime.getEndTime());
     }
 
     private String formatTimeRange(LocalTime start, LocalTime end) {

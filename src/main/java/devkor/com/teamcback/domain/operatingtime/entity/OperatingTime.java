@@ -23,19 +23,9 @@ public class OperatingTime {
     private Long id;
 
     @Column(nullable = false)
-    private int startHour;
-
-    @Column(nullable = false)
-    private int startMinute;
-
-    @Column(nullable = false)
-    private int endHour;
-
-    @Column(nullable = false)
-    private int endMinute;
-
     private LocalTime startTime;
 
+    @Column(nullable = false)
     private LocalTime endTime;
 
     @ManyToOne

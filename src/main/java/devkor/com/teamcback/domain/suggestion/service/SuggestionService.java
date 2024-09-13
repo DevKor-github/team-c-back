@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.suggestion.service;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTION;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
@@ -9,6 +10,8 @@ import devkor.com.teamcback.domain.suggestion.dto.response.ModifySuggestionRes;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
+import devkor.com.teamcback.domain.user.entity.User;
+import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,15 +26,20 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SuggestionService {
     private final SuggestionRepository suggestionRepository;
+    private final UserRepository userRepository;
 
     /**
      * 건의 생성
      */
     @Transactional
-    public CreateSuggestionRes createSuggestion(CreateSuggestionReq req) {
-        Suggestion suggestion = new Suggestion(req);
+    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req) {
+        User user = findUser(userId);
+        Suggestion suggestion = new Suggestion(req, user);
 
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
+
+        //건의 생성 시 score 증가
+        user.updateScore(user.getScore() + 3);
 
         return new CreateSuggestionRes(savedSuggestion);
     }
@@ -70,5 +78,9 @@ public class SuggestionService {
 
     private Suggestion findSuggestion(Long id) {
         return suggestionRepository.findById(id).orElseThrow(() ->new GlobalException(NOT_FOUND_SUGGESTION));
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(NOT_FOUND_USER));
     }
 }

@@ -3,14 +3,8 @@ package devkor.com.teamcback.domain.suggestion.entity;
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import devkor.com.teamcback.domain.user.entity.User;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -36,12 +30,15 @@ public class Suggestion extends BaseEntity {
     @Column(nullable = false)
     private boolean isSolved = false;
 
-    // TODO: 로그인 개발 이후 User와 다대일 연관관계
+    @ManyToOne
+    @JoinColumn(name = "userId")
+    private User user;
 
-    public Suggestion(CreateSuggestionReq req) {
+    public Suggestion(CreateSuggestionReq req, User user) {
         this.title = req.getTitle();
         this.suggestionType = req.getType();
         this.content = req.getContent();
+        this.user = user;
     }
 
     public void updateIsSolved(boolean solved) {

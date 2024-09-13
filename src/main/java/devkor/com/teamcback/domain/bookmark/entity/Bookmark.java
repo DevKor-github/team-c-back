@@ -25,7 +25,7 @@ public class Bookmark extends BaseEntity {
     private LocationType locationType;
 
     @Column(nullable = false)
-    private Long placeId;
+    private Long locationId;
 
     @Column
     private String memo;
@@ -35,7 +35,7 @@ public class Bookmark extends BaseEntity {
         this.category = category;
         this.memo = req.getMemo();
         this.locationType = req.getLocationType();
-        this.placeId = req.getPlaceId();
+        this.locationId = req.getLocationId();
 
     }
 

@@ -12,7 +12,7 @@ public class CreateBookmarkReq {
     private LocationType locationType;
 
     @Schema(description = "장소 id", example = "5")
-    private Long placeId;
+    private Long locationId;
 
     @Schema(description = "카테고리 메모", example = "자주 찾는 장소 모음")
     private String memo;

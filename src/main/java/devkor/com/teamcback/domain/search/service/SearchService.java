@@ -259,7 +259,7 @@ public class SearchService {
             User user = findUser(userId);
             // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
             List<Category> categories = categoryRepository.findAllByUser(user);
-            if(bookmarkRepository.existsByLocationTypeAndPlaceIdAndCategoryIn(LocationType.BUILDING, buildingId, categories)) {
+            if(bookmarkRepository.existsByLocationTypeAndLocationIdAndCategoryIn(LocationType.BUILDING, buildingId, categories)) {
                 bookmarked = true;
             }
         }
@@ -284,7 +284,7 @@ public class SearchService {
         }
 
         Place place = findPlace(placeId);
-        if(bookmarkRepository.existsByLocationTypeAndPlaceIdAndCategoryIn(LocationType.PLACE, place.getId(), categories)) {
+        if(bookmarkRepository.existsByLocationTypeAndLocationIdAndCategoryIn(LocationType.PLACE, place.getId(), categories)) {
             bookmarked = true;
         }
         return new SearchPlaceDetailRes(place, bookmarked, placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList());

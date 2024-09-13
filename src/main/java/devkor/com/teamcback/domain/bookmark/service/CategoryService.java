@@ -128,11 +128,11 @@ public class CategoryService {
         checkAuthority(user, category.getUser());
 
         //placeType & Id로 장소 존재 여부 확인
-        checkPlaceExists(req.getLocationType(), req.getPlaceId());
+        checkPlaceExists(req.getLocationType(), req.getLocationId());
 
         //장소 중복 확인하기
         //해당 카테고리안에 placeType, placeId가 모두 동일한 것이 있으면 중복
-        checkPlaceDuplication(category, req.getLocationType(), req.getPlaceId());
+        checkPlaceDuplication(category, req.getLocationType(), req.getLocationId());
 
         //즐겨찾기 생성
         Bookmark bookmark = bookmarkRepository.save(new Bookmark(req, category));
@@ -214,7 +214,7 @@ public class CategoryService {
     }
 
     private void checkPlaceDuplication(Category category, LocationType locationType, Long placeId) {
-        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByCategoryAndLocationTypeAndPlaceId(category, locationType, placeId);
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByCategoryAndLocationTypeAndLocationId(category, locationType, placeId);
 
         // 같은 카테고리에 동일 북마크가 존재하는 경우
         if (optionalBookmark.isPresent()) {

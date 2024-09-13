@@ -15,7 +15,7 @@ public class GetBookmarkRes {
     private LocationType locationType;
 
     @Schema(description = "즐겨찾기 장소 Id", example = "5")
-    private Long placeId;
+    private Long locationId;
 
     @Schema(description = "즐겨찾기 메모", example = "자료구조 강의실")
     private String memo;
@@ -23,7 +23,7 @@ public class GetBookmarkRes {
     public GetBookmarkRes(Bookmark bookmark) {
         this.bookmarkId = bookmark.getId();
         this.locationType = bookmark.getLocationType();
-        this.placeId = bookmark.getPlaceId();
+        this.locationId = bookmark.getLocationId();
         this.memo = bookmark.getMemo();
     }
 

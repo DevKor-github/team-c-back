@@ -39,8 +39,13 @@ public class OperatingScheduler {
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
-        log.info("운영 시간 업데이트");
+        setState();
 
+        log.info("운영 시간 업데이트");
+        operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
+    }
+
+    private void setState() {
         LocalDate now = LocalDate.now();
 
         dayOfWeek = findDayOfWeek(now);
@@ -54,8 +59,6 @@ public class OperatingScheduler {
             isEvenWeek = isEvenWeek(now);
             log.info("isEvenWeek: {}", isEvenWeek);
         }
-
-        operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
 //    @Scheduled(cron = "30 16 * * * *") // 테스트용

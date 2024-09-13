@@ -1,5 +1,7 @@
 package devkor.com.teamcback.domain.place.entity;
 
+import static devkor.com.teamcback.domain.operatingtime.service.OperatingService.OPERATING_TIME_PATTERN;
+
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
@@ -7,6 +9,7 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.*;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -124,7 +127,7 @@ public class Place extends BaseEntity {
             case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
         }
 
-        if(this.operatingTime == null) {
+        if(this.operatingTime == null || !Pattern.matches(OPERATING_TIME_PATTERN, operatingTime)) {
             this.operatingTime = this.building.getOperatingTime();
         }
     }

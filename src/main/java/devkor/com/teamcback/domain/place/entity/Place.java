@@ -59,6 +59,7 @@ public class Place extends BaseEntity {
     @Setter
     private String sundayOperatingTime;
 
+    @Setter
     @Column(nullable = false)
     private boolean isOperating;
 
@@ -114,21 +115,5 @@ public class Place extends BaseEntity {
         this.building = building;
         this.node = node;
         this.description = req.getDescription();
-    }
-
-    public void setOperating(boolean operating) {
-        this.isOperating = operating;
-    }
-
-    public void updateOperatingTime(DayOfWeek dayOfWeek) {
-        switch(dayOfWeek) {
-            case SUNDAY -> this.operatingTime = sundayOperatingTime;
-            case SATURDAY -> this.operatingTime = saturdayOperatingTime;
-            case WEEKDAY -> this.operatingTime = weekdayOperatingTime;
-        }
-
-        if(this.operatingTime == null || !Pattern.matches(OPERATING_TIME_PATTERN, operatingTime)) {
-            this.operatingTime = this.building.getOperatingTime();
-        }
     }
 }

@@ -10,7 +10,8 @@ public enum NodeType {
     ELEVATOR("엘리베이터"),
     STAIR("계단"),
     ENTRANCE("출입문"),
-    CHECKPOINT("경로");
+    CHECKPOINT("경로"),
+    SHUTTLE("셔틀");
 
     private final String name;
 }

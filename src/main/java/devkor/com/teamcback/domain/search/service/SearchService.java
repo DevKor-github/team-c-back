@@ -194,8 +194,6 @@ public class SearchService {
 
          List<SearchRoomDetailRes> roomDetailRes = new ArrayList<>(
              placeList.stream().map(SearchRoomDetailRes::new).toList());
-         roomDetailRes.addAll(placeList.stream().map(SearchRoomDetailRes::new).toList());
-
          return new SearchRoomRes(roomDetailRes);
     }
 

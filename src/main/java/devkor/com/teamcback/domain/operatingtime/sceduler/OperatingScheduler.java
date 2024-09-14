@@ -45,21 +45,6 @@ public class OperatingScheduler {
         operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
     }
 
-    private void setState() {
-        LocalDate now = LocalDate.now();
-
-        dayOfWeek = findDayOfWeek(now);
-        log.info("dayOfWeek: {}", dayOfWeek.toString());
-        isHoliday = isHoliday(now); // 공휴일 여부
-        log.info("isHoliday: {}", isHoliday);
-        isVacation = isVacation(now); // 방학 여부
-        log.info("isVacation: {}", isVacation);
-        isEvenWeek = false; // 토요일 짝수 주 여부
-        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
-            isEvenWeek = isEvenWeek(now);
-            log.info("isEvenWeek: {}", isEvenWeek);
-        }
-    }
 
 //    @Scheduled(cron = "30 16 * * * *") // 테스트용
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
@@ -84,6 +69,22 @@ public class OperatingScheduler {
         log.info("장소 운영 시간 업데이트");
 
         operatingService.updatePlaceOperatingTime();
+    }
+
+    private void setState() {
+        LocalDate now = LocalDate.now();
+
+        dayOfWeek = findDayOfWeek(now);
+        log.info("dayOfWeek: {}", dayOfWeek.toString());
+        isHoliday = isHoliday(now); // 공휴일 여부
+        log.info("isHoliday: {}", isHoliday);
+        isVacation = isVacation(now); // 방학 여부
+        log.info("isVacation: {}", isVacation);
+        isEvenWeek = false; // 토요일 짝수 주 여부
+        if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
+            isEvenWeek = isEvenWeek(now);
+            log.info("isEvenWeek: {}", isEvenWeek);
+        }
     }
 
     private DayOfWeek findDayOfWeek(LocalDate date) {

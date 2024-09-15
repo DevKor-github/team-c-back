@@ -41,7 +41,7 @@ public class OperatingService {
     private static final List<Long> alwaysOpenBuildings = List.of(0L, 23L, 27L, 60L);
 
     // 출입 권한 필요 혹은 정보가 없는 건물
-    private static final List<Long> alwaysAccessRequiredOrWithoutInfoBuildings = List.of(1L, 16L, 17L, 19L, 29L, 31L, 35L, 36L, 37L, 38L, 54L);
+    private static final List<Long> alwaysAccessRequiredOrWithoutInfoBuildings = List.of(1L, 16L, 17L, 19L, 29L, 31L, 35L, 36L, 37L, 38L, 52L, 54L);
     private static final String DEFAULT_OPERATING_TIME = "00:00-23:59";
 
     /**
@@ -112,37 +112,36 @@ public class OperatingService {
      * 건물의 운영 시간 찾기
      */
     private String findBuildingOperatingTime(Building building, DayOfWeek dayOfWeek) {
-        String operatingTime = null;
         // 일자에 해당하는 운영 시간 -> 없으면 다른 요일의 운영 시간을 가져옴
-        if(dayOfWeek == DayOfWeek.WEEKDAY && isTimeRangePattern(building.getWeekdayOperatingTime())) {
-            operatingTime = building.getWeekdayOperatingTime();
+        String operatingTime = dayOfWeek.getOperatingTime(building);
+        if(!isTimeRangePattern(operatingTime)) {
+            operatingTime = findOtherBuildingOperatingTime(building, dayOfWeek);
         }
-        if((operatingTime == null || dayOfWeek == DayOfWeek.SATURDAY) && isTimeRangePattern(building.getSaturdayOperatingTime())) {
-            operatingTime = building.getSaturdayOperatingTime();
-        }
-        if((operatingTime == null || dayOfWeek == DayOfWeek.SUNDAY) && isTimeRangePattern(building.getSundayOperatingTime())) {
-            operatingTime = building.getSundayOperatingTime();
-        }
-        if(operatingTime == null && isTimeRangePattern(building.getWeekdayOperatingTime())) {
-            operatingTime = building.getWeekdayOperatingTime();
-        }
-        // 모든 경우에 정보가 없으면 상시 운영으로 표시
-        if(operatingTime == null) operatingTime = DEFAULT_OPERATING_TIME;
 
         return operatingTime;
+    }
+
+    /**
+     * 시간 형식인 다음 운영 시간을 찾음
+     */
+    private String findOtherBuildingOperatingTime(Building building, DayOfWeek dayOfWeek) {
+        DayOfWeek nextDay = dayOfWeek.findNext();
+        String operatingTime = nextDay.getOperatingTime(building);
+
+        while(dayOfWeek != nextDay) {
+            if(isTimeRangePattern(operatingTime)) return operatingTime;
+            nextDay = nextDay.findNext();
+            operatingTime = nextDay.getOperatingTime(building);
+        }
+
+        return DEFAULT_OPERATING_TIME;
     }
 
     /**
      * 장소의 운영 시간 찾기
      */
     private String findPlaceOperatingTime(Place place, DayOfWeek dayOfWeek) {
-        String operatingTime = null;
-
-        switch(dayOfWeek) {
-            case SUNDAY -> operatingTime = place.getSundayOperatingTime();
-            case SATURDAY -> operatingTime = place.getSaturdayOperatingTime();
-            case WEEKDAY -> operatingTime = place.getWeekdayOperatingTime();
-        }
+        String operatingTime = dayOfWeek.getOperatingTime(place);
 
         // 장소의 운영 시간이 시간 형식이 아니면 건물의 운영 시간을 따라감
         if(!isTimeRangePattern(operatingTime)) {
@@ -227,19 +226,9 @@ public class OperatingService {
             return true;
         }
 
-        String operatingTime = building.getOperatingTime();
         // 운영 시간이 오늘 일자에 해당하는 건물의 운영시간과 일치하지 않으면 운영 종료 상태
-        switch (dayOfWeek) {
-            case WEEKDAY :
-                if(!building.getWeekdayOperatingTime().equals(operatingTime))
-                    return false;
-            case SATURDAY:
-                if(!building.getSaturdayOperatingTime().equals(operatingTime))
-                    return false;
-            case SUNDAY:
-                if(!building.getSundayOperatingTime().equals(operatingTime))
-                    return false;
-        }
+        String operatingTime = building.getOperatingTime();
+        if(!operatingTime.equals(dayOfWeek.getOperatingTime(building))) return false;
 
         return isInOperatingTime(now, operatingTime);
     }

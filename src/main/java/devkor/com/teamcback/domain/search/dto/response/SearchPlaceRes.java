@@ -1,8 +1,8 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -49,6 +49,8 @@ public class SearchPlaceRes {
     private Double yCoord;
     @Schema(description = "건물 또는 강의실 종류", example = "BUILDING")
     private LocationType locationType;
+    @Schema(description = "편의시설 종류", example = "TRASH_CAN")
+    private PlaceType placeType;
     @Schema(description = "편의시설 부가 설명", example = "문의: xx-xxx-xxxx")
     private String description;
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
@@ -65,13 +67,16 @@ public class SearchPlaceRes {
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();
         this.sundayOperatingTime = place.getSundayOperatingTime();
         this.isOperating = place.isOperating();
+        this.needStudentCard = place.getBuilding().isNeedStudentCard();
         this.floor = place.getFloor();
+        this.address = place.getBuilding().getAddress();
         this.plugAvailability = place.isPlugAvailability();
         this.longitude = place.getNode().getLongitude();
         this.latitude = place.getNode().getLatitude();
         this.xCoord = place.getNode().getXCoord();
         this.yCoord = place.getNode().getYCoord();
         this.locationType = LocationType.PLACE;
+        this.placeType = place.getType();
         this.description = place.getDescription();
         this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
     }

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -11,6 +12,8 @@ public class SearchFacilityRes {
     private Long facilityId;
     @Schema(description = "편의시설 이름", example = "쓰레기통1")
     private String name;
+    @Schema(description = "편의시설 종류", example = "TRASH_CAN")
+    private PlaceType placeType;
     @Schema(description = "편의시설 이용 가능 여부", example = "true")
     private Boolean availability;
     @Schema(description = " 평일 운영 시간", example = "9:00-22:00")
@@ -45,6 +48,7 @@ public class SearchFacilityRes {
     public SearchFacilityRes(Place place) {
         this.facilityId = place.getId();
         this.name = place.getName();
+        this.placeType = place.getType();
         this.availability = place.isAvailability();
         this.weekdayOperatingTime = place.getWeekdayOperatingTime();
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();

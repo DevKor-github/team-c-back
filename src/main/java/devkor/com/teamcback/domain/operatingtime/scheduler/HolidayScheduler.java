@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.operatingtime.sceduler;
+package devkor.com.teamcback.domain.operatingtime.scheduler;
 
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import java.net.URISyntaxException;

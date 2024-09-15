@@ -1,10 +1,9 @@
-package devkor.com.teamcback.domain.operatingtime.sceduler;
+package devkor.com.teamcback.domain.operatingtime.scheduler;
 
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +45,7 @@ public class OperatingScheduler {
     }
 
 
-//    @Scheduled(cron = "30 16 * * * *") // 테스트용
+//    @Scheduled(cron = "30 35 * * * *") // 테스트용
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
         log.info("운영 여부 업데이트");

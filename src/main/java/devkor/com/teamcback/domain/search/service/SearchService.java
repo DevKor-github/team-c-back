@@ -153,7 +153,7 @@ public class SearchService {
     @Transactional(readOnly = true)
     public SearchBuildingFacilityListRes searchBuildingFacilityByType(Long buildingId, PlaceType placeType) {
         Building building = findBuilding(buildingId);
-        SearchBuildingFacilityListRes res = new SearchBuildingFacilityListRes(building, placeType);
+        SearchBuildingFacilityListRes res = new SearchBuildingFacilityListRes(building);
 
         List<Place> facilities = getFacilitiesByBuildingAndType(building, placeType);
 

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.routes.controller;
 
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
+import devkor.com.teamcback.domain.routes.entity.Conditions;
 import devkor.com.teamcback.domain.routes.entity.LocationType;
 import devkor.com.teamcback.domain.routes.entity.NodeType;
 import devkor.com.teamcback.domain.routes.service.RouteService;
@@ -47,7 +48,7 @@ public class RouteController {
         @ApiResponse(responseCode = "404", description = "Not Found",
         content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<List<GetRouteRes>> findRoute(
+    public CommonResponse<GetRouteRes> findRoute(
         @Parameter(name = "startType", description = "출발 장소의 LocationType", example = "PLACE", required = true)
         @RequestParam LocationType startType,
         @Parameter(name = "startId", description = "startType이 COORD가 아닐 경우 해당 시설의 ID")
@@ -63,7 +64,9 @@ public class RouteController {
         @Parameter(name = "endLat", description = "endType이 COORD일 경우 해당 장소의 위도")
         @RequestParam(required = false) Double endLat,
         @Parameter(name = "endLong", description = "endType이 COORD일 경우 해당 장소의 경도")
-        @RequestParam(required = false) Double endLong) throws ParseException {
+        @RequestParam(required = false) Double endLong,
+        @Parameter(name = "conditions", description = "경로 탐색의 조건")
+        @RequestParam(required = false) List<Conditions> conditions) throws ParseException {
         List<Double> startLocation = new ArrayList<>();
         List<Double> endLocation = new ArrayList<>();
 
@@ -79,9 +82,16 @@ public class RouteController {
         else{
             endLocation.add(endId.doubleValue());
         }
-        List<GetRouteRes> returnList = new ArrayList<>();
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, null));
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.STAIR));
+        GetRouteRes returnList;
+
+        if (conditions == null){
+            List<Conditions> defaultList = Arrays.asList(Conditions.OPERATING);
+            returnList = routeService.findRoute(startLocation, startType, endLocation, endType, defaultList);
+        }
+        else{
+            returnList = routeService.findRoute(startLocation, startType, endLocation, endType, conditions);
+        }
+
         return CommonResponse.success(returnList);
     }
 }

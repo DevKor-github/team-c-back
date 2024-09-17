@@ -36,7 +36,7 @@ public class RouteService {
      */
     @Transactional(readOnly = true)
     public GetRouteRes findRoute(List<Double> startPosition, LocationType startType,
-        List<Double> endPosition, LocationType endType, NodeType barrierFree) throws ParseException {
+        List<Double> endPosition, LocationType endType, List<Conditions> conditions) throws ParseException {
 
         Node startNode = getNodeByType(startPosition, startType);
         Node endNode = getNodeByType(endPosition, endType);
@@ -63,8 +63,8 @@ public class RouteService {
             }
         }
 
-        List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
-        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
+        List<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
+        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
         if (route.getPath().isEmpty()) return new GetRouteRes(1);
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
@@ -73,7 +73,7 @@ public class RouteService {
     /**
      * 탐색 알고리즘의 효율성을 위해 이동할 만한 건물들만 추리는 메서드
      */
-    private List<Building> getBuildingsForRoute(Node startNode, Node endNode) {
+    private List<Building> getBuildingsForRoute(Node startNode, Node endNode, List<Conditions> conditions) {
         List<Building> buildingList = new ArrayList<>();
         buildingList.add(findBuilding(0L)); // 외부 경로 추가
         buildingList.add(startNode.getBuilding());
@@ -81,6 +81,10 @@ public class RouteService {
 
         addLinkedBuildings(startNode.getBuilding(), buildingList);
         addLinkedBuildings(endNode.getBuilding(), buildingList);
+
+        if (conditions.contains(Conditions.STUDENTCARD)){
+            buildingList.removeIf(Building::isNeedStudentCard);
+        }
 
         return buildingList;
     }
@@ -160,17 +164,17 @@ public class RouteService {
     /**
      * 그래프 요소 찾기(node, edge 묶음)
      */
-    private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, NodeType nodeToBan){
+    private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
         List<Edge> graphEdge = new ArrayList<>();
-        if (nodeToBan == null){
+        if (conditions.isEmpty()){
             for (Building i : buildingList){
                 graphNode.addAll(findAllNode(i));
             }
         }
         else{
             for (Building i : buildingList){
-                graphNode.addAll(findNodeWithExceptions(i, nodeToBan));
+                graphNode.addAll(findNodeWithExceptions(i, conditions));
             }
         }
         if (!startNode.isOperating() || !endNode.isOperating()) throw new GlobalException(NOT_OPERATING);
@@ -247,6 +251,12 @@ public class RouteService {
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
             }
+            //버스를 타고 내릴 때 경로 분할(로직은 동일)
+            else if ((thisNode.getType() == NodeType.SHUTTLE && nextNode.getType() != NodeType.SHUTTLE) || (nextNode.getType() == NodeType.SHUTTLE && thisNode.getType() != NodeType.SHUTTLE)){
+                partialRoute.add(thisNode);
+                returnRoute.add(new ArrayList<>(partialRoute));
+                partialRoute.clear();
+            }
             // 같은 건물 내에서 층 이동 시 경로 분할, 중간 층 생략
             else if (!Objects.equals(thisNode.getFloor(), nextNode.getFloor())) {
                 partialRoute.add(thisNode);
@@ -291,22 +301,35 @@ public class RouteService {
         int nextNodeFloor = nextNode.getFloor().intValue();
         String floor = nextNodeFloor >= 0 ? Integer.toString(nextNodeFloor) : "B" + Math.abs(nextNodeFloor);
 
-        //건물이 같은 경우는 층 이동의 경우밖에 없음
-        if (prevNode.getType() == NodeType.CHECKPOINT){
+        //버스정류장 분할
+        if (prevNode.getType() != nextNode.getType() && nextNode.getType() == NodeType.SHUTTLE) {
+            String busStopName = placeRepository.findByNode(prevNode).getDetail();
+            return busStopName + "에서 셔틀버스를 탑승하세요";
+        }
+        else if (prevNode.getType() != nextNode.getType() && prevNode.getType() == NodeType.SHUTTLE) {
+            String busStopName = placeRepository.findByNode(nextNode).getDetail();
+            return busStopName + "에서 셔틀버스를 내리세요";
+        }
+        //체크포인트 분할
+        else if (prevNode.getType() == NodeType.CHECKPOINT) {
             String checkpointName = findCheckpoint(prevNode).getName();
             return checkpointName + "(으)로 이동하세요.";
         }
-        else if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){
+        //건물이 같은 경우는 층 이동의 경우밖에 없음
+        else if (Objects.equals(prevNodeBuilding, nextNodeBuilding)) {
             return floor + "층으로 이동하세요.";
         }
         //바깥에서 안으로 들어가는 경우
-        else if (prevNodeBuilding.getId() == 0L){
+        else if (prevNodeBuilding.getId() == 0L) {
             return nextNodeBuilding.getName() + " " + floor + "층 출입구로 들어가세요.";
         }
         //안에서 바깥으로 나가는 경우
-        else{
-            if (nextNodeBuilding.getId() == 0L) return "출입구를 통해 밖으로 나가세요";
-            else return "출입구를 통해 " + nextNodeBuilding.getName() + " " + floor + "층으로 이동하세요.";
+        else {
+            if (nextNodeBuilding.getId() == 0L) {
+                return "출입구를 통해 밖으로 나가세요";
+            } else {
+                return "출입구를 통해 " + nextNodeBuilding.getName() + " " + floor + "층으로 이동하세요.";
+            }
         }
     }
 
@@ -320,8 +343,20 @@ public class RouteService {
         return nodeRepository.findByBuildingAndRouting(building, true);
     }
 
-    private List<Node> findNodeWithExceptions(Building building, NodeType nodeToBan){
-        return nodeRepository.findByBuildingAndRoutingAndTypeNot(building, true, nodeToBan);
+    private List<Node> findNodeWithExceptions(Building building, List<Conditions> conditions){
+        boolean isOperating = conditions.contains(Conditions.OPERATING);
+        List<NodeType> nodeTypes = new ArrayList<>(Arrays.asList(NodeType.NORMAL, NodeType.ELEVATOR, NodeType.ENTRANCE, NodeType.CHECKPOINT, NodeType.STAIR));
+        if (conditions.contains(Conditions.SHUTTLE)){
+            nodeTypes.add(NodeType.SHUTTLE);
+            if (conditions.contains(Conditions.BARRIERFREE)){
+                nodeTypes.remove(NodeType.SHUTTLE);
+                nodeTypes.remove(NodeType.STAIR);
+            }
+        }
+        else if (conditions.contains(Conditions.BARRIERFREE)){
+            nodeTypes.remove(NodeType.STAIR);
+        }
+        return nodeRepository.findByBuildingAndRoutingAndTypeIn(building, true, nodeTypes);
     }
 
     private Place findPlace(Long placeId) {

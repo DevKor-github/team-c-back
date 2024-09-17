@@ -11,6 +11,7 @@ import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.*;
 import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
+import devkor.com.teamcback.domain.routes.repository.ShuttletimeRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.util.*;
+import java.time.temporal.ChronoUnit;
+import java.time.LocalTime;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
@@ -30,6 +33,7 @@ public class RouteService {
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
+    private final ShuttletimeRepository shuttletimeRepository;
 
     /**
      * 메인 경로탐색 메서드

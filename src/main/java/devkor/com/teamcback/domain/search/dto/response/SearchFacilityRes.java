@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public class SearchFacilityRes {
     @Schema(description = "편의시설 ID", example = "1")
-    private Long facilityId;
+    private Long id;
     @Schema(description = "편의시설 이름", example = "쓰레기통1")
     private String name;
     @Schema(description = "편의시설 종류", example = "TRASH_CAN")
@@ -46,7 +46,7 @@ public class SearchFacilityRes {
     private String starAverage;
 
     public SearchFacilityRes(Place place) {
-        this.facilityId = place.getId();
+        this.id = place.getId();
         this.name = place.getName();
         this.placeType = place.getType();
         this.availability = place.isAvailability();

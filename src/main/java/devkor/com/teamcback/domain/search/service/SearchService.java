@@ -14,6 +14,7 @@ import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.place.repository.PlaceImageRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.Koyeon;
@@ -35,6 +36,9 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static devkor.com.teamcback.domain.routes.entity.NodeType.ELEVATOR;
+import static devkor.com.teamcback.domain.routes.entity.NodeType.ENTRANCE;
+import static devkor.com.teamcback.domain.routes.entity.NodeType.STAIR;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -51,6 +55,7 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final KoyeonRepository koyeonRepository;
     private final PlaceImageRepository placeImageRepository;
+    private final NodeRepository nodeRepository;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -194,7 +199,11 @@ public class SearchService {
 
          List<SearchRoomDetailRes> roomDetailRes = new ArrayList<>(
              placeList.stream().map(SearchRoomDetailRes::new).toList());
-         return new SearchRoomRes(roomDetailRes);
+
+         List<SearchNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloorAndTypeIn(building, floor, List.of(ENTRANCE, STAIR, ELEVATOR))
+             .stream().map(SearchNodeRes::new).toList();
+
+         return new SearchRoomRes(roomDetailRes, nodeList);
     }
 
     /**

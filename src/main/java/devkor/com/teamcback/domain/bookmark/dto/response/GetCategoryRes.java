@@ -17,6 +17,8 @@ public class GetCategoryRes {
     private String memo;
     @Schema(description = "카테고리의 즐겨찾기 수", example = "5")
     private int bookmarkCount;
+    @Schema(description = "장소가 즐겨찾기된 경우 카테고리 포함 여부", example = "true")
+    private boolean isBookmarked = false;
 
     public GetCategoryRes(Category category) {
         this.categoryId = category.getId();
@@ -31,5 +33,14 @@ public class GetCategoryRes {
         this.color = category.getColor().getName();
         this.memo = category.getMemo();
         this.bookmarkCount = bookmarkCount;
+    }
+
+    public GetCategoryRes(Category category, int bookmarkCount, boolean isBookmarked) {
+        this.categoryId = category.getId();
+        this.category = category.getCategory();
+        this.color = category.getColor().getName();
+        this.memo = category.getMemo();
+        this.bookmarkCount = bookmarkCount;
+        this.isBookmarked = isBookmarked;
     }
 }

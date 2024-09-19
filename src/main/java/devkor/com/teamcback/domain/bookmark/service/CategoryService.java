@@ -9,10 +9,11 @@ import devkor.com.teamcback.domain.bookmark.entity.CategoryBookmark;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
+import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
-import java.awt.print.Book;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -91,11 +92,26 @@ public class CategoryService {
      * 카테고리 전체 조회
      */
     @Transactional(readOnly = true)
-    public GetCategoryListRes getAllCategories(Long userId) {
+    public GetCategoryListRes getAllCategories(Long userId, LocationType type, Long id) {
         User user = findUser(userId);
 
-        return new GetCategoryListRes(categoryRepository.findAllByUser(user)
-            .stream().map(category -> new GetCategoryRes(category, category.getCategoryBookmarkList().size())).toList());
+        List<Category> userCategoryList = categoryRepository.findAllByUser(user);
+
+        if(type != null && id != null) {
+            Bookmark bookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(id, type, userCategoryList);
+            if(bookmark != null) {
+                List<Category> categories = bookmark.getCategoryBookmarkList().stream().map(CategoryBookmark::getCategory).toList();
+                // 사용자의 카테고리 중 즐겨찾기의 카테고리가 포함되는지 확인
+                GetCategoryListRes getCategoryListRes = new GetCategoryListRes(userCategoryList
+                    .stream().map(category -> new GetCategoryRes(category, category.getCategoryBookmarkList().size(), categories.contains(category))).toList());
+                getCategoryListRes.setBookmarkId(bookmark.getId());
+                return getCategoryListRes;
+            }
+        }
+
+        return new GetCategoryListRes(userCategoryList
+                .stream().map(category -> new GetCategoryRes(category, category.getCategoryBookmarkList().size())).toList());
+
     }
 
     /**

@@ -1,10 +1,10 @@
 package devkor.com.teamcback.domain.bookmark.controller;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
-import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.*;
 import devkor.com.teamcback.domain.bookmark.service.CategoryService;
+import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -140,8 +141,13 @@ public class CategoryController {
     @GetMapping
     public CommonResponse<GetCategoryListRes> getAllCategories(
         @Parameter(description = "사용자정보", required = true)
-        @AuthenticationPrincipal UserDetailsImpl userDetail) {
-        return CommonResponse.success(categoryService.getAllCategories(userDetail.getUser().getUserId()));
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
+        @Parameter(description = "장소 종류")
+        @RequestParam LocationType type,
+        @Parameter(description = "장소 id")
+        @RequestParam Long id
+    ) {
+        return CommonResponse.success(categoryService.getAllCategories(userDetail.getUser().getUserId(), type, id));
     }
 
     /**

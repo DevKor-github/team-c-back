@@ -4,10 +4,10 @@ import java.util.List;
 import lombok.Getter;
 
 @Getter
-public class SearchRoomRes {
+public class SearchFloorInfoRes {
     private List<SearchRoomDetailRes> roomList;
 
-    public SearchRoomRes(List<SearchRoomDetailRes> roomList) {
+    public SearchFloorInfoRes(List<SearchRoomDetailRes> roomList) {
         this.roomList = roomList;
     }
 }

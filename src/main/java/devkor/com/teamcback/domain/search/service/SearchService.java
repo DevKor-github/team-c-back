@@ -188,13 +188,13 @@ public class SearchService {
      * 건물 특정 층에 있는 장소 검색
      */
     @Transactional(readOnly = true)
-    public SearchRoomRes searchPlaceByBuildingFloor(Long buildingId, int floor) {
+    public SearchFloorInfoRes searchPlaceByBuildingFloor(Long buildingId, int floor) {
          Building building = findBuilding(buildingId);
          List<Place> placeList = placeRepository.findAllByBuildingAndFloor(building, floor);
 
          List<SearchRoomDetailRes> roomDetailRes = new ArrayList<>(
              placeList.stream().map(SearchRoomDetailRes::new).toList());
-         return new SearchRoomRes(roomDetailRes);
+         return new SearchFloorInfoRes(roomDetailRes);
     }
 
     /**
@@ -257,7 +257,7 @@ public class SearchService {
             User user = findUser(userId);
             // 해당 유저의 북마크에 빌딩 있는지 확인 (유저의 카테고리 리스트 가져와서, 해당 안에 존재하는지 확인)
             List<Category> categories = categoryRepository.findAllByUser(user);
-            if(bookmarkRepository.existsByLocationTypeAndLocationIdAndCategoryIn(LocationType.BUILDING, buildingId, categories)) {
+            if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(buildingId, LocationType.BUILDING, categories)) {
                 bookmarked = true;
             }
         }
@@ -282,7 +282,7 @@ public class SearchService {
         }
 
         Place place = findPlace(placeId);
-        if(bookmarkRepository.existsByLocationTypeAndLocationIdAndCategoryIn(LocationType.PLACE, place.getId(), categories)) {
+        if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {
             bookmarked = true;
         }
         return new SearchPlaceDetailRes(place, bookmarked, placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList());

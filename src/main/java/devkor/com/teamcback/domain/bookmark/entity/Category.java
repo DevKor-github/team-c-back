@@ -4,15 +4,20 @@ import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
 import devkor.com.teamcback.domain.common.BaseEntity;
 import devkor.com.teamcback.domain.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Category extends BaseEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -38,6 +43,9 @@ public class Category extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<CategoryBookmark> categoryBookmarkList = new ArrayList<>();
 
     public Category(CreateCategoryReq req, User user) {
         this.category = req.getCategory();

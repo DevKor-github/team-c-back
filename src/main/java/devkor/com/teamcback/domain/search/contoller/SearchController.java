@@ -123,7 +123,7 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchRoomRes> searchPlaceByBuildingFloor(
+    public CommonResponse<SearchFloorInfoRes> searchPlaceByBuildingFloor(
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)

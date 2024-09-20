@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.Place;
@@ -34,6 +36,10 @@ public class GlobalSearchRes {
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @Schema(description = "building_id", example = "null/0/1")
     private Long buildingId;
+    @Schema(description = "isBookmarked", example = "true")
+    private boolean isBookmarked = false;
+    @Schema(description = "isBookmarked", example = "true")
+    private Color categoryColor;
 
 
     @Override
@@ -49,16 +55,20 @@ public class GlobalSearchRes {
         return name.hashCode();
     }
 
-    public GlobalSearchRes(Building building, LocationType locationType) {
+    public GlobalSearchRes(Building building, LocationType locationType, Category category) {
         this.id = building.getId();
         this.name = building.getName();
         this.address = building.getAddress();
         this.longitude = building.getNode().getLongitude();
         this.latitude = building.getNode().getLatitude();
         this.locationType = locationType;
+        if(category != null) {
+            this.isBookmarked = true;
+            this.categoryColor = category.getColor();
+        }
     }
 
-    public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding) {
+    public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding, Category category) {
         if(place.getType().equals(PlaceType.CLASSROOM)) { //일반 교실들
             this.id = place.getId();
             this.buildingId = place.getBuilding().getId();
@@ -88,5 +98,9 @@ public class GlobalSearchRes {
         this.latitude = place.getNode().getLatitude();
         this.locationType = locationType;
         this.placeType = place.getType();
+        if(category != null) {
+            this.isBookmarked = true;
+            this.categoryColor = category.getColor();
+        }
     }
 }

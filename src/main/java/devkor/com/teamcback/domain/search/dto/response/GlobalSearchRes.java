@@ -38,7 +38,7 @@ public class GlobalSearchRes {
     private Long buildingId;
     @Schema(description = "isBookmarked", example = "true")
     private boolean isBookmarked = false;
-    @Schema(description = "isBookmarked", example = "true")
+    @Schema(description = "categoryColor", example = "red")
     private Color categoryColor;
 
 

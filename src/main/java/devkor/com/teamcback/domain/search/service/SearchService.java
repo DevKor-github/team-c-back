@@ -91,7 +91,7 @@ public class SearchService {
         List<Place> places;
         List<Building> buildings;
 
-        User user = userId != null ? findUser(userId) : new User();
+        User user = userId != null ? findUser(userId) : null;
 
         // 건물이 입력됨
         if(word.contains(" ")) {
@@ -381,13 +381,13 @@ public class SearchService {
     }
 
     private Category checkBookmarked(User user, Building building) {
-        if(user.getUserId() == null) return null;
+        if(user == null) return null;
         List<Category> categories = categoryRepository.findCategoriesByUserAndLocationTypeAndLocationId(user, LocationType.BUILDING, building.getId());
         return categories.isEmpty() ? null : categories.get(0);
     }
 
     private Category checkBookmarked(User user, Place place) {
-        if(user.getUserId() == null) return null;
+        if(user == null) return null;
         List<Category> categories = categoryRepository.findCategoriesByUserAndLocationTypeAndLocationId(user, LocationType.PLACE, place.getId());
         return categories.isEmpty() ? null : categories.get(0);
     }
@@ -453,13 +453,6 @@ public class SearchService {
         return Arrays.stream(PlaceType.values())
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }
-
-    private static List<PlaceType> getFacilityType(String name) {
-        return Arrays.stream(PlaceType.values())
-            .filter(facilityType -> facilityType.getName().contains(name))
-            .toList();
-    }
-
 
     private int calculateScoreByIndex(String name, String keyword) {
         // 괄호() > 대학 > 관 (앞의 것이 존재한다면 해당 것을 기준으로 삼음)

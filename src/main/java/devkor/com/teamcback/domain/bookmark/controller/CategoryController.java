@@ -143,9 +143,9 @@ public class CategoryController {
         @Parameter(description = "사용자정보", required = true)
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(description = "장소 종류")
-        @RequestParam LocationType type,
+        @RequestParam(required = false) LocationType type,
         @Parameter(description = "장소 id")
-        @RequestParam Long id
+        @RequestParam(required = false) Long id
     ) {
         return CommonResponse.success(categoryService.getAllCategories(userDetail.getUser().getUserId(), type, id));
     }

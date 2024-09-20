@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.search.service;
 
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
+import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
@@ -56,6 +57,7 @@ public class SearchService {
     private final KoyeonRepository koyeonRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final CategoryBookmarkRepository categoryBookmarkRepository;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -63,6 +65,7 @@ public class SearchService {
     static final int BASE_SCORE_FACILITY_DEFAULT = 500;
     static final int BASE_SCORE_FACILITY_SPECIAL = 0;
     static final int BASE_SCORE_CLASSROOM_DEFAULT = 0;
+    static final int BASE_SCORE_IS_BOOKMARKED = 5000;
 
     // 아이콘으로 표시할 편의시설 종류
     private final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
@@ -81,12 +84,14 @@ public class SearchService {
      * 통합 검색
      */
     @Transactional(readOnly = true)
-    public GlobalSearchListRes globalSearch(String word) {
+    public GlobalSearchListRes globalSearch(String word, Long userId) {
         List<GlobalSearchRes> list = new ArrayList<>();
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
 
         List<Place> places;
         List<Building> buildings;
+
+        User user = userId != null ? findUser(userId) : null;
 
         // 건물이 입력됨
         if(word.contains(" ")) {
@@ -97,12 +102,12 @@ public class SearchService {
 
             buildings = getBuildings(firstBuildingWord);
             if(!buildings.isEmpty()) {
-                scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord));
+                scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord, user));
             }
 
             buildings = getBuildings(lastBuildingWord);
             if(!buildings.isEmpty()) {
-                scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord));
+                scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
             }
             return new GlobalSearchListRes(orderSequence(scores));
         }
@@ -111,10 +116,10 @@ public class SearchService {
         places = getPlaces(word, null);
 
         for(Building building : buildings) {
-            list.add(new GlobalSearchRes(building, LocationType.BUILDING));
+            list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
         }
         for(Place place : places) {
-            list.add(new GlobalSearchRes(place, LocationType.PLACE, false));
+            list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
         }
 
         return new GlobalSearchListRes(orderSequence(calculateScore(list, word, null)));
@@ -351,32 +356,54 @@ public class SearchService {
             .toList();
     }
 
-    private Map<GlobalSearchRes, Integer> getScores(String word, List<Building> buildings, String placeWord, String buildingWord) {
+    private Map<GlobalSearchRes, Integer> getScores(String word, List<Building> buildings, String placeWord, String buildingWord, User user) {
         List<GlobalSearchRes> list = new ArrayList<>();
         List<Place> places;
 
+        List<String> excludedTypes = Arrays.asList(
+            PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(), PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(),
+            PlaceType.MEN_HANDICAPPED_TOILET.getName(), PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(),
+            PlaceType.TRASH_CAN.getName()
+        );
+
         for (Building building : buildings) {
-            list.add(new GlobalSearchRes(building, LocationType.BUILDING));
+            list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
             places = getPlaces(placeWord, building);
 
             for (Place place : places) {
-                list.add(new GlobalSearchRes(place, LocationType.PLACE, true));
+                checkBookmarked(user, place);
+                if(!excludedTypes.contains(place.getName())) {
+                    list.add(new GlobalSearchRes(place, LocationType.PLACE, true, checkBookmarked(user, place)));
+                }
             }
         }
         return calculateScore(list, word, buildingWord);
     }
 
+    private Category checkBookmarked(User user, Building building) {
+        if(user == null) return null;
+        List<Category> categories = categoryRepository.findCategoriesByUserAndLocationTypeAndLocationId(user, LocationType.BUILDING, building.getId());
+        return categories.isEmpty() ? null : categories.get(0);
+    }
+
+    private Category checkBookmarked(User user, Place place) {
+        if(user == null) return null;
+        List<Category> categories = categoryRepository.findCategoriesByUserAndLocationTypeAndLocationId(user, LocationType.PLACE, place.getId());
+        return categories.isEmpty() ? null : categories.get(0);
+    }
+
     private Map<GlobalSearchRes, Integer> calculateScore(List<GlobalSearchRes> list, String keyword, String buildingKeyword) {
-        //TODO : 로그인 반영 후, 즐겨찾기 여부 확인해서 맨 위로 올리기 -> baseScore = 5000
         Map<GlobalSearchRes, Integer> scores = new HashMap<>();
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
         int indexScore = 0;
+        int bookmarkScore = 0;
 
         for (GlobalSearchRes res : list) {
             if (res.getLocationType() == LocationType.BUILDING) {
                 baseScore = buildingKeyword == null ? BASE_SCORE_BUILDING_DEFAULT : BASE_SCORE_BUILDING_WITH_KEYWORD;
                 indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
+                bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             }
             if (res.getLocationType() == LocationType.PLACE) {
                 if(res.getPlaceType().equals(PlaceType.CLASSROOM)) {
@@ -391,7 +418,7 @@ public class SearchService {
                     indexScore = calculateScoreByIndex(res.getName(), keyword);
                 }
             }
-            scores.put(res, baseScore + indexScore);
+            scores.put(res, baseScore + indexScore + bookmarkScore);
         }
         return scores;
     }
@@ -426,13 +453,6 @@ public class SearchService {
         return Arrays.stream(PlaceType.values())
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }
-
-    private static List<PlaceType> getFacilityType(String name) {
-        return Arrays.stream(PlaceType.values())
-            .filter(facilityType -> facilityType.getName().contains(name))
-            .toList();
-    }
-
 
     private int calculateScoreByIndex(String name, String keyword) {
         // 괄호() > 대학 > 관 (앞의 것이 존재한다면 해당 것을 기준으로 삼음)

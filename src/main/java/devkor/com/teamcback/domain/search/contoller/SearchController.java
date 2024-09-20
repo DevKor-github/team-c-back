@@ -42,6 +42,7 @@ public class SearchController {
 
     /***
      * keyword가 포함된 장소 검색
+     * @param userDetail 사용자 정보
      * @param keyword 검색 단어
      */
     @GetMapping()
@@ -52,9 +53,12 @@ public class SearchController {
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<GlobalSearchListRes> globalSearch(
+        @Parameter(description = "사용자정보", required = false)
+        @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(name = "keyword", description = "검색 키워드", example = "애기능", required = true)
         @RequestParam(name = "keyword") String keyword) {
-        return CommonResponse.success(searchService.globalSearch(keyword.trim()));
+            Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
+        return CommonResponse.success(searchService.globalSearch(keyword.trim(), userId));
     }
 
     /**
@@ -123,7 +127,7 @@ public class SearchController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchRoomRes> searchPlaceByBuildingFloor(
+    public CommonResponse<SearchFloorInfoRes> searchPlaceByBuildingFloor(
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId,
         @Parameter(name = "floor", description = "건물 층", example = "1", required = true)

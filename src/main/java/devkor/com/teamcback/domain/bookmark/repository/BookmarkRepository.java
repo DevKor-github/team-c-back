@@ -9,8 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
-    Optional<Bookmark> findByCategoryAndLocationTypeAndLocationId(Category category, LocationType locationType, Long locationId);
-    Long countAllByCategory(Category category);
-    List<Bookmark> findAllByCategory(Category category);
-    Boolean existsByLocationTypeAndLocationIdAndCategoryIn(LocationType locationType, Long locationId, List<Category> category);
+    List<Bookmark> findAllByCategoryBookmarkList_CategoryId(Long categoryId);
+
+    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_Category(Long locationId, LocationType locationType, Category category);
+
+    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(Long locationId, LocationType locationType,
+        List<Category> userCategoryList);
+
+    boolean existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(Long locationId, LocationType locationType,
+        List<Category> categories);
 }

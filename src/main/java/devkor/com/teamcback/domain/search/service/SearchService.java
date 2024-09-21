@@ -57,7 +57,6 @@ public class SearchService {
     private final KoyeonRepository koyeonRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
-    private final CategoryBookmarkRepository categoryBookmarkRepository;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;

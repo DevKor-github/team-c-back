@@ -54,6 +54,13 @@ public class Category extends BaseEntity {
         this.user = user;
     }
 
+    public Category(String category, Color color, User user) {
+        this.category = category;
+        this.color = color;
+        this.memo = "";
+        this.user = user;
+    }
+
     public void update(ModifyCategoryReq req) {
         this.category = req.getCategory();
         this.color = req.getColor();

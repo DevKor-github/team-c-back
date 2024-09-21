@@ -1,5 +1,7 @@
 package devkor.com.teamcback.domain.user.service;
 
+import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
@@ -30,6 +32,8 @@ public class UserService {
     private final CategoryRepository categoryRepository;
     private final JwtUtil jwtUtil;
     private static final String DEFAULT_NAME = "호랑이";
+    private static final String DEFAULT_CATEGORY = "내 장소";
+    private static final Color DEFAULT_COLOR = Color.RED;
 
     /**
      * 마이페이지 정보 조회
@@ -53,6 +57,10 @@ public class UserService {
         if(user == null) { // 회원이 없으면 회원가입
             String username = makeRandomName();
             user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
+
+            // 기본 카테고리 저장
+            Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
+            categoryRepository.save(category);
         }
 
         return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));

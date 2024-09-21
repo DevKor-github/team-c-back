@@ -11,6 +11,8 @@ public class SearchMainFacilityRes {
     private String name;
     @Schema(description = "편의시설 종류", example = "CAFETERIA")
     private PlaceType type;
+    @Schema(description = "편의시설 종류(한글)", example = "식당")
+    private String typeName;
     @Schema(description = "편의시설 id", example = "1")
     private Long placeId;
     @Schema(description = "이미지 URL")
@@ -24,8 +26,8 @@ public class SearchMainFacilityRes {
             int floor = (int) Math.floor(place.getFloor() * -1);
             this.name = "B" + floor + "층 " + place.getName();
         }
-
         this.type = place.getType();
+        this.typeName = place.getType().getName();
         this.placeId = place.getId();
         this.imageUrl = place.getImageUrl();
     }

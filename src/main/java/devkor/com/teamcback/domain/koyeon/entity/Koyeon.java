@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.search.entity;
+package devkor.com.teamcback.domain.koyeon.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;

@@ -65,6 +65,7 @@ public class SecurityConfig {
             authorizeHttpRequests
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
                 .requestMatchers("/api/search/**").permitAll()
+                .requestMatchers("/api/koyeon/**").permitAll() // 고연전 이후 삭제 필요
                 .requestMatchers("/api/routes/**").permitAll()
                 .requestMatchers("/api/users/login").permitAll()
                 .requestMatchers("/api/suggestions/**").permitAll()

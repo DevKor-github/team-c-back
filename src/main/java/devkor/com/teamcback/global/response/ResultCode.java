@@ -57,6 +57,7 @@ public enum ResultCode {
 
     // 특수 9000번대
     NOT_FOUND_KOYEON(HttpStatus.NOT_FOUND, 9000, "고연전 정보를 찾을 수 없습니다."),
+    NOT_FOUND_PUB(HttpStatus.NOT_FOUND, 9001, "주점 정보를 찾을 수 없습니다."),
 
     // 운영 시간 10000번대
     OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다.")

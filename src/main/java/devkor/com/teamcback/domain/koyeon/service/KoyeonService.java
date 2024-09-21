@@ -1,7 +1,8 @@
 package devkor.com.teamcback.domain.koyeon.service;
 
-import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubInfoListRes;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubInfoRes;
+import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubListRes;
+import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubRes;
 import devkor.com.teamcback.domain.koyeon.entity.Koyeon;
 import devkor.com.teamcback.domain.koyeon.repository.FreePubRepository;
 import devkor.com.teamcback.domain.koyeon.repository.KoyeonRepository;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_KOYEON;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PUB;
 
 @Slf4j
 @Service
@@ -29,12 +31,23 @@ public class KoyeonService {
     }
 
     /**
-     * 무료 주점 정보 반환
+     * 무료 주점 List 반환
      */
     @Transactional(readOnly = true)
-    public SearchFreePubInfoListRes searchFreePubInfo() {
-        return new SearchFreePubInfoListRes(freePubRepository.findAll().stream()
-            .map(SearchFreePubInfoRes::new)
+    public SearchFreePubListRes searchFreePubList() {
+        return new SearchFreePubListRes(freePubRepository.findAll()
+            .stream()
+            .map(SearchFreePubRes::new)
             .toList());
     }
+
+    /**
+     * 특정 주점 정보 반환
+     */
+    @Transactional(readOnly = true)
+    public SearchFreePubInfoRes searchFreePubInfo(Long pubId) {
+        return new SearchFreePubInfoRes(freePubRepository.findById(pubId).orElseThrow(() -> new GlobalException(NOT_FOUND_PUB)));
+    }
+
+
 }

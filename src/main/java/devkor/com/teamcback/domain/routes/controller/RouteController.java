@@ -80,8 +80,7 @@ public class RouteController {
             endLocation.add(endId.doubleValue());
         }
         List<GetRouteRes> returnList = new ArrayList<>();
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, null));
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.STAIR));
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.SHUTTLE));
         return CommonResponse.success(returnList);
     }
 }

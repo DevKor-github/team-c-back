@@ -17,9 +17,7 @@ import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
-import devkor.com.teamcback.domain.search.entity.Koyeon;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import devkor.com.teamcback.domain.search.repository.KoyeonRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -51,7 +49,6 @@ public class SearchService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final KoyeonRepository koyeonRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
 
@@ -72,14 +69,6 @@ public class SearchService {
     private final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName());
-
-    /**
-     * 고연전 여부 확인
-     */
-    @Transactional(readOnly = true)
-    public Koyeon isKoyeon() {
-        return koyeonRepository.findById(1L).orElseThrow(() -> new GlobalException(NOT_FOUND_KOYEON));
-    }
 
     /**
      * 통합 검색

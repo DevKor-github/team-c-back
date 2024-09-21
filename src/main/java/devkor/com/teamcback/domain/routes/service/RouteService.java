@@ -66,7 +66,7 @@ public class RouteService {
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-        if (route.getPath().isEmpty()) return new GetRouteRes(1);
+        if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
     }
 
@@ -104,6 +104,11 @@ public class RouteService {
     private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding) {
         Long duration = route.getDistance();
         List<List<Node>> path = cutRoute(route.getPath(), isStartBuilding, isEndBuilding);
+
+        //시작, 끝이 건물인 경우 해당 노드 지우기
+        if (isStartBuilding) path.remove(0);
+        if (isEndBuilding) path.get(path.size()-1).remove(path.get(path.size()-1).size()-1);
+
         List<PartialRouteRes> totalRoute = new ArrayList<>();
 
         for (int i = 0; i < path.size(); i++) {
@@ -122,6 +127,8 @@ public class RouteService {
             } else {
                 partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), path.get(i + 1).get(0)));
             }
+
+
 
             totalRoute.add(partialRouteRes);
         }
@@ -241,8 +248,8 @@ public class RouteService {
             thisNode = route.get(count);
             nextNode = route.get(count + 1);
 
-            // 새로운 건물로 이동할 때 경로 분할
-            if ((!Objects.equals(thisNode.getBuilding(), nextNode.getBuilding())) || (thisNode.getType() != nextNode.getType() && thisNode.getType() == NodeType.CHECKPOINT)) {
+            // 새로운 건물로 이동할 때 경로분할 & 체크포인트일때 경로분할 & 외부에서 새로운 건물로 들어갈 때(입구 분리) 경로분할
+            if ((!Objects.equals(thisNode.getBuilding(), nextNode.getBuilding()) && thisNode.getBuilding().getId() != 0L) || (thisNode.getType() != nextNode.getType() && thisNode.getType() == NodeType.CHECKPOINT) || (thisNode.getBuilding().getId() == 0L && nextNode.getType() == NodeType.ENTRANCE)) {
                 partialRoute.add(thisNode);
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
@@ -291,15 +298,22 @@ public class RouteService {
         int nextNodeFloor = nextNode.getFloor().intValue();
         String floor = nextNodeFloor >= 0 ? Integer.toString(nextNodeFloor) : "B" + Math.abs(nextNodeFloor);
 
-        //건물이 같은 경우는 층 이동의 경우밖에 없음
         if (prevNode.getType() == NodeType.CHECKPOINT){
             String checkpointName = findCheckpoint(prevNode).getName();
             return checkpointName + "(으)로 이동하세요.";
         }
+        //건물 외부에서 내부로 들어가는 경우, prevNodeBuilding과 nextNodeBuilding이 같음(id 0L)
+        //미리 출입구에서 한 번 추가적으로 끊기 때문.
+        else if (Objects.equals(prevNodeBuilding, nextNodeBuilding) && prevNodeBuilding.getId() == 0L){
+            Building enteringBuilding = findLinkedBuilding(nextNode);
+            String buildingName = enteringBuilding.getName();
+            return buildingName + "(으)로 이동하세요.";
+        }
+        //그 외 건물이 같은 경우는 층 이동의 경우밖에 없음
         else if (Objects.equals(prevNodeBuilding, nextNodeBuilding)){
             return floor + "층으로 이동하세요.";
         }
-        //바깥에서 안으로 들어가는 경우
+        //끊긴 출입구 기준으로 바깥에서 안으로 들어가는 경우
         else if (prevNodeBuilding.getId() == 0L){
             return nextNodeBuilding.getName() + " " + floor + "층 출입구로 들어가세요.";
         }
@@ -310,10 +324,34 @@ public class RouteService {
         }
     }
 
+    //노드에 연결된 건물을 찾는 메서드(들어오는 예상 노드는 ENTRANCE).
+    //건물 내부가 완료되지 않아/가장 가까운 출입구가 출입금지라 entrance와 연결된 내부 노드가 없을 수도 있는데, 이 경우 건물 노드로 찾는다
+    private Building findLinkedBuilding(Node node){
+        List<Node> adjacentNode = adjacentNodes(node);
+        for (Node connectedNode: adjacentNode){
+            if (!Objects.equals(connectedNode.getBuilding(), node.getBuilding())) return connectedNode.getBuilding();
+            if (findBuildingByNode(connectedNode) != null) return findBuildingByNode(connectedNode);
+        }
+        throw new Error("연결된 건물이 없습니다");
+    }
+
+    private List<Node> adjacentNodes(Node node){
+        List<Node> returnList = new ArrayList<Node>();
+        String[] adjacentNode = node.getAdjacentNode().split(",");
+        for (String nodeId: adjacentNode){
+            returnList.add(findNode(Long.parseLong(nodeId)));
+        }
+        return returnList;
+    }
+
 
     // findEntity 메서드
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
+    }
+
+    private Building findBuildingByNode(Node node){
+        return buildingRepository.findBuildingByNode(node);
     }
 
     private List<Node> findAllNode(Building building){

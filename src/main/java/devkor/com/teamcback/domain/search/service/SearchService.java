@@ -2,7 +2,6 @@ package devkor.com.teamcback.domain.search.service;
 
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
-import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
@@ -37,9 +36,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static devkor.com.teamcback.domain.routes.entity.NodeType.ELEVATOR;
-import static devkor.com.teamcback.domain.routes.entity.NodeType.ENTRANCE;
-import static devkor.com.teamcback.domain.routes.entity.NodeType.STAIR;
+import static devkor.com.teamcback.domain.routes.entity.NodeType.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j

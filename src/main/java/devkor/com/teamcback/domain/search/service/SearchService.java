@@ -66,9 +66,12 @@ public class SearchService {
         PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM, PlaceType.BANK, PlaceType.GYM);
 
     // 통합 검색 결과에 표시하지 않을 편의시설 종류
+    //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
+    //TODO: tb_place에서 KOYEON type 제거
     private final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
-        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName());
+        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
+        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName(), PlaceType.KOYEON.getName());
 
     /**
      * 통합 검색

@@ -35,6 +35,8 @@ public class SearchFreePubInfoRes {
         this.longitude = pub.getLongitude();
         this.address = pub.getAddress();
         this.operatingTime = pub.getOperatingTime();
-        this.menus = Arrays.stream(pub.getMenus().split(",")).toList();
+        if(pub.getMenus() != null) {
+            this.menus = Arrays.stream(pub.getMenus().split(",")).toList();
+        }
     }
 }

@@ -42,7 +42,13 @@ public class UserService {
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
         Level level = getLevel(user.getScore());
-        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), level.getProfileImage());
+        Level nextLevel = level.getNextLevel();
+        Long remainScoreToNextLevel =  nextLevel == null ? 0 : nextLevel.getMinScore() - user.getScore();
+        int percent = 100;
+        if(nextLevel != null) {
+            percent = (int) (100 * (user.getScore() - level.getMinScore()) / (nextLevel.getMinScore() - level.getMinScore()));
+        }
+        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), remainScoreToNextLevel, percent);
     }
 
     /**

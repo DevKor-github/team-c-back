@@ -19,7 +19,7 @@ public class SearchFreePubRes {
     public SearchFreePubRes(FreePub pub) {
         this.id = pub.getId();
         this.name = pub.getName();
-        this.latitude = pub.getNode().getLatitude();
-        this.longitude = pub.getNode().getLongitude();
+        this.latitude = pub.getLatitude();
+        this.longitude = pub.getLongitude();
     }
 }

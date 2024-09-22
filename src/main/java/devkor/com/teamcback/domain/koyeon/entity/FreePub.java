@@ -20,9 +20,9 @@ public class FreePub {
     @Column(nullable = false)
     private String sponsor;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "nodeId")
-//    private Node node;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nodeId")
+    private Node node;
 
     @Column(nullable = false)
     private String address;

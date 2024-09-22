@@ -13,8 +13,6 @@ public class GetUserInfoRes {
     private String username;
     @Schema(description = "email", example = "abc1234@naver.com")
     private String email;
-    @Schema(description = "profileUrl", example = "profileUrl")
-    private String profileUrl;
     @Schema(description = "provider", example = "NAVER")
     private Provider provider;
     @Schema(description = "role", example = "USER")
@@ -23,18 +21,23 @@ public class GetUserInfoRes {
     private int level;
     @Schema(description = "score", example = "15")
     private Long score;
+    @Schema(description = "remainScoreToNextLevel", example = "10")
+    private Long remainScoreToNextLevel;
+    @Schema(description = "percent", example = "75")
+    private int percent;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
-    public GetUserInfoRes(User user, Long categoryCount, int level, String profileUrl) {
+    public GetUserInfoRes(User user, Long categoryCount, int level, Long remainScoreToNextLevel, int percent) {
         this.username = user.getUsername();
         this.email = user.getEmail();
-        this.profileUrl = profileUrl;
         this.provider = user.getProvider();
         this.role = user.getRole();
         this.level = level;
         this.score = user.getScore();
+        this.remainScoreToNextLevel = remainScoreToNextLevel;
+        this.percent = percent;
         this.categoryCount = categoryCount;
     }
 }

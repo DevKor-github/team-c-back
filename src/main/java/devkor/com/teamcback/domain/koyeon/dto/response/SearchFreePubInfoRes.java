@@ -31,8 +31,8 @@ public class SearchFreePubInfoRes {
         this.id = pub.getId();
         this.name = pub.getName();
         this.sponsor = pub.getSponsor();
-        this.latitude = pub.getNode().getLatitude();
-        this.longitude = pub.getNode().getLongitude();
+        this.latitude = pub.getLatitude();
+        this.longitude = pub.getLongitude();
         this.address = pub.getAddress();
         this.operatingTime = pub.getOperatingTime();
         this.menus = Arrays.stream(pub.getMenus().split(",")).toList();

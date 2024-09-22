@@ -3,7 +3,6 @@ package devkor.com.teamcback.domain.search.contoller;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
-import devkor.com.teamcback.domain.search.entity.Koyeon;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -25,20 +24,6 @@ import java.util.List;
 @RequestMapping("/api/search")
 public class SearchController {
     private final SearchService searchService;
-
-    /***
-     * 고연전 여부 반환
-     */
-    @GetMapping("/koyeon")
-    @Operation(summary = "고연전 시즌 여부를 t/f로 반환", description = "고연전 시즌 여부를 t/f로 반환")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-        @ApiResponse(responseCode = "404", description = "Not Found",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-    })
-    public CommonResponse<Koyeon> isKoyeon() {
-        return CommonResponse.success(searchService.isKoyeon());
-    }
 
     /***
      * keyword가 포함된 장소 검색

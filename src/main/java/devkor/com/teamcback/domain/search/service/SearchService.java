@@ -2,7 +2,6 @@ package devkor.com.teamcback.domain.search.service;
 
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
-import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
@@ -18,9 +17,7 @@ import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
-import devkor.com.teamcback.domain.search.entity.Koyeon;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import devkor.com.teamcback.domain.search.repository.KoyeonRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -37,9 +34,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static devkor.com.teamcback.domain.routes.entity.NodeType.ELEVATOR;
-import static devkor.com.teamcback.domain.routes.entity.NodeType.ENTRANCE;
-import static devkor.com.teamcback.domain.routes.entity.NodeType.STAIR;
+import static devkor.com.teamcback.domain.routes.entity.NodeType.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -54,10 +49,8 @@ public class SearchService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final KoyeonRepository koyeonRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
-    private final CategoryBookmarkRepository categoryBookmarkRepository;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -72,13 +65,13 @@ public class SearchService {
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA,
         PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM, PlaceType.BANK, PlaceType.GYM);
 
-    /**
-     * 고연전 여부 확인
-     */
-    @Transactional(readOnly = true)
-    public Koyeon isKoyeon() {
-        return koyeonRepository.findById(1L).orElseThrow(() -> new GlobalException(NOT_FOUND_KOYEON));
-    }
+    // 통합 검색 결과에 표시하지 않을 편의시설 종류
+    //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
+    //TODO: tb_place에서 KOYEON type 제거
+    private final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
+        PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
+        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
+        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName(), PlaceType.KOYEON.getName());
 
     /**
      * 통합 검색
@@ -119,7 +112,9 @@ public class SearchService {
             list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
         }
         for(Place place : places) {
-            list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
+            if(!excludedTypes.contains(place.getName())) {
+                list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
+            }
         }
 
         return new GlobalSearchListRes(orderSequence(calculateScore(list, word, null)));
@@ -359,12 +354,6 @@ public class SearchService {
     private Map<GlobalSearchRes, Integer> getScores(String word, List<Building> buildings, String placeWord, String buildingWord, User user) {
         List<GlobalSearchRes> list = new ArrayList<>();
         List<Place> places;
-
-        List<String> excludedTypes = Arrays.asList(
-            PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(), PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(),
-            PlaceType.MEN_HANDICAPPED_TOILET.getName(), PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(),
-            PlaceType.TRASH_CAN.getName()
-        );
 
         for (Building building : buildings) {
             list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));

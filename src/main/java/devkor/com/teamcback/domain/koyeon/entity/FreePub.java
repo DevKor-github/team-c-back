@@ -32,4 +32,10 @@ public class FreePub {
 
     @Column(nullable = false)
     private String menus;
+
+    @Column(nullable = false)
+    private Double latitude;
+
+    @Column(nullable = false)
+    private Double longitude;
 }

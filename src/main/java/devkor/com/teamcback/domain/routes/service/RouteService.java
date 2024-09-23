@@ -63,6 +63,10 @@ public class RouteService {
             }
         }
 
+        if (startNode.getBuilding().getId() == 0L && endNode.getBuilding().getId() == 0L){
+            if (getEuclidDistance(startNode.getLatitude(), startNode.getLongitude(), endNode.getLatitude(), endNode.getLongitude()) < 0.0001) throw new GlobalException(COORDINATES_TOO_NEAR);
+        }
+
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);

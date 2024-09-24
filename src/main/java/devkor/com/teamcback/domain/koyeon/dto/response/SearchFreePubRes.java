@@ -14,6 +14,10 @@ public class SearchFreePubRes {
     private Long id;
     @Schema(description = "주점 이름", example = "맛닭꼬")
     private String name;
+    @Schema(description = "후원 단체", example = "79학번 동기회")
+    private String sponsor;
+    @Schema(description = "운영 시간", example = "19:00-22:00")
+    private String operatingTime;
     @Schema(description = "주점 경도", example = "127.0274309")
     private Double longitude;
     @Schema(description = "주점 위도", example = "37.5844829")
@@ -24,6 +28,8 @@ public class SearchFreePubRes {
     public SearchFreePubRes(FreePub pub) {
         this.id = pub.getId();
         this.name = pub.getName();
+        this.sponsor = pub.getSponsor();
+        this.operatingTime = pub.getOperatingTime();
         this.latitude = pub.getLatitude();
         this.longitude = pub.getLongitude();
     }
@@ -31,6 +37,8 @@ public class SearchFreePubRes {
     public SearchFreePubRes(FreePub pub, List<String> filteredMenus) {
         this.id = pub.getId();
         this.name = pub.getName();
+        this.sponsor = pub.getSponsor();
+        this.operatingTime = pub.getOperatingTime();
         this.latitude = pub.getLatitude();
         this.longitude = pub.getLongitude();
         this.filteredMenus = filteredMenus;

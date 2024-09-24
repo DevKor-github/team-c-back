@@ -3,27 +3,18 @@ package devkor.com.teamcback.domain.koyeon.service;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubInfoRes;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubListRes;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubRes;
-import devkor.com.teamcback.domain.koyeon.entity.FoodTag;
-import devkor.com.teamcback.domain.koyeon.entity.FreePub;
-import devkor.com.teamcback.domain.koyeon.entity.Koyeon;
-import devkor.com.teamcback.domain.koyeon.entity.Menu;
-import devkor.com.teamcback.domain.koyeon.entity.TagMenu;
-import devkor.com.teamcback.domain.koyeon.repository.FoodTagRepository;
-import devkor.com.teamcback.domain.koyeon.repository.FreePubRepository;
-import devkor.com.teamcback.domain.koyeon.repository.KoyeonRepository;
-import devkor.com.teamcback.domain.koyeon.repository.MenuRepository;
-import devkor.com.teamcback.domain.koyeon.repository.TagMenuRepository;
+import devkor.com.teamcback.domain.koyeon.entity.*;
+import devkor.com.teamcback.domain.koyeon.repository.*;
 import devkor.com.teamcback.global.exception.GlobalException;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_KOYEON;
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PUB;
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_TAG;
+import java.util.ArrayList;
+import java.util.List;
+
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
 @Service
@@ -77,8 +68,11 @@ public class KoyeonService {
      */
     @Transactional(readOnly = true)
     public SearchFreePubInfoRes searchFreePubInfo(Long pubId) {
-        return new SearchFreePubInfoRes(freePubRepository.findById(pubId).orElseThrow(() -> new GlobalException(NOT_FOUND_PUB)));
+        FreePub pub = findFreePub(pubId);
+        return new SearchFreePubInfoRes(pub, menuRepository.findByFreePub(pub));
     }
 
-
+    private FreePub findFreePub(Long pubId) {
+        return freePubRepository.findById(pubId).orElseThrow(() -> new GlobalException(NOT_FOUND_PUB));
+    }
 }

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,8 +48,11 @@ public class KoyeonController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchFreePubListRes> searchFreePubList() {
-        return CommonResponse.success(koyeonService.searchFreePubList());
+    public CommonResponse<SearchFreePubListRes> searchFreePubList(
+        @Parameter(name = "tagId", description = "태그 id", example = "1")
+        @RequestParam(required = false) Long tagId
+    ) {
+        return CommonResponse.success(koyeonService.searchFreePubList(tagId));
     }
 
     /***

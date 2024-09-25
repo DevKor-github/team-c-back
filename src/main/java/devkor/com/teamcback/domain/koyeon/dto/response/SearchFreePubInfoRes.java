@@ -1,10 +1,10 @@
 package devkor.com.teamcback.domain.koyeon.dto.response;
 
 import devkor.com.teamcback.domain.koyeon.entity.FreePub;
+import devkor.com.teamcback.domain.koyeon.entity.Menu;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Schema(description = "주점 정보")
@@ -24,10 +24,12 @@ public class SearchFreePubInfoRes {
     private String address;
     @Schema(description = "운영시간", example = "19:00-22:00")
     private String operatingTime;
+    @Schema(description = "노드 ID", example = "1")
+    private Long nodeId = null;
     @Schema(description = "메뉴List", example = "술, 밥, 치킨")
     private List<String> menus;
 
-    public SearchFreePubInfoRes(FreePub pub) {
+    public SearchFreePubInfoRes(FreePub pub, List<Menu> menus) {
         this.id = pub.getId();
         this.name = pub.getName();
         this.sponsor = pub.getSponsor();
@@ -35,8 +37,7 @@ public class SearchFreePubInfoRes {
         this.longitude = pub.getLongitude();
         this.address = pub.getAddress();
         this.operatingTime = pub.getOperatingTime();
-        if(pub.getMenus() != null) {
-            this.menus = Arrays.stream(pub.getMenus().split(",")).toList();
-        }
+        this.menus = menus.stream().map(Menu::getName).toList();
+        if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
     }
 }

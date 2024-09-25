@@ -58,7 +58,7 @@ public class RouteController {
         @RequestParam(required = false) Double startLong,
         @Parameter(name = "endType", description = "도착 장소의 LocationType", example = "BUILDING", required = true)
         @RequestParam LocationType endType,
-        @Parameter(name = "endId", description = "endType이 COORD가 아닐 경우 해당 시설의 ID", required = true)
+        @Parameter(name = "endId", description = "endType이 COORD가 아닐 경우 해당 시설의 ID")
         @RequestParam(required = false) Long endId,
         @Parameter(name = "endLat", description = "endType이 COORD일 경우 해당 장소의 위도")
         @RequestParam(required = false) Double endLat,

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -64,6 +65,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests((authorizeHttpRequests) ->
             authorizeHttpRequests
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
+                .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
                 .requestMatchers("/api/koyeon/**").permitAll() // 고연전 이후 삭제 필요
                 .requestMatchers("/api/users/login").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용

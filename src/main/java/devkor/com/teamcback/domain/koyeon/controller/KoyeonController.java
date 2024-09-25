@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.koyeon.controller;
 
+import devkor.com.teamcback.domain.koyeon.dto.response.GlobalPubSearchListRes;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubInfoRes;
 import devkor.com.teamcback.domain.koyeon.dto.response.SearchFreePubListRes;
 import devkor.com.teamcback.domain.koyeon.entity.Koyeon;
@@ -12,10 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +36,24 @@ public class KoyeonController {
     }
 
     /***
+     * 주점 통합 검색
+     * @param keyword
+     */
+    @GetMapping("/search")
+    @Operation(summary = "주점 통합 검색", description = "주점 통합 검색")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GlobalPubSearchListRes> globalPubSearch(
+        @Parameter(name = "keyword", description = "검색어", example = "치킨")
+        @RequestParam String keyword
+    ) {
+        return CommonResponse.success(koyeonService.globalPubSearch(keyword));
+    }
+
+    /***
      * 주점 List 반환
      */
     @GetMapping("/pubs")
@@ -47,8 +63,11 @@ public class KoyeonController {
         @ApiResponse(responseCode = "404", description = "Not Found",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<SearchFreePubListRes> searchFreePubList() {
-        return CommonResponse.success(koyeonService.searchFreePubList());
+    public CommonResponse<SearchFreePubListRes> searchFreePubList(
+        @Parameter(name = "tagId", description = "태그 id", example = "1")
+        @RequestParam(required = false) Long tagId
+    ) {
+        return CommonResponse.success(koyeonService.searchFreePubList(tagId));
     }
 
     /***

@@ -89,7 +89,7 @@ public class GlobalSearchRes {
             this.name = place.getBuilding().getName() + " " + place.getName();
         } else { //특정 시설
             this.id = place.getId();
-            this.buildingId = null;
+            this.buildingId = place.getBuilding().getId();
             this.floor = place.getFloor();
             this.name = place.getBuilding().getName() + " " + place.getName();
             if(!place.getDetail().equals(".")) this.detail = place.getDetail();

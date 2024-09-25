@@ -44,6 +44,7 @@ public enum ResultCode {
     NOT_PROVIDED_ROUTE(HttpStatus.BAD_REQUEST, 6002, "해당 경로는 제공되지 않습니다."),
     COORDINATES_TOO_FAR(HttpStatus.BAD_REQUEST, 6003, "찾고자 하는 경로가 캠퍼스에서 너무 멉니다."),
     NOT_OPERATING(HttpStatus.NOT_FOUND, 6004, "현재 운영중이 아닌 시설입니다."),
+    COORDINATES_TOO_NEAR(HttpStatus.BAD_REQUEST, 6005, "찾고자 하는 두 지점이 서로 너무 가깝습니다."),
 
     // 즐겨찾기 7000번대
     INCORRECT_COLOR(HttpStatus.BAD_REQUEST, 7000, "정해진 색상 내에서 선택해주세요."),
@@ -60,7 +61,10 @@ public enum ResultCode {
     NOT_FOUND_PUB(HttpStatus.NOT_FOUND, 9001, "주점 정보를 찾을 수 없습니다."),
 
     // 운영 시간 10000번대
-    OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다.")
+    OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다."),
+
+    // 고연전 11000번대
+    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

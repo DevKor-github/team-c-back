@@ -15,8 +15,10 @@ public class GlobalPubSearchRes {
     private String name;
     @Schema(description = "후원처", example = "승명호 교우회장님")
     private String sponsor;
-    @Schema(description = "", example = "서울특별시 성북구 고려대로24길 27")
+    @Schema(description = "주소", example = "서울특별시 성북구 고려대로24길 27")
     private String address;
+    @Schema(description = "노드 ID", example = "1")
+    private Long nodeId = null;
 
     @Override
     public boolean equals(Object o) {
@@ -35,6 +37,7 @@ public class GlobalPubSearchRes {
         this.name = pub.getName();
         this.sponsor = pub.getSponsor();
         this.address = pub.getAddress();
+        if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
     }
 
 }

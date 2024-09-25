@@ -24,6 +24,8 @@ public class SearchFreePubInfoRes {
     private String address;
     @Schema(description = "운영시간", example = "19:00-22:00")
     private String operatingTime;
+    @Schema(description = "노드 ID", example = "1")
+    private Long nodeId = null;
     @Schema(description = "메뉴List", example = "술, 밥, 치킨")
     private List<String> menus;
 
@@ -36,5 +38,6 @@ public class SearchFreePubInfoRes {
         this.address = pub.getAddress();
         this.operatingTime = pub.getOperatingTime();
         this.menus = menus.stream().map(Menu::getName).toList();
+        if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
     }
 }

@@ -2,6 +2,8 @@ package devkor.com.teamcback.domain.suggestion.repository;
 
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
+import devkor.com.teamcback.domain.user.entity.User;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +14,6 @@ public interface SuggestionRepository extends JpaRepository<Suggestion, Long> {
     Page<Suggestion> findBySuggestionType(Pageable pageable, SuggestionType type);
 
     Page<Suggestion> findBySuggestionTypeAndIsSolved(Pageable pageable, SuggestionType type, Boolean isSolved);
+
+    List<Suggestion> findByUser(User user);
 }

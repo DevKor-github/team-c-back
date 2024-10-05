@@ -28,7 +28,7 @@ public class CategoryBookmark extends BaseEntity {
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bookmark_id", nullable = false)
+    @JoinColumn(name = "bookmark_id")
     private Bookmark bookmark;
 
     public void setCategoryAndBookmark(Category category, Bookmark bookmark) {

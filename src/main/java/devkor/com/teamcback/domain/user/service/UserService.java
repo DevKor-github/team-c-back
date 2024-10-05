@@ -104,10 +104,12 @@ public class UserService {
     /**
      * 사용자 회원 탈퇴
      */
+    @Transactional
     public DeleteUserRes deleteUser(Long userId) {
         User user = findUser(userId);
 
         List<Category> categoryList = categoryRepository.findByUser(user);
+
         for(Category category : categoryList) {
             // 각 북마크가 다른 카테고리와 연결되어 있지 않은지 확인 후 삭제
             category.getCategoryBookmarkList().forEach(categoryBookmark -> {

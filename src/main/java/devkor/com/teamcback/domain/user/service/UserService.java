@@ -122,8 +122,14 @@ public class UserService {
             categoryRepository.delete(category);
         }
 
+        // 건의 익명 처리
+        List<Suggestion> suggestions = suggestionRepository.findByUser(user);
+        for(Suggestion suggestion : suggestions) {
+            suggestion.setUser(null);
+        }
+
         userBookmarkLogRepository.deleteAll(userBookmarkLogRepository.findByUser(user));
-        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
+//        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
         userRepository.delete(user);
 
         return new DeleteUserRes();

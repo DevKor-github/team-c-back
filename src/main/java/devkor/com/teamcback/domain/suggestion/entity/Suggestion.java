@@ -7,6 +7,7 @@ import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -30,6 +31,7 @@ public class Suggestion extends BaseEntity {
     @Column(nullable = false)
     private boolean isSolved = false;
 
+    @Setter
     @ManyToOne
     @JoinColumn(name = "userId")
     private User user;
@@ -44,4 +46,5 @@ public class Suggestion extends BaseEntity {
     public void updateIsSolved(boolean solved) {
         this.isSolved = solved;
     }
+
 }

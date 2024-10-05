@@ -53,6 +53,14 @@ public class CategoryService {
         // 카테고리 소유자인지 확인
         checkAuthority(user, category.getUser());
 
+        // 각 북마크가 다른 카테고리와 연결되어 있지 않은지 확인 후 삭제
+        category.getCategoryBookmarkList().forEach(categoryBookmark -> {
+            Bookmark bookmark = categoryBookmark.getBookmark();
+            if (bookmark.getCategoryBookmarkList().size() == 1) {
+                bookmarkRepository.delete(bookmark);
+            }
+        });
+
         categoryRepository.delete(category);
 
         return new DeleteCategoryRes();

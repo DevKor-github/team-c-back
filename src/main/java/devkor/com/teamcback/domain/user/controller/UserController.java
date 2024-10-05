@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.user.controller;
 
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
@@ -73,5 +74,22 @@ public class UserController {
         @Parameter(description = "사용자명", required = true)
         @RequestParam String username) {
         return CommonResponse.success(userService.modifyUsername(userDetail.getUser().getUserId(), username));
+    }
+
+    /**
+     * 사용자 회원 탈퇴
+     * @param userDetail 사용자 정보
+     */
+    @Operation(summary = "사용자 회원 탈퇴", description = "사용자 회원 탈퇴")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @DeleteMapping
+    public CommonResponse<DeleteUserRes> deleteUser(
+        @Parameter(description = "사용자정보", required = true)
+        @AuthenticationPrincipal UserDetailsImpl userDetail) {
+        return CommonResponse.success(userService.deleteUser(userDetail.getUser().getUserId()));
     }
 }

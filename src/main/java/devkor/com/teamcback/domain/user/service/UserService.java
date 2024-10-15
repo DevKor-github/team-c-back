@@ -1,9 +1,18 @@
 package devkor.com.teamcback.domain.user.service;
 
+import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
+import devkor.com.teamcback.domain.bookmark.entity.CategoryBookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Color;
+import devkor.com.teamcback.domain.bookmark.entity.UserBookmarkLog;
+import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
+import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
+import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
+import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
+import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
@@ -13,6 +22,7 @@ import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +40,9 @@ import static devkor.com.teamcback.global.response.ResultCode.*;
 public class UserService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final UserBookmarkLogRepository userBookmarkLogRepository;
+    private final SuggestionRepository suggestionRepository;
     private final JwtUtil jwtUtil;
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
@@ -86,6 +99,40 @@ public class UserService {
         user.updateUsername(username);
 
         return new ModifyUsernameRes();
+    }
+
+    /**
+     * 사용자 회원 탈퇴
+     */
+    @Transactional
+    public DeleteUserRes deleteUser(Long userId) {
+        User user = findUser(userId);
+
+        List<Category> categoryList = categoryRepository.findByUser(user);
+
+        for(Category category : categoryList) {
+            // 각 북마크가 다른 카테고리와 연결되어 있지 않은지 확인 후 삭제
+            category.getCategoryBookmarkList().forEach(categoryBookmark -> {
+                Bookmark bookmark = categoryBookmark.getBookmark();
+                if (bookmark.getCategoryBookmarkList().size() == 1) {
+                    bookmarkRepository.delete(bookmark);
+                }
+            });
+
+            categoryRepository.delete(category);
+        }
+
+        // 건의 익명 처리
+        List<Suggestion> suggestions = suggestionRepository.findByUser(user);
+        for(Suggestion suggestion : suggestions) {
+            suggestion.setUser(null);
+        }
+
+        userBookmarkLogRepository.deleteAll(userBookmarkLogRepository.findByUser(user));
+//        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
+        userRepository.delete(user);
+
+        return new DeleteUserRes();
     }
 
     private void checkInvalidUsername(String username) {

@@ -22,4 +22,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
         @Param("locationType") LocationType locationType,
         @Param("locationId") Long locationId
     );
+
+    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.categoryBookmarkList WHERE c.user = :user")
+    List<Category> findByUser(@Param("user") User user);
 }

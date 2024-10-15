@@ -11,7 +11,8 @@ public enum NodeType {
     STAIR("계단"),
     ENTRANCE("출입문"),
     CHECKPOINT("경로"),
-    SHUTTLE("셔틀");
+    SHUTTLE("셔틀"),
+    EVENT("이벤트 노드");
 
     private final String name;
 }

@@ -1,14 +1,14 @@
 package devkor.com.teamcback.domain.search.dto.response;
 
-import static devkor.com.teamcback.domain.operatingtime.service.OperatingService.OPERATING_TIME_PATTERN;
-
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.regex.Pattern;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.regex.Pattern;
+
+import static devkor.com.teamcback.domain.operatingtime.service.OperatingService.OPERATING_TIME_PATTERN;
 
 @Getter
 @Schema(description = "건물 상세 정보")
@@ -19,6 +19,10 @@ public class SearchBuildingDetailRes {
     private String name;
     @Schema(description = "주소", example = "서울 성북구 안암로 73-15")
     private String address;
+    @Schema(description = "건물 경도", example = "127.0274309")
+    private Double longitude;
+    @Schema(description = "건물 위도", example = "37.5844829")
+    private Double latitude;
     @Schema(description = "건물 사진 url", example = "building_url")
     private String imageUrl;
     @Schema(description = " 평일 운영 시간", example = "9:00-22:00")
@@ -44,6 +48,8 @@ public class SearchBuildingDetailRes {
         this.buildingId = building.getId();
         this.name = "고려대학교 서울캠퍼스 " + building.getName();
         this.address = building.getAddress();
+        this.latitude = building.getNode().getLatitude();
+        this.longitude = building.getNode().getLongitude();
         this.imageUrl = building.getImageUrl();
         this.weekdayOperatingTime = building.getWeekdayOperatingTime();
         this.saturdayOperatingTime = building.getSaturdayOperatingTime();

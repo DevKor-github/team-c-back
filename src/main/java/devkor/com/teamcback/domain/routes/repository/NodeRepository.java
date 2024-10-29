@@ -12,4 +12,5 @@ public interface NodeRepository extends JpaRepository<Node, Long> {
     List<Node> findAllByBuildingAndFloor(Building building, Double floor);
     List<Node> findAllByBuildingAndType(Building building, NodeType nodeType);
     List<Node> findAllByBuildingAndFloorAndTypeIn(Building building, double floor, List<NodeType> entrance);
+    List<Node> findByBuildingAndRoutingAndTypeIn(Building building, boolean routing, List<NodeType> type);
 }

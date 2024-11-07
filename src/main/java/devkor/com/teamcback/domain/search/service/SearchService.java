@@ -15,7 +15,7 @@ import devkor.com.teamcback.domain.place.repository.PlaceImageRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
-import devkor.com.teamcback.domain.search.HangulUtils;
+import devkor.com.teamcback.domain.search.HangeulUtils;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
@@ -53,7 +53,7 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
-    private final HangulUtils hangulUtils;
+    private final HangeulUtils hangeulUtils;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -357,11 +357,11 @@ public class SearchService {
 
         for (BuildingNickname b : buildingNicknames) {
             String nickname = b.getNickname();
-            b.update(hangulUtils.extractChosung(nickname), hangulUtils.decomposeHangulString(nickname));
+            b.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
         }
         for (PlaceNickname p : placeNicknames) {
             String nickname = p.getNickname();
-            p.update(hangulUtils.extractChosung(nickname), hangulUtils.decomposeHangulString(nickname));
+            p.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
         }
         buildingNicknameRepository.saveAll(buildingNicknames);
         placeNicknameRepository.saveAll(placeNicknames);
@@ -371,8 +371,8 @@ public class SearchService {
 
     private List<Building> getBuildings(String word) {
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangulUtils.decomposeHangulString(word));
-        if(hangulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangulUtils.extractChosung(word)));
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
+        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
 
         for (BuildingNickname buildingNickname : buildingNicknames) {
             System.out.println("건물:" + buildingNickname.getBuilding().getName() + " 별명:" + buildingNickname.getNickname());
@@ -519,12 +519,12 @@ public class SearchService {
         // 강의실 조회
         List<PlaceNickname> placeNicknames = new ArrayList<>();
         if(building != null && !places.isEmpty()) {
-            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangulUtils.decomposeHangulString(word), places, limit);
-            if(hangulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangulUtils.extractChosung(word), places, limit));
+            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
         }
         else if(building == null) {
-            placeNicknames =placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangulUtils.decomposeHangulString(word), limit);
-            if(hangulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangulUtils.extractChosung(word), limit));
+            placeNicknames =placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
         }
 
         // 중복을 제거하여 List에 저장

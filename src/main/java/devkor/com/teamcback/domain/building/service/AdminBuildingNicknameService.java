@@ -12,7 +12,7 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.search.HangulUtils;
+import devkor.com.teamcback.domain.search.HangeulUtils;
 import devkor.com.teamcback.global.exception.GlobalException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +24,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminBuildingNicknameService {
     private final BuildingNicknameRepository buildingNicknameRepository;
     private final BuildingRepository buildingRepository;
-    private final HangulUtils hangulUtils;
+    private final HangeulUtils hangeulUtils;
 
     // 건물 별명 저장
     @Transactional
     public SaveBuildingNicknameRes saveBuildingNickname(Long buildingId, SaveBuildingNicknameReq req) {
         Building building = findBuilding(buildingId);
         String nickname = req.getNickname();
-        BuildingNickname buildingNickname = new BuildingNickname(building, nickname, hangulUtils.extractChosung(nickname), hangulUtils.decomposeHangulString(nickname));
+        BuildingNickname buildingNickname = new BuildingNickname(building, nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
 
         buildingNicknameRepository.save(buildingNickname);
 

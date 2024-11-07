@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.search;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HangulUtils {
+public class HangeulUtils {
     private static final char HANGUL_BASE = 0xAC00;
     private static final char[] CHOSUNG = {
         'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'

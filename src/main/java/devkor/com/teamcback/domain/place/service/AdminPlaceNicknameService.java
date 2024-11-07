@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.domain.search.HangulUtils;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,14 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE_NI
 public class AdminPlaceNicknameService {
     private final PlaceNicknameRepository placeNicknameRepository;
     private final PlaceRepository placeRepository;
+    private final HangulUtils hangulUtils;
 
     // 강의실 별명 저장
     @Transactional
     public SavePlaceNicknameRes saveClassroomNickname(Long placeId, SavePlaceNicknameReq req) {
         Place place = findPlace(placeId);
-        PlaceNickname placeNickname = new PlaceNickname(place, req.getNickname());
+        String nickname = req.getNickname();
+        PlaceNickname placeNickname = new PlaceNickname(place, nickname, hangulUtils.extractChosung(nickname), hangulUtils.decomposeHangulString(nickname));
 
         placeNicknameRepository.save(placeNickname);
 

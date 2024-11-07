@@ -27,8 +27,19 @@ public class BuildingNickname extends BaseEntity {
     @Column(nullable = false)
     private String nickname;
 
+    @Column()
+    private String chosung;
+
+    @Column()
+    private String jasoDecompose;
+
     public BuildingNickname(Building building, String nickname) {
         this.building = building;
         this.nickname = nickname;
+    }
+
+    public void update(String chosung, String jasoDecompose) {
+        this.chosung = chosung;
+        this.jasoDecompose = jasoDecompose;
     }
 }

@@ -21,8 +21,19 @@ public class PlaceNickname extends BaseEntity {
     @Column(nullable = false)
     private String nickname;
 
+    @Column()
+    private String chosung;
+
+    @Column()
+    private String jasoDecompose;
+
     public PlaceNickname(Place place, String nickname) {
         this.place = place;
         this.nickname = nickname;
+    }
+
+    public void update(String chosung, String jasoDecompose) {
+        this.chosung = chosung;
+        this.jasoDecompose = jasoDecompose;
     }
 }

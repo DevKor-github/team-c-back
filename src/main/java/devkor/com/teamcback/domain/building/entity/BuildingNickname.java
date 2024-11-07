@@ -33,9 +33,11 @@ public class BuildingNickname extends BaseEntity {
     @Column()
     private String jasoDecompose;
 
-    public BuildingNickname(Building building, String nickname) {
+    public BuildingNickname(Building building, String nickname, String chosung, String jasoDecompose) {
         this.building = building;
         this.nickname = nickname;
+        this.chosung = chosung;
+        this.jasoDecompose = jasoDecompose;
     }
 
     public void update(String chosung, String jasoDecompose) {

@@ -253,22 +253,4 @@ public class SearchController {
         searchService.saveSearchLog(userDetail.getUser().getUserId(), req);
         return CommonResponse.success(new SaveSearchLogRes());
     }
-
-    /***
-     * Nickname Tables 업데이트
-     * @param userDetail 사용자 정보
-     */
-    @PostMapping()
-    @Operation(summary = "Nickname Tables 업데이트", description = "Nickname Tables 업데이트")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-        @ApiResponse(responseCode = "404", description = "Not Found",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-    })
-    public CommonResponse<UpdateNicknamesRes> globalSearch(
-        @Parameter(description = "사용자정보", required = true)
-        @AuthenticationPrincipal UserDetailsImpl userDetail) {
-        Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
-        return CommonResponse.success(searchService.updateNicknames(userId));
-    }
 }

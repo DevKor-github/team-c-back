@@ -4,6 +4,7 @@ import devkor.com.teamcback.domain.building.dto.request.SaveBuildingNicknameReq;
 import devkor.com.teamcback.domain.building.dto.response.DeleteBuildingNicknameRes;
 import devkor.com.teamcback.domain.building.dto.response.GetBuildingNicknameListRes;
 import devkor.com.teamcback.domain.building.dto.response.SaveBuildingNicknameRes;
+import devkor.com.teamcback.domain.building.dto.response.UpdateBuildingNicknamesRes;
 import devkor.com.teamcback.domain.building.service.AdminBuildingNicknameService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,13 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -71,5 +66,21 @@ public class AdminBuildingNicknameController {
     public CommonResponse<GetBuildingNicknameListRes> getBuildingNickname(
         @Parameter(name = "buildingId", description = "건물 ID") @PathVariable Long buildingId) {
         return CommonResponse.success(adminBuildingNicknameService.getBuildingNickname(buildingId));
+    }
+
+    /***
+     * Building Nickname Tables 업데이트
+     */
+    @PostMapping("/nicknames")
+    @Operation(summary = "Building Nickname Tables 업데이트", description = "Building Nickname Tables 업데이트")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<UpdateBuildingNicknamesRes> updateBuildingNicknames() {
+        return CommonResponse.success(adminBuildingNicknameService.updateBuildingNicknames());
     }
 }

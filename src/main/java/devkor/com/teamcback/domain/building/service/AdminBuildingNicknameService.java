@@ -4,15 +4,12 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_NICKNAME;
 
 import devkor.com.teamcback.domain.building.dto.request.SaveBuildingNicknameReq;
-import devkor.com.teamcback.domain.building.dto.response.DeleteBuildingNicknameRes;
-import devkor.com.teamcback.domain.building.dto.response.GetBuildingNicknameListRes;
-import devkor.com.teamcback.domain.building.dto.response.GetBuildingNicknameRes;
-import devkor.com.teamcback.domain.building.dto.response.SaveBuildingNicknameRes;
+import devkor.com.teamcback.domain.building.dto.response.*;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.search.HangeulUtils;
+import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.global.exception.GlobalException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +54,19 @@ public class AdminBuildingNicknameService {
 
 
         return new GetBuildingNicknameListRes(building, nicknameList);
+    }
+
+    // 건물 별명 테이블 업데이트
+    public UpdateBuildingNicknamesRes updateBuildingNicknames() {
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
+
+        for (BuildingNickname b : buildingNicknames) {
+            String nickname = b.getNickname();
+            b.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        }
+        buildingNicknameRepository.saveAll(buildingNicknames);
+
+        return new UpdateBuildingNicknamesRes(buildingNicknames.size());
     }
 
     private Building findBuilding(Long buildingId) {

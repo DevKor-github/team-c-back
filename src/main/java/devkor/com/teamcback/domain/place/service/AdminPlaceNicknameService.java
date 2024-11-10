@@ -1,15 +1,12 @@
 package devkor.com.teamcback.domain.place.service;
 
 import devkor.com.teamcback.domain.place.dto.request.SavePlaceNicknameReq;
-import devkor.com.teamcback.domain.place.dto.response.DeletePlaceNicknameRes;
-import devkor.com.teamcback.domain.place.dto.response.GetClassroomNicknameRes;
-import devkor.com.teamcback.domain.place.dto.response.GetPlaceNicknameListRes;
-import devkor.com.teamcback.domain.place.dto.response.SavePlaceNicknameRes;
+import devkor.com.teamcback.domain.place.dto.response.*;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
-import devkor.com.teamcback.domain.search.HangeulUtils;
+import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -58,6 +55,20 @@ public class AdminPlaceNicknameService {
 
 
         return new GetPlaceNicknameListRes(place, nicknameList);
+    }
+
+    /**
+     * Place Nickname Tables 업데이트
+     */
+    public UpdatePlaceNicknamesRes updatePlaceNicknames() {
+        List<PlaceNickname> placeNicknames = placeNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
+
+        for (PlaceNickname p : placeNicknames) {
+            String nickname = p.getNickname();
+            p.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        }
+        placeNicknameRepository.saveAll(placeNicknames);
+        return new UpdatePlaceNicknamesRes(placeNicknames.size());
     }
 
     private Place findPlace(Long placeId) {

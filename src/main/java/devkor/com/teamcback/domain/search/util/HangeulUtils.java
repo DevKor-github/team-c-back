@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.search;
+package devkor.com.teamcback.domain.search.util;
 
 import org.springframework.stereotype.Component;
 
@@ -14,10 +14,10 @@ public class HangeulUtils {
     private static final char[] JONGSUNG = {
         ' ', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'
     };
-    private static final String CONSONANT_ONLY_REGEX = "^[ㄱ-ㅎ]+$";
+    private static final String CHOSUNG_ONLY_REGEX = "^[ㄱ-ㅎ]+$";
 
     public boolean isConsonantOnly(String str) {
-        return str.matches(CONSONANT_ONLY_REGEX);
+        return str.matches(CHOSUNG_ONLY_REGEX);
     }
 
     // 초성 분리 메소드

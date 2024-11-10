@@ -57,6 +57,7 @@ public class AdminBuildingNicknameService {
     }
 
     // 건물 별명 테이블 업데이트
+    @Transactional
     public UpdateBuildingNicknamesRes updateBuildingNicknames() {
         List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
 

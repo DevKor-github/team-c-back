@@ -60,6 +60,7 @@ public class AdminPlaceNicknameService {
     /**
      * Place Nickname Tables 업데이트
      */
+    @Transactional
     public UpdatePlaceNicknamesRes updatePlaceNicknames() {
         List<PlaceNickname> placeNicknames = placeNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
 

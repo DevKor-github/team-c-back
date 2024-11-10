@@ -8,9 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PlaceNicknameRepository extends JpaRepository<PlaceNickname, Long> {
-    List<PlaceNickname> findByNicknameContainingOrderByNickname(String word, Pageable pageable);
+    List<PlaceNickname> findAllByChosungContainingOrderByNickname(String chosung, Pageable pageable);
+    List<PlaceNickname> findAllByJasoDecomposeContainingOrderByNickname(String jaso, Pageable pageable);
 
     List<PlaceNickname> findAllByPlace(Place place);
 
-    List<PlaceNickname> findByNicknameContainingAndPlaceInOrderByNickname(String word, List<Place> list, Pageable pageable);
+    List<PlaceNickname> findByChosungContainingAndPlaceInOrderByNickname(String chosung, List<Place> list, Pageable pageable);
+    List<PlaceNickname> findByJasoDecomposeContainingAndPlaceInOrderByNickname(String jaso, List<Place> list, Pageable pageable);
+    List<PlaceNickname> findByChosungIsNullOrJasoDecomposeIsNull();
 }

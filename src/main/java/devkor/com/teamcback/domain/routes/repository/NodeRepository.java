@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NodeRepository extends JpaRepository<Node, Long> {
-    List<Node> findByBuildingAndRoutingAndTypeNot(Building building, boolean routing, NodeType type);
+    List<Node> findByBuildingAndRoutingAndTypeNotAndTypeNot(Building building, boolean routing, NodeType type1, NodeType type2);
     List<Node> findByBuildingAndRouting(Building building, boolean routing);
     List<Node> findAllByBuildingAndFloor(Building building, Double floor);
     List<Node> findAllByBuildingAndType(Building building, NodeType nodeType);

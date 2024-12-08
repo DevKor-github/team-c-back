@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.routes.controller;
 
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
-import devkor.com.teamcback.domain.routes.entity.Conditions;
 import devkor.com.teamcback.domain.routes.entity.LocationType;
 import devkor.com.teamcback.domain.routes.entity.NodeType;
 import devkor.com.teamcback.domain.routes.service.RouteService;
@@ -42,11 +41,11 @@ public class RouteController {
      */
     @GetMapping()
     @Operation(summary = "출발정보와 도착정보 통한 경로 탐색",
-    description = "startType와 endType으로 타입 명시 후 id 또는 위도경도 정보 이용하여 경로 탐색. barrierFree를 통해 사용하지 않을 이동수단(계단 혹은 엘리베이터) 명시.")
+        description = "startType와 endType으로 타입 명시 후 id 또는 위도경도 정보 이용하여 경로 탐색. barrierFree를 통해 사용하지 않을 이동수단(계단 혹은 엘리베이터) 명시.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
         @ApiResponse(responseCode = "404", description = "Not Found",
-        content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<List<GetRouteRes>> findRoute(
         @Parameter(name = "startType", description = "출발 장소의 LocationType", example = "PLACE", required = true)
@@ -64,9 +63,7 @@ public class RouteController {
         @Parameter(name = "endLat", description = "endType이 COORD일 경우 해당 장소의 위도")
         @RequestParam(required = false) Double endLat,
         @Parameter(name = "endLong", description = "endType이 COORD일 경우 해당 장소의 경도")
-        @RequestParam(required = false) Double endLong,
-        @Parameter(name = "conditions", description = "경로 탐색의 조건")
-        @RequestParam(required = false) List<Conditions> conditions) throws ParseException {
+        @RequestParam(required = false) Double endLong) throws ParseException {
         List<Double> startLocation = new ArrayList<>();
         List<Double> endLocation = new ArrayList<>();
 
@@ -83,12 +80,8 @@ public class RouteController {
             endLocation.add(endId.doubleValue());
         }
         List<GetRouteRes> returnList = new ArrayList<>();
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, conditions));
-
-        //presentation 후 없앨 코드
-        List<Conditions> newCondition = conditions;
-        newCondition.add(Conditions.BARRIERFREE);
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, conditions));
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, null));
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.STAIR));
         return CommonResponse.success(returnList);
     }
 }

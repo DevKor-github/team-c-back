@@ -44,8 +44,7 @@ public class RouteController {
         description = "startType와 endType으로 타입 명시 후 id 또는 위도경도 정보 이용하여 경로 탐색. barrierFree를 통해 사용하지 않을 이동수단(계단 혹은 엘리베이터) 명시.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-        @ApiResponse(responseCode = "404", description = "Not Found",
-            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Not Found", content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     public CommonResponse<List<GetRouteRes>> findRoute(
         @Parameter(name = "startType", description = "출발 장소의 LocationType", example = "PLACE", required = true)

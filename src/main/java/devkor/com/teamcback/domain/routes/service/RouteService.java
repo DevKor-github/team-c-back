@@ -70,7 +70,7 @@ public class RouteService {
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-        if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
+        //if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE); 임시로 제거
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
     }
 
@@ -106,6 +106,8 @@ public class RouteService {
      * 경로 생성 메서드
      */
     private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding) {
+        if (route.getPath().isEmpty()) return new GetRouteRes(1);//경로 미탐색 막기 위해 임의로 추가
+
         Long duration = route.getDistance();
         List<List<Node>> path = cutRoute(route.getPath(), isStartBuilding, isEndBuilding);
 

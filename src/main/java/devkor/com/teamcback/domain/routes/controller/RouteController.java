@@ -83,12 +83,19 @@ public class RouteController {
             endLocation.add(endId.doubleValue());
         }
         List<GetRouteRes> returnList = new ArrayList<>();
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, conditions));
+        List<Conditions> newCondition;
+        if (conditions == null) {
+            newCondition = new ArrayList<>();
+            returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, newCondition));
+        }
+        else{
+            returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, conditions));
+        }
 
         //presentation 후 없앨 코드
-        List<Conditions> newCondition = conditions;
+        newCondition = conditions;
         newCondition.add(Conditions.BARRIERFREE);
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, conditions));
+        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, newCondition));
         return CommonResponse.success(returnList);
     }
 }

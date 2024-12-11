@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.routes.service;
 
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
+import devkor.com.teamcback.domain.building.repository.ConnectedBuildingRepository;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.dto.response.DijkstraRes;
@@ -30,6 +31,7 @@ public class RouteService {
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
+    private final ConnectedBuildingRepository connectedBuildingRepository;
 
     /**
      * 메인 경로탐색 메서드
@@ -117,11 +119,11 @@ public class RouteService {
      * 출발/도착지에 직접적으로 연결된 건물들이 있는 경우 buildingList에 추가하는 메서드
      */
     private void addLinkedBuildings(Building building, List<Building> buildingList) {
-        List<Long> linkedBuildingIds = LinkedBuildingData.getLinkedBuildings(building.getId());
-        for (Long linkedBuildingId : linkedBuildingIds) {
-            Building linkedBuilding = findBuilding(linkedBuildingId);
-            if (!buildingList.contains(linkedBuilding)) {
-                buildingList.add(linkedBuilding);
+        List<Long> connectedBuildingIds = connectedBuildingRepository.findConnectedBuildingsByBuilding(building);
+        for (Long connectedBuildingId : connectedBuildingIds) {
+            Building connectedBuilding = findBuilding(connectedBuildingId);
+            if (!buildingList.contains(connectedBuilding)) {
+                buildingList.add(connectedBuilding);
             }
         }
     }

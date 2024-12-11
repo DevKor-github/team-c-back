@@ -18,6 +18,7 @@ import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
+import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -51,6 +52,7 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final HangeulUtils hangeulUtils;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -67,11 +69,10 @@ public class SearchService {
 
     // 통합 검색 결과에 표시하지 않을 편의시설 종류
     //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
-    //TODO: tb_place에서 KOYEON type 제거
     private final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
-        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName(), PlaceType.KOYEON.getName());
+        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
 
     /**
      * 통합 검색
@@ -88,15 +89,18 @@ public class SearchService {
 
         // 건물이 입력됨
         if(word.contains(" ")) {
+            // 건물 + 장소 조합
             String firstBuildingWord = word.split(" ")[0];
-            String lastBuildingWord = word.split(" ")[word.split(" ").length - 1];
             String firstPlaceWord = word.substring(firstBuildingWord.length()).trim();
-            String lastPlaceWord = word.substring(0, word.length() - lastBuildingWord.length()).trim();
 
             buildings = getBuildings(firstBuildingWord);
             if(!buildings.isEmpty()) {
                 scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord, user));
             }
+
+            // 장소 + 건물 조합(강의실명에 공백 있을 경우를 대비해 분리)
+            String lastBuildingWord = word.split(" ")[word.split(" ").length - 1];
+            String lastPlaceWord = word.substring(0, word.length() - lastBuildingWord.length()).trim();
 
             buildings = getBuildings(lastBuildingWord);
             if(!buildings.isEmpty()) {
@@ -342,7 +346,8 @@ public class SearchService {
 
     private List<Building> getBuildings(String word) {
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByNicknameContaining(word);
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
+        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
 
         // 중복을 제거하여 List에 저장
         return buildingNicknames.stream()
@@ -390,8 +395,9 @@ public class SearchService {
 
         for (GlobalSearchRes res : list) {
             if (res.getLocationType() == LocationType.BUILDING) {
+                // 건물+장소명인 경우 기본 "건물명"은 맨 밑으로
                 baseScore = buildingKeyword == null ? BASE_SCORE_BUILDING_DEFAULT : BASE_SCORE_BUILDING_WITH_KEYWORD;
-                indexScore = buildingKeyword != null ? calculateScoreByIndex(res.getName(), buildingKeyword) : calculateScoreByIndex(res.getName(), keyword);
+                indexScore = calculateScoreByIndex(res.getName(), keyword);
                 bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             }
             if (res.getLocationType() == LocationType.PLACE) {
@@ -443,17 +449,15 @@ public class SearchService {
             .anyMatch(facilityType -> facilityType.getName().equals(name));
     }
 
-    private int calculateScoreByIndex(String name, String keyword) {
+    private int calculateScoreByIndex(String originalName, String keyword) {
         // 괄호() > 대학 > 관 (앞의 것이 존재한다면 해당 것을 기준으로 삼음)
         String[] criteria = {"\\(", "대학", "관"};
-        int indexScore = 0;
-
         for (String c : criteria) {
-            if(name.contains(c.replace("\\", ""))) {
-                String[] temp = name.split(c, 2);
+            if(originalName.contains(c.replace("\\", ""))) {
+                String[] temp = originalName.split(c, 2);
                 // 기준 부분이 keyword를 포함한다면 이를 새로운 name으로 설정
                 if(!temp[1].isEmpty() && temp[1].contains(String.valueOf(keyword.charAt(0)))) {
-                    name = temp[1];
+                    originalName = temp[1];
                     break;
                 }
             }
@@ -462,16 +466,15 @@ public class SearchService {
         int index;
         if(keyword.contains(" ")) {
             String[] keywords = keyword.split(" ", 2);
-            int index1 = name.indexOf(keywords[0].charAt(0));
-            int index2 = name.indexOf(keywords[1].charAt(0));
+            int index1 = originalName.indexOf(keywords[0].charAt(0)); // building index 값
+            int index2 = originalName.indexOf(keywords[1].charAt(0)); // place index 값
 
-            index = (index1 == -1) ? index2 : (index2 == -1) ? index1 : Math.min(index1, index2);
+            index = (index1 == -1) ? 100 - index2 : (index2 == -1) ? 100 - index1 : 200 - index1 - index2;
         } else {
-            index = name.indexOf(keyword.charAt(0));
+            int indexVal = originalName.indexOf(keyword.charAt(0));
+            index = (indexVal == -1) ? indexVal : 100 - indexVal;
         }
-        if (index != -1) indexScore += (100 - index);
-
-        return indexScore;
+        return index;
     }
 
     private List<Place> getPlaces(String word, Building building) {
@@ -486,10 +489,12 @@ public class SearchService {
         // 강의실 조회
         List<PlaceNickname> placeNicknames = new ArrayList<>();
         if(building != null && !places.isEmpty()) {
-            placeNicknames = placeNicknameRepository.findByNicknameContainingAndPlaceInOrderByNickname(word, places, limit);
+            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
         }
         else if(building == null) {
-            placeNicknames = placeNicknameRepository.findByNicknameContainingOrderByNickname(word, limit);
+            placeNicknames =placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
         }
 
         // 중복을 제거하여 List에 저장

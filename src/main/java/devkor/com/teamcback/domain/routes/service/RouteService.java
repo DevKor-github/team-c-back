@@ -36,7 +36,7 @@ public class RouteService {
      */
     @Transactional(readOnly = true)
     public GetRouteRes findRoute(List<Double> startPosition, LocationType startType,
-        List<Double> endPosition, LocationType endType, NodeType barrierFree) throws ParseException {
+        List<Double> endPosition, LocationType endType, List<Conditions> conditions) throws ParseException {
 
         Node startNode = getNodeByType(startPosition, startType);
         Node endNode = getNodeByType(endPosition, endType);
@@ -68,9 +68,9 @@ public class RouteService {
         }
 
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
-        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, barrierFree);
+        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
-        if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
+        //if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE); 임시로 제거
         return buildRouteResponse(route, isStartBuilding, isEndBuilding);
     }
 
@@ -106,6 +106,8 @@ public class RouteService {
      * 경로 생성 메서드
      */
     private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding) {
+        if (route.getPath().isEmpty()) return new GetRouteRes(1);//경로 미탐색 막기 위해 임의로 추가
+
         Long duration = route.getDistance();
         List<List<Node>> path = cutRoute(route.getPath(), isStartBuilding, isEndBuilding);
 
@@ -171,17 +173,17 @@ public class RouteService {
     /**
      * 그래프 요소 찾기(node, edge 묶음)
      */
-    private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, NodeType nodeToBan){
+    private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
         List<Edge> graphEdge = new ArrayList<>();
-        if (nodeToBan == null){
+        if (conditions.isEmpty()){
             for (Building i : buildingList){
                 graphNode.addAll(findAllNode(i));
             }
         }
         else{
             for (Building i : buildingList){
-                graphNode.addAll(findNodeWithExceptions(i, nodeToBan));
+                graphNode.addAll(findNodeWithExceptions(i, conditions));
             }
         }
         if (!startNode.isOperating() || !endNode.isOperating()) throw new GlobalException(NOT_OPERATING);
@@ -362,8 +364,20 @@ public class RouteService {
         return nodeRepository.findByBuildingAndRouting(building, true);
     }
 
-    private List<Node> findNodeWithExceptions(Building building, NodeType nodeToBan){
-        return nodeRepository.findByBuildingAndRoutingAndTypeNot(building, true, nodeToBan);
+    //추후 이 메서드와 getGraph 수정하여 operating여부, 실내 탐색 필요.
+    private List<Node> findNodeWithExceptions(Building building, List<Conditions> conditions){
+        List<NodeType> nodeTypes = new ArrayList<>(Arrays.asList(NodeType.NORMAL, NodeType.ELEVATOR, NodeType.ENTRANCE, NodeType.CHECKPOINT, NodeType.STAIR));
+        if (conditions.contains(Conditions.SHUTTLE)){
+            nodeTypes.add(NodeType.SHUTTLE);
+            if (conditions.contains(Conditions.BARRIERFREE)){
+                nodeTypes.remove(NodeType.SHUTTLE);
+                nodeTypes.remove(NodeType.STAIR);
+            }
+        }
+        else if (conditions.contains(Conditions.BARRIERFREE)){
+            nodeTypes.remove(NodeType.STAIR);
+        }
+        return nodeRepository.findByBuildingAndRoutingAndTypeIn(building, true, nodeTypes);
     }
 
     private Place findPlace(Long placeId) {

@@ -23,8 +23,4 @@ public class GetRouteRes {
         this.description = description;
     }
 
-    public void addPath(PartialRouteRes path){
-        this.path.add(path);
-    }
-
 }

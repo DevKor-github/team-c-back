@@ -35,43 +35,67 @@ public class RouteService {
      * 메인 경로탐색 메서드
      */
     @Transactional(readOnly = true)
-    public GetRouteRes findRoute(List<Double> startPosition, LocationType startType,
-        List<Double> endPosition, LocationType endType, List<Conditions> conditions) throws ParseException {
+    public List<GetRouteRes> findRoute(LocationType startType, Long startId, Double startLat, Double startLong,
+        LocationType endType, Long endId, Double endLat, Double endLong, List<Conditions> conditions){
 
-        Node startNode = getNodeByType(startPosition, startType);
-        Node endNode = getNodeByType(endPosition, endType);
+        // 출발, 도착 노드 검색
+        Node startNode = getNodeByType(startType, startId, startLat, startLong);
+        Node endNode = getNodeByType(endType, endId, endLat, endLong);
 
+        // 에러 조건 확인
         boolean isStartBuilding = startType == LocationType.BUILDING;
         boolean isEndBuilding = endType == LocationType.BUILDING;
 
-        // 에러 조건 확인
+        // 1. 출발 건물, 도착 건물이 같은 경우
         if (isStartBuilding && isEndBuilding) {
-            if (startPosition.get(0).longValue() == endPosition.get(0).longValue()) {
+            if (startId.equals(endId)) {
                 throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
 
+        // 2. 한 건물에서 같은 건물 내 장소 간의 경로 요청의 경우
         if (isStartBuilding && endType == LocationType.PLACE) {
-            if (startPosition.get(0).longValue() == endNode.getBuilding().getId()) {
+            if (startId.equals(endNode.getBuilding().getId())) {
                 throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
 
         if (isEndBuilding && startType == LocationType.PLACE) {
-            if (startNode.getBuilding().getId() == endPosition.get(0).longValue()) {
+            if (startNode.getBuilding().getId().equals(endId)) {
                 throw new GlobalException(NOT_PROVIDED_ROUTE);
             }
         }
 
+        // 3. 야외에서 너무 가까운 경우
         if (startNode.getBuilding().getId() == 0L && endNode.getBuilding().getId() == 0L){
-            if (getEuclidDistance(startNode.getLatitude(), startNode.getLongitude(), endNode.getLatitude(), endNode.getLongitude()) < 0.0001) throw new GlobalException(COORDINATES_TOO_NEAR);
+            if (getEuclidDistance(startNode.getLatitude(), startNode.getLongitude(), endNode.getLatitude(), endNode.getLongitude()) < 0.0001) {
+                throw new GlobalException(COORDINATES_TOO_NEAR);
+            }
         }
 
+        // 길찾기 응답 리스트 생성
+        List<GetRouteRes> routeRes = new ArrayList<>();
+
+        // 연결된 건물 찾기
         List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
         DijkstraRes route = dijkstra(graphRes.getGraphNode(), graphRes.getGraphEdge(), startNode, endNode);
         //if (route.getPath().isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE); 임시로 제거
-        return buildRouteResponse(route, isStartBuilding, isEndBuilding);
+        routeRes.add(buildRouteResponse(route, isStartBuilding, isEndBuilding));
+
+        return routeRes;
+    }
+
+    /**
+     * 타입에 맞는 Node 찾기
+     */
+    private Node getNodeByType(LocationType type, Long id, Double latitude, Double longitude) {
+        return switch (type) {
+            case COORD -> findNearestNode(latitude, longitude);
+            case BUILDING -> findBuilding(id).getNode();
+            case PLACE -> findPlace(id).getNode();
+            case NODE -> findNode(id);
+        };
     }
 
     /**
@@ -155,19 +179,6 @@ public class RouteService {
             }
         }
         return coordinates;
-    }
-
-    /**
-     * 타입에 맞는 Node 찾기
-     */
-    private Node getNodeByType(List<Double> position, LocationType type) {
-        return switch (type) {
-            case COORD -> findNearestNode(position.get(0), position.get(1));
-            case BUILDING -> findBuilding(position.get(0).longValue()).getNode();
-            case PLACE -> findPlace(position.get(0).longValue()).getNode();
-            case NODE -> findNode(position.get(0).longValue());
-            default -> throw new IllegalArgumentException("Invalid LocationType: " + type);
-        };
     }
 
     /**

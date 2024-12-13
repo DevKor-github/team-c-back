@@ -181,7 +181,7 @@ public class RouteService {
      */
     private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
-        List<Edge> graphEdge = new ArrayList<>(); // TODO: HashMap으로 고치면 시간 단축되는지 보기
+        Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
         // 조건에 따른 노드 검색
         if (conditions == null || conditions.isEmpty()){
@@ -222,8 +222,11 @@ public class RouteService {
                 throw new AdminException(INCORRECT_NODE_DATA, "노드" + node.getId() + "의 인접 노드와 거리 개수가 다릅니다.");
             }
 
+            if(!graphEdge.containsKey(node.getId())) {
+                graphEdge.put(node.getId(), new ArrayList<>());
+            }
             for (int i = 0; i < nextNodeId.length; i++) {
-                graphEdge.add(new Edge(distance[i], node.getId(), nextNodeId[i]));
+                graphEdge.get(node.getId()).add(new Edge(distance[i], node.getId(), nextNodeId[i]));
             }
         }
         return new GetGraphRes(graphNode, graphEdge);
@@ -254,7 +257,7 @@ public class RouteService {
      */
     private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode) {
         List<Node> nodes = graphRes.getGraphNode();
-        List<Edge> edges = graphRes.getGraphEdge();
+        Map<Long, List<Edge>> edges = graphRes.getGraphEdge();
         Map<Long, Long> distances = new HashMap<>(); // 출발 노드부터의 거리
         Map<Long, Long> previousNodes = new HashMap<>(); // 경로 반환을 위해 다시 거꾸로 추적하기 위한 노드 순서 저장
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>(); // 시작 노드와 거리가 짧은 노드 순으로 선택 가능
@@ -284,20 +287,19 @@ public class RouteService {
                 break;
             }
 
-            for (Edge edge : edges) {
-                if (edge.getStartNode().equals(currentNode)) {
-                    Long neighbor = edge.getEndNode();
-                    Long currentDistance = distances.get(currentNode);
-                    if (currentDistance == null) {
-                        continue; // currentNode가 distances에 존재하지 않는 경우를 대비
-                    }
-                    Long newDist = currentDistance + edge.getDistance();
-                    Long neighborDist = distances.get(neighbor);
-                    if (neighborDist == null || newDist < neighborDist) {
-                        distances.put(neighbor, newDist);
-                        previousNodes.put(neighbor, currentNode);
-                        priorityQueue.add(new NodeDistancePair(neighbor, newDist));
-                    }
+            if(!edges.containsKey(currentNode)) continue;
+            for (Edge edge : edges.get(currentNode)) {
+                Long neighbor = edge.getEndNode();
+                Long currentDistance = distances.get(currentNode);
+                if (currentDistance == null) {
+                    continue; // currentNode가 distances에 존재하지 않는 경우를 대비
+                }
+                Long newDist = currentDistance + edge.getDistance();
+                Long neighborDist = distances.get(neighbor);
+                if (neighborDist == null || newDist < neighborDist) {
+                    distances.put(neighbor, newDist);
+                    previousNodes.put(neighbor, currentNode);
+                    priorityQueue.add(new NodeDistancePair(neighbor, newDist));
                 }
             }
         }

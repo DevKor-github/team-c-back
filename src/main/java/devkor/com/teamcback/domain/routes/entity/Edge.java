@@ -5,13 +5,13 @@ import lombok.Getter;
 
 @Getter
 public class Edge extends BaseEntity {
-    private int distance;
+    private long distance;
 
     private Long startNode;
 
     private Long endNode;
 
-    public Edge(int distance, Long startNode, Long endNode) {
+    public Edge(long distance, Long startNode, Long endNode) {
         this.distance = distance;
         this.startNode = startNode;
         this.endNode = endNode;

@@ -36,7 +36,7 @@ public class RouteService {
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
     private static final Long INF = Long.MAX_VALUE;
-    private static final Double INIT_OUTDOOR_DISTANCE = 99999.0;
+    private static final Double INIT_OUTDOOR_DISTANCE = Double.MAX_VALUE;
     private static final Double MAX_OUTDOOR_DISTANCE = 0.003;
     private static final Double MIN_OUTDOOR_DISTANCE = 0.0001;
 
@@ -52,35 +52,7 @@ public class RouteService {
         Node endNode = getNodeByType(endType, endId, endLat, endLong);
 
         // 에러 조건 확인
-        boolean isStartBuilding = startType == LocationType.BUILDING;
-        boolean isEndBuilding = endType == LocationType.BUILDING;
-
-        // 1. 출발 건물, 도착 건물이 같은 경우
-        if (isStartBuilding && isEndBuilding) {
-            if (startId.equals(endId)) {
-                throw new GlobalException(NOT_PROVIDED_ROUTE);
-            }
-        }
-
-        // 2. 한 건물에서 같은 건물 내 장소 간의 경로 요청의 경우
-        if (isStartBuilding && endType == LocationType.PLACE) {
-            if (startId.equals(endNode.getBuilding().getId())) {
-                throw new GlobalException(NOT_PROVIDED_ROUTE);
-            }
-        }
-
-        if (isEndBuilding && startType == LocationType.PLACE) {
-            if (startNode.getBuilding().getId().equals(endId)) {
-                throw new GlobalException(NOT_PROVIDED_ROUTE);
-            }
-        }
-
-        // 3. 야외에서 너무 가까운 경우
-        if (startNode.getBuilding().getId().equals(OUTDOOR_ID) && endNode.getBuilding().getId().equals(OUTDOOR_ID)){
-            if (getEuclidDistance(startNode.getLatitude(), startNode.getLongitude(), endNode.getLatitude(), endNode.getLongitude()) < MIN_OUTDOOR_DISTANCE) {
-                throw new GlobalException(COORDINATES_TOO_NEAR);
-            }
-        }
+        checkLocationError(startNode, endNode, startType, endType, startId, endId);
 
         // 길찾기 응답 리스트 생성
         List<GetRouteRes> routeRes = new ArrayList<>();
@@ -96,7 +68,7 @@ public class RouteService {
         if (route.getPath().isEmpty()) {
             throw new GlobalException(NOT_FOUND_ROUTE);
         }
-        routeRes.add(buildRouteResponse(route, isStartBuilding, isEndBuilding));
+        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING));
 
         // 베리어프리만 추가로 적용하는 경우(임시)
 //        GetGraphRes graphRes2 = getGraph(buildingList, startNode, endNode, List.of(BARRIERFREE));
@@ -106,6 +78,42 @@ public class RouteService {
 
         return routeRes;
     }
+
+    /**
+     * 에러 조건 확인
+     */
+    private void checkLocationError(Node startNode, Node endNode, LocationType startType, LocationType endType, Long startId, Long endId) {
+        boolean isStartBuilding = startType == LocationType.BUILDING;
+        boolean isEndBuilding = endType == LocationType.BUILDING;
+
+        // 1. 출발 건물, 도착 건물이 같은 경우
+        if (isStartBuilding && isEndBuilding) {
+            if (startId.equals(endId)) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
+            }
+        }
+
+        // 2. 같은 건물 내 장소 간의 경로 요청의 경우
+        if (isStartBuilding && endType == LocationType.PLACE) {
+            if (startId.equals(endNode.getBuilding().getId())) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
+            }
+        }
+
+        if (isEndBuilding && startType == LocationType.PLACE) {
+            if (endId.equals(startNode.getBuilding().getId())) {
+                throw new GlobalException(NOT_PROVIDED_ROUTE);
+            }
+        }
+
+        // 3. 야외에서 너무 가까운 경우
+        if (startNode.getBuilding().getId().equals(OUTDOOR_ID) && endNode.getBuilding().getId().equals(OUTDOOR_ID)){
+            if (getEuclidDistance(startNode.getLatitude(), startNode.getLongitude(), endNode.getLatitude(), endNode.getLongitude()) < MIN_OUTDOOR_DISTANCE) {
+                throw new GlobalException(COORDINATES_TOO_NEAR);
+            }
+        }
+    }
+
 
     /**
      * 타입에 맞는 Node 찾기
@@ -168,9 +176,9 @@ public class RouteService {
     private void addConnectedBuildings(Building building, List<Building> buildingList) {
         List<Long> connectedBuildingIds = connectedBuildingRepository.findConnectedBuildingsByBuilding(building);
         for (Long connectedBuildingId : connectedBuildingIds) {
-            Building connectedBuilding = findBuilding(connectedBuildingId);
-            if (!buildingList.contains(connectedBuilding)) {
-                buildingList.add(connectedBuilding);
+            if (buildingList.stream()
+                .noneMatch(existingBuilding -> existingBuilding.getId().equals(connectedBuildingId))) {
+                buildingList.add(findBuilding(connectedBuildingId));
             }
         }
     }
@@ -230,10 +238,6 @@ public class RouteService {
             }
         }
         return new GetGraphRes(graphNode, graphEdge);
-    }
-
-    private List<Node> findAllNode(Building building){
-        return nodeRepository.findByBuildingAndRouting(building, true);
     }
 
     /**
@@ -515,6 +519,10 @@ public class RouteService {
 
     private Node findNode(Long nodeId) {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
+    }
+
+    private List<Node> findAllNode(Building building){
+        return nodeRepository.findByBuildingAndRouting(building, true);
     }
 
     private Checkpoint findCheckpoint(Node node){

@@ -40,10 +40,11 @@ public class SuggestionController {
     })
     @PostMapping
     public CommonResponse<CreateSuggestionRes> createSuggestion(
-        @Parameter(description = "사용자정보", required = true)
+        @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(description = "건의 제목, 분류, 내용", required = true)
         @RequestBody CreateSuggestionReq req) {
-        return CommonResponse.success(suggestionService.createSuggestion(userDetail.getUser().getUserId(), req));
+        Long userId = userDetail == null ? null : userDetail.getUser().getUserId();
+        return CommonResponse.success(suggestionService.createSuggestion(userId, req));
     }
 }

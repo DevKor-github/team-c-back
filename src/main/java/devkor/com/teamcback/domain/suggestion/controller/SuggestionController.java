@@ -1,7 +1,5 @@
 package devkor.com.teamcback.domain.suggestion.controller;
 
-import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
-import devkor.com.teamcback.domain.bookmark.dto.response.CreateCategoryRes;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.service.SuggestionService;

@@ -489,7 +489,7 @@ public class RouteService {
             if(!adjacentNode.getBuilding().equals(node.getBuilding())) return adjacentNode.getBuilding();
         }
 
-        throw new AdminException(INCORRECT_NODE_DATA,node.getId() + "에 연결된 건물이 없습니다");
+        throw new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다");
     }
 
     /**

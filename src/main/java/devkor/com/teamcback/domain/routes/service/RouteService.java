@@ -509,10 +509,6 @@ public class RouteService {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
     }
 
-    private Building findBuildingByNode(Node node){
-        return buildingRepository.findBuildingByNode(node);
-    }
-
     private Place findPlace(Long placeId) {
         return placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
     }

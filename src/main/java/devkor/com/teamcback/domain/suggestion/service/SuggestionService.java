@@ -33,13 +33,16 @@ public class SuggestionService {
      */
     @Transactional
     public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req) {
-        User user = findUser(userId);
+        User user = null;
+        if(userId != null) user = findUser(userId);
         Suggestion suggestion = new Suggestion(req, user);
 
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
 
         //건의 생성 시 score 증가
-        user.updateScore(user.getScore() + 3);
+        if(user != null) {
+            user.updateScore(user.getScore() + 3);
+        }
 
         return new CreateSuggestionRes(savedSuggestion);
     }

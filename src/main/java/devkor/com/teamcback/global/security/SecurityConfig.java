@@ -69,6 +69,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
                 .requestMatchers("/api/koyeon/**").permitAll() // 고연전 이후 삭제 필요
                 .requestMatchers("/api/users/login").permitAll()
+                .requestMatchers("/api/suggestions/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()

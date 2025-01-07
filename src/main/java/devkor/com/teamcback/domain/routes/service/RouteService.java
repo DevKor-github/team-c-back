@@ -489,7 +489,7 @@ public class RouteService {
             if(!adjacentNode.getBuilding().equals(node.getBuilding())) return adjacentNode.getBuilding();
         }
 
-        throw new AdminException(INCORRECT_NODE_DATA,"연결된 건물이 없습니다");
+        throw new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다");
     }
 
     /**
@@ -507,10 +507,6 @@ public class RouteService {
     // findEntity 메서드
     private Building findBuilding(Long buildingId) {
         return buildingRepository.findById(buildingId).orElseThrow(() -> new GlobalException(NOT_FOUND_BUILDING));
-    }
-
-    private Building findBuildingByNode(Node node){
-        return buildingRepository.findBuildingByNode(node);
     }
 
     private Place findPlace(Long placeId) {

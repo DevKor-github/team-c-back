@@ -45,6 +45,7 @@ public enum ResultCode {
     COORDINATES_TOO_FAR(HttpStatus.BAD_REQUEST, 6003, "찾고자 하는 경로가 캠퍼스에서 너무 멉니다."),
     NOT_OPERATING(HttpStatus.NOT_FOUND, 6004, "현재 운영중이 아닌 시설입니다."),
     COORDINATES_TOO_NEAR(HttpStatus.BAD_REQUEST, 6005, "찾고자 하는 두 지점이 서로 너무 가깝습니다."),
+    INCORRECT_NODE_DATA(HttpStatus.UNPROCESSABLE_ENTITY, 6006, "노드 데이터가 잘못되었습니다."),
 
     // 즐겨찾기 7000번대
     INCORRECT_COLOR(HttpStatus.BAD_REQUEST, 7000, "정해진 색상 내에서 선택해주세요."),

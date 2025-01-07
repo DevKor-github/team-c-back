@@ -18,6 +18,12 @@ public class GlobalExceptionHandler {
             .body(new CommonResponse<>(e.getResultCode()));
     }
 
+    @ExceptionHandler(AdminException.class)
+    public ResponseEntity<CommonResponse<String>> handleException(AdminException e) {
+        return ResponseEntity.status(e.getResultCode().getStatus())
+            .body(new CommonResponse<>(e.getResultCode(), e.getAdminMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<CommonResponse<String>> handleValidationError(
         MethodArgumentNotValidException e) { // Validation 예외를 잡아줌

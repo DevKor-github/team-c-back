@@ -1,7 +1,5 @@
 package devkor.com.teamcback.domain.suggestion.controller;
 
-import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
-import devkor.com.teamcback.domain.bookmark.dto.response.CreateCategoryRes;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.service.SuggestionService;
@@ -40,10 +38,11 @@ public class SuggestionController {
     })
     @PostMapping
     public CommonResponse<CreateSuggestionRes> createSuggestion(
-        @Parameter(description = "사용자정보", required = true)
+        @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(description = "건의 제목, 분류, 내용", required = true)
         @RequestBody CreateSuggestionReq req) {
-        return CommonResponse.success(suggestionService.createSuggestion(userDetail.getUser().getUserId(), req));
+        Long userId = userDetail == null ? null : userDetail.getUser().getUserId();
+        return CommonResponse.success(suggestionService.createSuggestion(userId, req));
     }
 }

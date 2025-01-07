@@ -1,8 +1,8 @@
 package devkor.com.teamcback.domain.routes.controller;
 
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
+import devkor.com.teamcback.domain.routes.entity.Conditions;
 import devkor.com.teamcback.domain.routes.entity.LocationType;
-import devkor.com.teamcback.domain.routes.entity.NodeType;
 import devkor.com.teamcback.domain.routes.service.RouteService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,9 +11,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,24 +60,10 @@ public class RouteController {
         @Parameter(name = "endLat", description = "endType이 COORD일 경우 해당 장소의 위도")
         @RequestParam(required = false) Double endLat,
         @Parameter(name = "endLong", description = "endType이 COORD일 경우 해당 장소의 경도")
-        @RequestParam(required = false) Double endLong) throws ParseException {
-        List<Double> startLocation = new ArrayList<>();
-        List<Double> endLocation = new ArrayList<>();
+        @RequestParam(required = false) Double endLong,
+        @Parameter(name = "conditions", description = "경로 탐색의 조건")
+        @RequestParam(required = false) List<Conditions> conditions) {
 
-        if (startType == LocationType.COORD){
-            startLocation.addAll(Arrays.asList(startLat, startLong));
-        }
-        else{
-            startLocation.add(startId.doubleValue());
-        }
-        if (endType == LocationType.COORD){
-            endLocation.addAll(Arrays.asList(endLat, endLong));
-        }
-        else{
-            endLocation.add(endId.doubleValue());
-        }
-        List<GetRouteRes> returnList = new ArrayList<>();
-        returnList.add(routeService.findRoute(startLocation, startType, endLocation, endType, NodeType.SHUTTLE));
-        return CommonResponse.success(returnList);
+        return CommonResponse.success(routeService.findRoute(startType, startId, startLat, startLong, endType, endId, endLat, endLong, conditions));
     }
 }

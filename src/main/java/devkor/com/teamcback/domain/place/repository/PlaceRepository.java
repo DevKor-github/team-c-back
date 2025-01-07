@@ -9,9 +9,6 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PlaceRepository extends JpaRepository<Place, Long> {
-    boolean existsByBuildingAndType(Building building, PlaceType type);
-
-    List<Place> findByNameContaining(String word);
 
     List<Place> findAllByBuildingAndType(Building building, PlaceType type);
 
@@ -30,8 +27,4 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     Place findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
 
     List<Place> findAllByBuildingAndTypeInOrderByFloor(Building building, List<PlaceType> types);
-
-    List<Place> findAllByBuildingAndNameContaining(Building building, String word);
-
-    List<Place> findAllByIdNotIn(List<Long> facilityIdList);
 }

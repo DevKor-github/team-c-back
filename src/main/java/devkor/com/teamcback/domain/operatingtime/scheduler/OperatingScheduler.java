@@ -63,7 +63,7 @@ public class OperatingScheduler {
     }
 
     // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
-//    @EventListener(ApplicationReadyEvent.class)
+    @EventListener(ApplicationReadyEvent.class)
     public void updatePlaceOperatingTime() {
         log.info("장소 운영 시간 업데이트");
 

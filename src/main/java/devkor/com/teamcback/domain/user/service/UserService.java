@@ -49,9 +49,11 @@ public class UserService {
     private final KakaoValidator kakaoValidator;
     private final GoogleValidator googleValidator;
     private final AppleValidator appleValidator;
+
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
     private static final Color DEFAULT_COLOR = Color.RED;
+
     @Value("${jwt.admin.token}")
     private String adminToken;
 
@@ -95,13 +97,12 @@ public class UserService {
     }
 
     private String validateToken(Provider provider, String token) {
-        switch (provider) {
-            case KAKAO: return kakaoValidator.validateToken(token);
-            case GOOGLE: return googleValidator.validateToken(token);
-            case APPLE: return appleValidator.validateToken(token);
-        }
-
-        throw new GlobalException(INVALID_INPUT);
+        return switch (provider) {
+            case KAKAO -> kakaoValidator.validateToken(token);
+            case GOOGLE -> googleValidator.validateToken(token);
+            case APPLE -> appleValidator.validateToken(token);
+            default -> throw new GlobalException(INVALID_INPUT);
+        };
     }
 
     /**

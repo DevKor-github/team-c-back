@@ -1,11 +1,14 @@
 package devkor.com.teamcback.global.jwt.OIDC.dto;
 
+import java.io.Serializable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class OIDCPublicKeyDto {
+@AllArgsConstructor
+public class OIDCPublicKeyDto implements Serializable {
     private String kid;
     private String alg;
     private String use;

@@ -2,10 +2,8 @@ package devkor.com.teamcback.global.jwt.OIDC;
 
 import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCDecodePayload;
-import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeysResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jws;
@@ -20,12 +18,10 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 @Component
 @RequiredArgsConstructor
 public class OIDCUtil {
-    private final RestTemplate restTemplate;
     private static final String KID = "kid";
     public String getKidFromUnsignedTokenHeader(String token, String aud, String iss) {
         return (String) getUnsignedTokenClaims(token, aud, iss).getHeader().get(KID);
@@ -47,13 +43,6 @@ public class OIDCUtil {
         String[] splitToken = token.split("\\.");
         if (splitToken.length != 3) throw new GlobalException(UNAUTHORIZED);
         return splitToken[0] + "." + splitToken[1] + ".";
-    }
-
-    public OIDCPublicKeysResponse getPublicKeys(String url) throws Exception {
-        String response = restTemplate.getForObject(url, String.class);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(response, OIDCPublicKeysResponse.class);
     }
 
     public OIDCDecodePayload getOIDCTokenBody(String token, String modulus, String exponent) {

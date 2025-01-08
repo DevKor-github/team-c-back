@@ -9,18 +9,24 @@ import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeyDto;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeysResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class KakaoValidator{
     private final OIDCUtil oidcUtil;
-    private static final String KAKAO_OIDC_PUBLIC_KEYS_URL = "https://kauth.kakao.com/.well-known/jwks.json";
+    private final KakaoClient kakaoClient;
 
     @Value("${jwt.social.kakao.iss}")
     private String ISS;
     @Value("${jwt.social.kakao.aud}")
     private String AUD;
+
+    public OIDCPublicKeysResponse getCachedData() {
+        return kakaoClient.getPublicKeys();
+    }
 
     public String validateToken(String token) {
         try {
@@ -28,7 +34,7 @@ public class KakaoValidator{
             String kid = oidcUtil.getKidFromUnsignedTokenHeader(token, AUD, ISS);
 
             // 공개키 가져오기
-            OIDCPublicKeysResponse publicKeysResponse = oidcUtil.getPublicKeys(KAKAO_OIDC_PUBLIC_KEYS_URL);
+            OIDCPublicKeysResponse publicKeysResponse = getCachedData();
 
             OIDCPublicKeyDto oidcPublicKeyDto =
                 publicKeysResponse.getKeys().stream()

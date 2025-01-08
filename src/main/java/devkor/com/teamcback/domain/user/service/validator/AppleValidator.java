@@ -16,14 +16,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AppleValidator {
     private final OIDCUtil oidcUtil;
+    private final AppleClient appleClient;
     private static final String KID = "kid";
     private static final String ALG = "alg";
-    private static final String KTY = "kty";
-    private static final String APPLE_OIDC_PUBLIC_KEYS_URL = "https://appleid.apple.com/auth/keys";
+
     @Value("${jwt.social.apple.iss}")
     private String ISS;
     @Value("${jwt.social.apple.aud}")
     private String AUD;
+
+    public OIDCPublicKeysResponse getCachedData() {
+        return appleClient.getPublicKeys();
+    }
 
     public String validateToken(String token) {
         try {
@@ -33,7 +37,7 @@ public class AppleValidator {
             String alg = (String) tokenInfo.get(ALG);
 
             // 공개키 가져오기
-            OIDCPublicKeysResponse publicKeysResponse = oidcUtil.getPublicKeys(APPLE_OIDC_PUBLIC_KEYS_URL);
+            OIDCPublicKeysResponse publicKeysResponse = getCachedData();
 
             OIDCPublicKeyDto oidcPublicKeyDto =
                 publicKeysResponse.getKeys().stream()

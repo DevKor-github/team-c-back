@@ -2,11 +2,8 @@ package devkor.com.teamcback.domain.user.service;
 
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
-import devkor.com.teamcback.domain.bookmark.entity.CategoryBookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Color;
-import devkor.com.teamcback.domain.bookmark.entity.UserBookmarkLog;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
-import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
@@ -17,15 +14,20 @@ import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
 import devkor.com.teamcback.domain.user.entity.Level;
+import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.domain.user.service.validator.AppleValidator;
+import devkor.com.teamcback.domain.user.service.validator.GoogleValidator;
+import devkor.com.teamcback.domain.user.service.validator.KakaoValidator;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,9 +46,14 @@ public class UserService {
     private final UserBookmarkLogRepository userBookmarkLogRepository;
     private final SuggestionRepository suggestionRepository;
     private final JwtUtil jwtUtil;
+    private final KakaoValidator kakaoValidator;
+    private final GoogleValidator googleValidator;
+    private final AppleValidator appleValidator;
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
     private static final Color DEFAULT_COLOR = Color.RED;
+    @Value("${jwt.admin.token}")
+    private String adminToken;
 
     /**
      * 마이페이지 정보 조회
@@ -69,10 +76,12 @@ public class UserService {
      */
     @Transactional
     public LoginUserRes login(LoginUserReq loginUserReq) {
-        // TODO: 소셜 검증 - 사용자가 소셜 서버의 사용자인지 확인
-        log.info("social-token: {}", loginUserReq.getToken());
+        String email = loginUserReq.getEmail();
+        if(!loginUserReq.getToken().equals(adminToken)) { // 관리자용 토큰 입력 시 검증 과정 생략
+            email = validateToken(loginUserReq.getProvider(), loginUserReq.getToken());
+        }
 
-        User user = userRepository.findByEmailAndProvider(loginUserReq.getEmail(), loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
+        User user = userRepository.findByEmailAndProvider(email, loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
         if(user == null) { // 회원이 없으면 회원가입
             String username = makeRandomName();
             user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
@@ -83,6 +92,16 @@ public class UserService {
         }
 
         return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+    }
+
+    private String validateToken(Provider provider, String token) {
+        switch (provider) {
+            case KAKAO: return kakaoValidator.validateToken(token);
+            case GOOGLE: return googleValidator.validateToken(token);
+            case APPLE: return appleValidator.validateToken(token);
+        }
+
+        throw new GlobalException(INVALID_INPUT);
     }
 
     /**

@@ -28,6 +28,9 @@ dependencies {
     // oauth2
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    // google
+    compileOnly 'com.google.api-client:google-api-client:1.32.1'
+
     // security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
@@ -73,6 +76,11 @@ dependencies {
 
     // aws
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.623'
+
+//    // spring cache
+//    implementation 'org.springframework.boot:spring-boot-starter-cache'
+//    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+//    implementation 'org.springframework.cache:spring-cache'
 }
 
 tasks.named('test') {

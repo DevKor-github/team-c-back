@@ -88,7 +88,8 @@ jwt:
       iss: ${KAKAO_ISS}
       aud: ${KAKAO_AUD}
     google:
-      client-id: ${GOOGLE_CLIENT_ID}
+      iss: ${GOOGLE_ISS}
+      aud: ${GOOGLE_AUD}
     apple:
       iss: ${APPLE_ISS}
       aud: ${APPLE_AUD}
@@ -108,14 +109,15 @@ cloud:
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
   swagger-ui:
     operations-sorter: alpha
     tags-sorter: alpha
     path: /swagger-ui.html
-    display-query-params-without-oauth2: true
     doc-expansion: none
+    enabled: true
   paths-to-match:
     - /api/**
 

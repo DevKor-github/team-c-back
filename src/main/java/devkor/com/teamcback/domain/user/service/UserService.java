@@ -18,9 +18,9 @@ import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
-import devkor.com.teamcback.domain.user.service.validator.AppleValidator;
-import devkor.com.teamcback.domain.user.service.validator.GoogleValidator;
-import devkor.com.teamcback.domain.user.service.validator.KakaoValidator;
+import devkor.com.teamcback.domain.user.validator.AppleValidator;
+import devkor.com.teamcback.domain.user.validator.GoogleValidator;
+import devkor.com.teamcback.domain.user.validator.KakaoValidator;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import java.util.List;
@@ -86,7 +86,7 @@ public class UserService {
         User user = userRepository.findByEmailAndProvider(email, loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
         if(user == null) { // 회원이 없으면 회원가입
             String username = makeRandomName();
-            user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
+            user = userRepository.save(new User(username, email, Role.USER, loginUserReq.getProvider()));
 
             // 기본 카테고리 저장
             Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);

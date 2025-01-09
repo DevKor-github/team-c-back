@@ -32,9 +32,6 @@ dependencies {
     // oauth2
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
-    // google
-    compileOnly 'com.google.api-client:google-api-client:1.32.1'
-
     // security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
@@ -76,7 +73,7 @@ dependencies {
     implementation 'org.json:json:20230227'
 
     // swagger용 openapi2
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
     // aws
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.623'

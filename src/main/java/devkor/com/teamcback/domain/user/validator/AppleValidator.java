@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.user.validator;
 
+import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
 import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
 import devkor.com.teamcback.domain.user.validator.client.AppleClient;
@@ -49,6 +50,8 @@ public class AppleValidator {
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
             return payload.getEmail();
+        } catch (GlobalException e) {
+            throw new GlobalException(LOG_IN_REQUIRED);
         } catch (Exception e) {
             throw new GlobalException(UNAUTHORIZED);
         }

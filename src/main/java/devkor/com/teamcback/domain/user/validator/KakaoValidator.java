@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.user.validator;
 
+import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
 import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
 import devkor.com.teamcback.domain.user.validator.client.KakaoClient;
@@ -39,11 +40,13 @@ public class KakaoValidator{
                 publicKeysResponse.getKeys().stream()
                     .filter(o -> o.getKid().equals(kid))
                     .findFirst()
-                    .orElseThrow();
+                    .orElseThrow(() -> new GlobalException(LOG_IN_REQUIRED));
 
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
             return payload.getEmail();
+        } catch (GlobalException e) {
+            throw new GlobalException(LOG_IN_REQUIRED);
         } catch (Exception e) {
             throw new GlobalException(UNAUTHORIZED);
         }

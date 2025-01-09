@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.user.validator;
 
+import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
 import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
 import devkor.com.teamcback.domain.user.validator.client.GoogleClient;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Component;
 public class GoogleValidator {
     private final OIDCUtil oidcUtil;
     private final GoogleClient googleClient;
-    private static final String KID = "kid";
 
     @Value("${jwt.social.google.iss}")
     private String ISS;
@@ -32,8 +32,7 @@ public class GoogleValidator {
     public String validateToken(String token) {
         try {
             // id_token 정보
-            Header tokenInfo = oidcUtil.getUnsignedTokenClaims(token, AUD, ISS).getHeader();
-            String kid = (String) tokenInfo.get(KID);
+            String kid = oidcUtil.getKidFromUnsignedTokenHeader(token, AUD, ISS);
 
             // 공개키 가져오기
             OIDCPublicKeysResponse publicKeysResponse = getCachedData();
@@ -42,11 +41,13 @@ public class GoogleValidator {
                 publicKeysResponse.getKeys().stream()
                     .filter(o -> o.getKid().equals(kid))
                     .findFirst()
-                    .orElseThrow();
+                    .orElseThrow(() -> new GlobalException(LOG_IN_REQUIRED));
 
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
             return payload.getEmail();
+        } catch (GlobalException e) {
+            throw new GlobalException(LOG_IN_REQUIRED);
         } catch (Exception e) {
             throw new GlobalException(UNAUTHORIZED);
         }

@@ -479,12 +479,8 @@ public class RouteService {
      */
     private Building findLinkedBuilding(Node node){
         Long[] adjacentNodeIds = convertStringToArray(node.getAdjacentNode());
-        for (Long nodeId: adjacentNodeIds){
-            Node adjacentNode = findNode(nodeId);
-            if(!adjacentNode.getBuilding().equals(node.getBuilding())) return adjacentNode.getBuilding();
-        }
-
-        throw new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다");
+        return buildingRepository.findByNodeIdIn(adjacentNodeIds)
+            .orElseThrow(() -> new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다"));
     }
 
     /**

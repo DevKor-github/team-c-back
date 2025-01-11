@@ -192,15 +192,9 @@ public class RouteService {
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
         // 조건에 따른 노드 검색
-        if (conditions == null || conditions.isEmpty()){
-            for (Building building : buildingList){
-                graphNode.addAll(findAllNode(building));
-            }
-        }
-        else{
-            for (Building building : buildingList){
-                graphNode.addAll(findNodeWithConditions(building, conditions));
-            }
+
+        for (Building building : buildingList){
+            graphNode.addAll(findNodeWithConditions(building, conditions));
         }
 
         if (!graphNode.contains(startNode)){
@@ -246,13 +240,14 @@ public class RouteService {
      */
     private List<Node> findNodeWithConditions(Building building, List<Conditions> conditions){
         List<NodeType> nodeTypes = new ArrayList<>(Arrays.asList(NodeType.NORMAL, NodeType.STAIR, NodeType.ELEVATOR, NodeType.ENTRANCE, NodeType.CHECKPOINT));
-        if (conditions.contains(BARRIERFREE)){
-            nodeTypes.remove(NodeType.STAIR);
+        if (conditions != null){
+            if (conditions.contains(BARRIERFREE)){
+                nodeTypes.remove(NodeType.STAIR);
+            }
+            else if (conditions.contains(Conditions.SHUTTLE)){
+                nodeTypes.add(NodeType.SHUTTLE);
+            }
         }
-        else if (conditions.contains(Conditions.SHUTTLE)){
-            nodeTypes.add(NodeType.SHUTTLE);
-        }
-
         return nodeRepository.findByBuildingAndRoutingAndTypeIn(building, true, nodeTypes);
     }
 

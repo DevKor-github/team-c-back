@@ -74,10 +74,28 @@ public class UserService {
     }
 
     /**
-     * 로그인
+     * 로그인 (안드로이드 배포 수정 후 삭제)
      */
     @Transactional
     public LoginUserRes login(LoginUserReq loginUserReq) {
+        User user = userRepository.findByEmailAndProvider(loginUserReq.getEmail(), loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
+        if(user == null) { // 회원이 없으면 회원가입
+            String username = makeRandomName();
+            user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
+
+            // 기본 카테고리 저장
+            Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
+            categoryRepository.save(category);
+        }
+
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+    }
+
+    /**
+     * 로그인
+     */
+    @Transactional
+    public LoginUserRes releaseLogin(LoginUserReq loginUserReq) {
         String email = loginUserReq.getEmail();
         if(!loginUserReq.getToken().equals(adminToken)) { // 관리자용 토큰 입력 시 검증 과정 생략
             email = validateToken(loginUserReq.getProvider(), loginUserReq.getToken());

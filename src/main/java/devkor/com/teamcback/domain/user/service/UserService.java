@@ -8,7 +8,9 @@ import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
+import devkor.com.teamcback.domain.user.dto.request.AutoLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.AutoLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
@@ -28,6 +30,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +52,7 @@ public class UserService {
     private final KakaoValidator kakaoValidator;
     private final GoogleValidator googleValidator;
     private final AppleValidator appleValidator;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
@@ -87,8 +91,10 @@ public class UserService {
             Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
             categoryRepository.save(category);
         }
+        String rawCode = UUID.randomUUID().toString();
+        user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode, user.getEmail());
     }
 
     /**
@@ -111,7 +117,10 @@ public class UserService {
             categoryRepository.save(category);
         }
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+        String rawCode = UUID.randomUUID().toString();
+        user.setCode(passwordEncoder.encode(rawCode));
+
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode, user.getEmail());
     }
 
     private String validateToken(Provider provider, String token) {
@@ -121,6 +130,24 @@ public class UserService {
             case APPLE -> appleValidator.validateToken(token);
             default -> throw new GlobalException(INVALID_INPUT);
         };
+    }
+
+    /**
+     * 자동 로그인
+     */
+    @Transactional
+    public AutoLoginRes autoLogin(AutoLoginReq autoLoginReq) {
+        List<User> userList = userRepository.findAllByEmail(autoLoginReq.getEmail());
+
+        User user = null;
+        for(User u : userList) {
+            if(passwordEncoder.matches(autoLoginReq.getCode(), u.getCode())) {
+                user = u;
+            }
+        }
+        if(user == null) throw new GlobalException(INVALID_INPUT);
+
+        return new AutoLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
     }
 
     /**

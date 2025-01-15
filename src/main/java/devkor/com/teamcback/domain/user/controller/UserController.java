@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.user.controller;
 
+import devkor.com.teamcback.domain.user.dto.request.AutoLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.AutoLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
@@ -69,6 +71,21 @@ public class UserController {
         @RequestBody LoginUserReq loginUserReq
     ) {
         return CommonResponse.success(userService.releaseLogin(loginUserReq));
+    }
+
+    /**
+     * 자동 로그인
+     */
+    @Operation(summary = "자동 로그인", description = "기기 저장된 사용자 정보로 자동 로그인")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+    })
+    @PostMapping("/login/auto")
+    public CommonResponse<AutoLoginRes> autoLogin(
+        @Parameter(description = "사용자정보", required = true)
+        @RequestBody AutoLoginReq autoLoginReq
+    ) {
+        return CommonResponse.success(userService.autoLogin(autoLoginReq));
     }
 
     /**

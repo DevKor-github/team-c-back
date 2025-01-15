@@ -63,7 +63,7 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
     })
-    @PostMapping("/login-release")
+    @PostMapping("/login/release")
     public CommonResponse<LoginUserRes> releaseLogin(
         @Parameter(description = "사용자정보", required = true)
         @RequestBody LoginUserReq loginUserReq

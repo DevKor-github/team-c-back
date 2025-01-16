@@ -45,13 +45,11 @@ public class AppleValidator {
                 publicKeysResponse.getKeys().stream()
                     .filter(o -> o.getKid().equals(kid) && o.getAlg().equals(alg))
                     .findFirst()
-                    .orElseThrow();
+                    .orElseThrow(() -> new GlobalException(LOG_IN_REQUIRED));
 
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
             return payload.getSub();
-        } catch (GlobalException e) {
-            throw new GlobalException(LOG_IN_REQUIRED);
         } catch (Exception e) {
             throw new GlobalException(UNAUTHORIZED);
         }

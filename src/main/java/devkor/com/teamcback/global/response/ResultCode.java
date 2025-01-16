@@ -18,6 +18,7 @@ public enum ResultCode {
     INVALID_IMAGE_FILE(HttpStatus.BAD_REQUEST, 1007, "지원하는 파일 형식이 아닙니다."),
     MAXIMUM_UPLOAD_FILE_SIZE(HttpStatus.BAD_REQUEST, 1008, "파일 크기는 최대 10MB까지 가능합니다."),
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, 1009, "파일을 찾을 수 없습니다."),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, 1010, "Refresh Token이 만료되었습니다."),
 
     // 사용자 2000번대
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, 2000, "사용자를 찾을 수 없습니다."),

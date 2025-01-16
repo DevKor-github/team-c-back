@@ -1,8 +1,8 @@
 package devkor.com.teamcback.domain.user.controller;
 
-import devkor.com.teamcback.domain.user.dto.request.AutoLoginReq;
+import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
-import devkor.com.teamcback.domain.user.dto.response.AutoLoginRes;
+import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
@@ -80,12 +80,12 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
     })
-    @PostMapping("/login/auto")
-    public CommonResponse<AutoLoginRes> autoLogin(
+    @PostMapping("/login/bypass")
+    public CommonResponse<BypassLoginRes> autoLogin(
         @Parameter(description = "사용자정보", required = true)
-        @RequestBody AutoLoginReq autoLoginReq
+        @RequestBody BypassLoginReq bypassLoginReq
     ) {
-        return CommonResponse.success(userService.autoLogin(autoLoginReq));
+        return CommonResponse.success(userService.bypassLogin(bypassLoginReq));
     }
 
     /**

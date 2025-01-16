@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class AutoLoginRes {
+public class BypassLoginRes {
     String accessToken;
     String refreshToken;
 }

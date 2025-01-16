@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.user.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -10,5 +9,4 @@ public class LoginUserRes {
     String accessToken;
     String refreshToken;
     String code;
-    String email;
 }

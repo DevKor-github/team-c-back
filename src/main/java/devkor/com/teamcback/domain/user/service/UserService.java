@@ -8,9 +8,9 @@ import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
-import devkor.com.teamcback.domain.user.dto.request.AutoLoginReq;
+import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
-import devkor.com.teamcback.domain.user.dto.response.AutoLoginRes;
+import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
@@ -94,7 +94,7 @@ public class UserService {
         String rawCode = UUID.randomUUID().toString();
         user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode, user.getEmail());
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
     }
 
     /**
@@ -120,7 +120,7 @@ public class UserService {
         String rawCode = UUID.randomUUID().toString();
         user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode, user.getEmail());
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
     }
 
     private String validateToken(Provider provider, String token) {
@@ -136,18 +136,18 @@ public class UserService {
      * 자동 로그인
      */
     @Transactional
-    public AutoLoginRes autoLogin(AutoLoginReq autoLoginReq) {
-        List<User> userList = userRepository.findAllByEmail(autoLoginReq.getEmail());
+    public BypassLoginRes bypassLogin(BypassLoginReq bypassLoginReq) {
+        User user = userRepository.findByEmailAndProvider(bypassLoginReq.getEmail(), bypassLoginReq.getProvider());
 
-        User user = null;
-        for(User u : userList) {
-            if(passwordEncoder.matches(autoLoginReq.getCode(), u.getCode())) {
-                user = u;
-            }
-        }
-        if(user == null) throw new GlobalException(INVALID_INPUT);
+        validateUser(user, bypassLoginReq.getCode());
 
-        return new AutoLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+        return new BypassLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+    }
+
+    private void validateUser(User user, String code) {
+        if(user == null) throw new GlobalException(NOT_FOUND_USER);
+
+        if(!passwordEncoder.matches(code, user.getCode())) throw new GlobalException(INVALID_INPUT);
     }
 
     /**

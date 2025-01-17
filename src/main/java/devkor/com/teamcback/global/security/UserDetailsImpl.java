@@ -13,17 +13,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @Getter
-public class UserDetailsImpl implements UserDetails, OAuth2User {
+public class UserDetailsImpl implements UserDetails {
 
     private final User user;
-    private final Map<String, Object> attributes;
-    private final String attributeKey;
 
     @Builder
-    private UserDetailsImpl(User user, Map<String, Object> attributes, String attributeKey) {
+    public UserDetailsImpl(User user) {
         this.user = user;
-        this.attributes = attributes;
-        this.attributeKey = attributeKey;
     }
 
     @Override
@@ -62,13 +58,4 @@ public class UserDetailsImpl implements UserDetails, OAuth2User {
         return true;
     }
 
-    @Override
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public String getName() {
-        return attributes.get(attributeKey).toString();
-    }
 }

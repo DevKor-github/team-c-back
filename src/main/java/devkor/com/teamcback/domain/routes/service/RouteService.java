@@ -389,9 +389,9 @@ public class RouteService {
 
                 // 계단/엘리베이터를 통한 연속적인 층 이동을 감지하여 중간 층을 생략
                 while (count < route.size() - 1 && !Objects.equals(thisNode.getFloor(), nextNode.getFloor())) {
-                    count++;
                     thisNode = route.get(count);
                     nextNode = route.get(count + 1);
+                    count++;
                 }
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();

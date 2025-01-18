@@ -7,6 +7,7 @@ import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
+import devkor.com.teamcback.domain.user.dto.response.TempLoginRes;
 import devkor.com.teamcback.domain.user.service.UserService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -51,7 +52,7 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
     })
     @PostMapping("/login")
-    public CommonResponse<LoginUserRes> login(
+    public CommonResponse<TempLoginRes> login(
         @Parameter(description = "사용자정보", required = true)
         @RequestBody LoginUserReq loginUserReq
     ) {

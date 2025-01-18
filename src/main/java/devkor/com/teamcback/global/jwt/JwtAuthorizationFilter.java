@@ -46,7 +46,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         // access token 검증
         switch(jwtUtil.validateToken(accessToken)) {
             case VALID -> setAuthentication(jwtUtil.getUserIdFromToken(accessToken));
-            case INVALID -> throw new GlobalException(UNAUTHORIZED);
+            case INVALID -> throw new GlobalException(INVALID_TOKEN);
             case EXPIRED -> authenticateRefreshToken(request, response);
         }
 
@@ -81,7 +81,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         switch(jwtUtil.validateToken(refreshToken)) {
             case VALID -> renewAccessToken(response, refreshToken);
-            case INVALID ->  throw new GlobalException(UNAUTHORIZED); // Unauthorized
+            case INVALID ->  throw new GlobalException(INVALID_TOKEN);
             case EXPIRED -> throw new GlobalException(REFRESH_TOKEN_EXPIRED);
         }
     }

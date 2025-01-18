@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.user.validator;
 
+import static devkor.com.teamcback.global.response.ResultCode.INVALID_TOKEN;
 import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
-import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
 import devkor.com.teamcback.domain.user.validator.client.AppleClient;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -51,7 +51,7 @@ public class AppleValidator {
 
             return payload.getSub();
         } catch (Exception e) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(INVALID_TOKEN);
         }
     }
 }

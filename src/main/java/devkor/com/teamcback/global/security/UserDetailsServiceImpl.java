@@ -1,6 +1,6 @@
 package devkor.com.teamcback.global.security;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
+import static devkor.com.teamcback.global.response.ResultCode.DELETED_USER;
 
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -22,7 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
         User user = userRepository.findByUserId(Long.parseLong(userId));
         if(user == null) {
-            throw new GlobalException(NOT_FOUND_USER);
+            throw new GlobalException(DELETED_USER);
         }
         return UserDetailsImpl.builder().user(user).build();
     }

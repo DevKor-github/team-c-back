@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -37,6 +38,10 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Long score = 0L;
 
+    @Setter
+    @Column(unique = true)
+    private String code;
+
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;
         this.email = email;
@@ -51,4 +56,5 @@ public class User extends BaseEntity {
     public void updateScore(Long score) {
         this.score = score;
     }
+
 }

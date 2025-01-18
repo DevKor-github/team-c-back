@@ -46,7 +46,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         // access token 검증
         switch(jwtUtil.validateToken(accessToken)) {
             case VALID -> setAuthentication(jwtUtil.getUserIdFromToken(accessToken));
-            case INVALID -> throw new GlobalException(UNAUTHORIZED);
+            case INVALID -> throw new GlobalException(INVALID_TOKEN);
             case EXPIRED -> authenticateRefreshToken(request, response);
         }
 
@@ -69,7 +69,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
      */
     private void authenticateRefreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = jwtUtil.getRefreshTokenFromHeader(request);
-        log.info("Refresh Token: {}", refreshToken);
+//        log.info("Refresh Token: {}", refreshToken);
 
         if(refreshToken == null) throw new GlobalException(REFRESH_TOKEN_REQUIRED); // refresh token 요청
 
@@ -81,8 +81,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
         switch(jwtUtil.validateToken(refreshToken)) {
             case VALID -> renewAccessToken(response, refreshToken);
-            case INVALID ->  throw new GlobalException(UNAUTHORIZED); // Unauthorized
-            case EXPIRED -> throw new GlobalException(LOG_IN_REQUIRED); // 재로그인 요청
+            case INVALID ->  throw new GlobalException(INVALID_TOKEN);
+            case EXPIRED -> throw new GlobalException(REFRESH_TOKEN_EXPIRED);
         }
     }
 

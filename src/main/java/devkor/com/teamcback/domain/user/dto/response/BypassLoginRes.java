@@ -5,8 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class LoginUserRes {
+public class BypassLoginRes {
     String accessToken;
     String refreshToken;
-    String code;
 }

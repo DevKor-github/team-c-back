@@ -2,30 +2,36 @@ package devkor.com.teamcback.domain.user.service;
 
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
-import devkor.com.teamcback.domain.bookmark.entity.CategoryBookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Color;
-import devkor.com.teamcback.domain.bookmark.entity.UserBookmarkLog;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
-import devkor.com.teamcback.domain.bookmark.repository.CategoryBookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
+import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
+import devkor.com.teamcback.domain.user.dto.response.TempLoginRes;
 import devkor.com.teamcback.domain.user.entity.Level;
+import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.domain.user.validator.AppleValidator;
+import devkor.com.teamcback.domain.user.validator.GoogleValidator;
+import devkor.com.teamcback.domain.user.validator.KakaoValidator;
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,9 +50,17 @@ public class UserService {
     private final UserBookmarkLogRepository userBookmarkLogRepository;
     private final SuggestionRepository suggestionRepository;
     private final JwtUtil jwtUtil;
+    private final KakaoValidator kakaoValidator;
+    private final GoogleValidator googleValidator;
+    private final AppleValidator appleValidator;
+    private final PasswordEncoder passwordEncoder;
+
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
     private static final Color DEFAULT_COLOR = Color.RED;
+
+    @Value("${jwt.admin.token}")
+    private String adminToken;
 
     /**
      * 마이페이지 정보 조회
@@ -65,13 +79,10 @@ public class UserService {
     }
 
     /**
-     * 로그인
+     * 로그인 (안드로이드 배포 수정 후 삭제)
      */
     @Transactional
-    public LoginUserRes login(LoginUserReq loginUserReq) {
-        // TODO: 소셜 검증 - 사용자가 소셜 서버의 사용자인지 확인
-        log.info("social-token: {}", loginUserReq.getToken());
-
+    public TempLoginRes login(LoginUserReq loginUserReq) {
         User user = userRepository.findByEmailAndProvider(loginUserReq.getEmail(), loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
         if(user == null) { // 회원이 없으면 회원가입
             String username = makeRandomName();
@@ -82,7 +93,60 @@ public class UserService {
             categoryRepository.save(category);
         }
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+        return new TempLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+    }
+
+    /**
+     * 로그인
+     */
+    @Transactional
+    public LoginUserRes releaseLogin(LoginUserReq loginUserReq) {
+        String email = loginUserReq.getEmail();
+        if(!loginUserReq.getToken().equals(adminToken)) { // 관리자용 토큰 입력 시 검증 과정 생략
+            email = validateToken(loginUserReq.getProvider(), loginUserReq.getToken());
+        }
+
+        User user = userRepository.findByEmailAndProvider(email, loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
+        if(user == null) { // 회원이 없으면 회원가입
+            String username = makeRandomName();
+            user = userRepository.save(new User(username, email, Role.USER, loginUserReq.getProvider()));
+
+            // 기본 카테고리 저장
+            Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
+            categoryRepository.save(category);
+        }
+
+        String rawCode = UUID.randomUUID().toString();
+        user.setCode(passwordEncoder.encode(rawCode));
+
+        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
+    }
+
+    private String validateToken(Provider provider, String token) {
+        return switch (provider) {
+            case KAKAO -> kakaoValidator.validateToken(token);
+            case GOOGLE -> googleValidator.validateToken(token);
+            case APPLE -> appleValidator.validateToken(token);
+            default -> throw new GlobalException(INVALID_INPUT);
+        };
+    }
+
+    /**
+     * 자동 로그인
+     */
+    @Transactional
+    public BypassLoginRes bypassLogin(BypassLoginReq bypassLoginReq) {
+        User user = userRepository.findByEmailAndProvider(bypassLoginReq.getEmail(), bypassLoginReq.getProvider());
+
+        validateUser(user, bypassLoginReq.getCode());
+
+        return new BypassLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
+    }
+
+    private void validateUser(User user, String code) {
+        if(user == null) throw new GlobalException(NOT_FOUND_USER);
+
+        if(!passwordEncoder.matches(code, user.getCode())) throw new GlobalException(INVALID_INPUT);
     }
 
     /**

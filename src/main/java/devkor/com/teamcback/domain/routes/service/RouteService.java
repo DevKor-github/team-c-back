@@ -192,15 +192,9 @@ public class RouteService {
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
         // 조건에 따른 노드 검색
-        if (conditions == null || conditions.isEmpty()){
-            for (Building building : buildingList){
-                graphNode.addAll(findAllNode(building));
-            }
-        }
-        else{
-            for (Building building : buildingList){
-                graphNode.addAll(findNodeWithConditions(building, conditions));
-            }
+
+        for (Building building : buildingList){
+            graphNode.addAll(findNodeWithConditions(building, conditions));
         }
 
         if (!graphNode.contains(startNode)){
@@ -246,13 +240,14 @@ public class RouteService {
      */
     private List<Node> findNodeWithConditions(Building building, List<Conditions> conditions){
         List<NodeType> nodeTypes = new ArrayList<>(Arrays.asList(NodeType.NORMAL, NodeType.STAIR, NodeType.ELEVATOR, NodeType.ENTRANCE, NodeType.CHECKPOINT));
-        if (conditions.contains(BARRIERFREE)){
-            nodeTypes.remove(NodeType.STAIR);
+        if (conditions != null){
+            if (conditions.contains(BARRIERFREE)){
+                nodeTypes.remove(NodeType.STAIR);
+            }
+            else if (conditions.contains(Conditions.SHUTTLE)){
+                nodeTypes.add(NodeType.SHUTTLE);
+            }
         }
-        else if (conditions.contains(Conditions.SHUTTLE)){
-            nodeTypes.add(NodeType.SHUTTLE);
-        }
-
         return nodeRepository.findByBuildingAndRoutingAndTypeIn(building, true, nodeTypes);
     }
 
@@ -394,9 +389,9 @@ public class RouteService {
 
                 // 계단/엘리베이터를 통한 연속적인 층 이동을 감지하여 중간 층을 생략
                 while (count < route.size() - 1 && !Objects.equals(thisNode.getFloor(), nextNode.getFloor())) {
-                    count++;
                     thisNode = route.get(count);
                     nextNode = route.get(count + 1);
+                    count++;
                 }
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
@@ -484,12 +479,8 @@ public class RouteService {
      */
     private Building findLinkedBuilding(Node node){
         Long[] adjacentNodeIds = convertStringToArray(node.getAdjacentNode());
-        for (Long nodeId: adjacentNodeIds){
-            Node adjacentNode = findNode(nodeId);
-            if(!adjacentNode.getBuilding().equals(node.getBuilding())) return adjacentNode.getBuilding();
-        }
-
-        throw new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다");
+        return buildingRepository.findByNodeIdIn(adjacentNodeIds)
+            .orElseThrow(() -> new AdminException(INCORRECT_NODE_DATA,node.getId() + "번 노드에 연결된 건물이 없습니다"));
     }
 
     /**

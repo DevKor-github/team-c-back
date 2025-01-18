@@ -50,6 +50,8 @@ public class AppleValidator {
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
             return payload.getSub();
+        } catch(GlobalException e) {
+            throw new GlobalException(LOG_IN_REQUIRED);
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }

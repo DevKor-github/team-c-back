@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.user.validator;
 
 import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
-import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
+import static devkor.com.teamcback.global.response.ResultCode.INVALID_TOKEN;
 
 import devkor.com.teamcback.domain.user.validator.client.GoogleClient;
 import devkor.com.teamcback.global.exception.GlobalException;
@@ -47,7 +47,7 @@ public class GoogleValidator {
 
             return payload.getEmail();
         } catch (Exception e) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(INVALID_TOKEN);
         }
     }
 }

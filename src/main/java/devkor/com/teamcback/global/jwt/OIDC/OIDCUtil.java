@@ -1,6 +1,6 @@
 package devkor.com.teamcback.global.jwt.OIDC;
 
-import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
+import static devkor.com.teamcback.global.response.ResultCode.INVALID_TOKEN;
 
 import devkor.com.teamcback.global.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCDecodePayload;
@@ -35,13 +35,13 @@ public class OIDCUtil {
                 .build()
                 .parseClaimsJwt(getUnsignedToken(token));
         } catch (Exception e) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(INVALID_TOKEN);
         }
     }
 
     private String getUnsignedToken(String token) {
         String[] splitToken = token.split("\\.");
-        if (splitToken.length != 3) throw new GlobalException(UNAUTHORIZED);
+        if (splitToken.length != 3) throw new GlobalException(INVALID_TOKEN);
         return splitToken[0] + "." + splitToken[1] + ".";
     }
 
@@ -61,7 +61,7 @@ public class OIDCUtil {
                 .build()
                 .parseClaimsJws(token);
         } catch (Exception e) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(INVALID_TOKEN);
         }
     }
 

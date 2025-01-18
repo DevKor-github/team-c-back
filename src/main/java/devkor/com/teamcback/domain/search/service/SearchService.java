@@ -17,6 +17,7 @@ import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
+import devkor.com.teamcback.domain.search.entity.DefaultPlace;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.domain.user.entity.User;
@@ -256,6 +257,9 @@ public class SearchService {
         List<SearchMainFacilityRes> res = new ArrayList<>();
 
         for (Place place : mainFacilities) {
+            if(place.getImageUrl() == null) {
+                place.setImageUrl(DefaultPlace.getUrlByPlaceType(place.getType()));
+            }
             res.add(new SearchMainFacilityRes(place));
         }
 

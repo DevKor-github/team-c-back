@@ -16,6 +16,7 @@ import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @Table(name = "tb_place")
 @NoArgsConstructor
 public class Place extends BaseEntity {

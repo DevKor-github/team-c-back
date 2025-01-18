@@ -129,6 +129,18 @@ profile:
     lv4-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv4.jpg
     lv5-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv5.jpg
 
+place:
+  default-image:
+    cafe: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFE.jpg
+    cafeteria: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFETERIA.jpg
+    convenience-store: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CONVENIENCE_STORE.jpg
+    gym: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/GYM.jpg
+    lounge: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/LOUNGE.jpg
+    reading-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/READING_ROOM.jpg
+    shower-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/SHOWER_ROOM.jpg
+    sleeping-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/SLEEPING_ROOM.jpg
+    study-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/STUDY_ROOM.jpg
+
 date:
   api:
     holiday:

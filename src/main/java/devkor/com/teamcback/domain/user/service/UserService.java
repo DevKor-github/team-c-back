@@ -15,6 +15,7 @@ import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
 import devkor.com.teamcback.domain.user.dto.response.LoginUserRes;
 import devkor.com.teamcback.domain.user.dto.response.ModifyUsernameRes;
+import devkor.com.teamcback.domain.user.dto.response.TempLoginRes;
 import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.Provider;
 import devkor.com.teamcback.domain.user.entity.Role;
@@ -81,7 +82,7 @@ public class UserService {
      * 로그인 (안드로이드 배포 수정 후 삭제)
      */
     @Transactional
-    public LoginUserRes login(LoginUserReq loginUserReq) {
+    public TempLoginRes login(LoginUserReq loginUserReq) {
         User user = userRepository.findByEmailAndProvider(loginUserReq.getEmail(), loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
         if(user == null) { // 회원이 없으면 회원가입
             String username = makeRandomName();
@@ -91,10 +92,8 @@ public class UserService {
             Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
             categoryRepository.save(category);
         }
-        String rawCode = UUID.randomUUID().toString();
-        user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
+        return new TempLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
     }
 
     /**

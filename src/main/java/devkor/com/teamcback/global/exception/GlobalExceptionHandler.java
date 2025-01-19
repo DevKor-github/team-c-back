@@ -2,6 +2,9 @@ package devkor.com.teamcback.global.exception;
 
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.response.ResultCode;
+import jakarta.validation.ConstraintViolationException;
+import java.sql.SQLException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -39,5 +42,11 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new CommonResponse<>(ResultCode.INVALID_INPUT, sb.toString()));
+    }
+
+    @ExceptionHandler({SQLException.class, DataAccessException.class, ConstraintViolationException.class})
+    public ResponseEntity<CommonResponse<String>> handleDBException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new CommonResponse<>(ResultCode.DB_ERROR, ex.getMessage()));
     }
 }

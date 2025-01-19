@@ -65,7 +65,7 @@ public class BookmarkService {
             for (Long selectCategoryId : req.getCategoryIdList()) {
                 if (!userCategoryList.stream().map(Category::getId).toList()
                     .contains(selectCategoryId)) {
-                    throw new GlobalException(UNAUTHORIZED);
+                    throw new GlobalException(FORBIDDEN);
                 }
             }
 
@@ -145,7 +145,7 @@ public class BookmarkService {
 
     private void checkAuthority(User user, Bookmark bookmark) {
         if(bookmark.getCategoryBookmarkList().stream().noneMatch(categoryBookmark -> categoryBookmark.getCategory().getUser().getUserId().equals(user.getUserId()))) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(FORBIDDEN);
         }
     }
 

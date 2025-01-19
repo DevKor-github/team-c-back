@@ -329,7 +329,15 @@ public class RouteService {
         List<List<Node>> path = cutRoute(route.getPath()); // 분할된 경로
 
         //시작, 끝이 건물인 경우 해당 노드 지우기
-        if (isStartBuilding) path.remove(0);
+        //시작, 끝이 건물인 경우 해당 노드 지우기
+        if (isStartBuilding) {
+            // 첫번째 path의 길이에 따라 삭제 다르게 하기
+            if(path.get(0).size() > 1) {
+                path.get(0).remove(0);
+            } else {
+                path.remove(0);
+            }
+        }
         if (isEndBuilding) path.get(path.size()-1).remove(path.get(path.size()-1).size()-1);
 
         List<PartialRouteRes> totalRoute = new ArrayList<>();

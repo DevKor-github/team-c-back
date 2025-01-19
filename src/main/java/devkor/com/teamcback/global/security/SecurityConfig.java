@@ -1,6 +1,7 @@
 package devkor.com.teamcback.global.security;
 
 import devkor.com.teamcback.global.exception.CustomAccessDeniedHandler;
+import devkor.com.teamcback.global.exception.CustomAuthenticationEntryPoint;
 import devkor.com.teamcback.global.exception.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
 import devkor.com.teamcback.global.jwt.JwtUtil;
@@ -60,6 +61,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CustomAuthenticationEntryPoint customAuthenticationEntryPoint() {
+        return new CustomAuthenticationEntryPoint();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // CSRF 설정
         http.csrf(AbstractHttpConfigurer::disable);
@@ -82,8 +88,9 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui.html").permitAll()
                 .requestMatchers("/api-docs/**").permitAll()
                 .anyRequest().authenticated() // 그 외 모든 요청 인증처리
-        ).exceptionHandling((exceptionHandling) -> exceptionHandling
-            .accessDeniedHandler(customAccessDeniedHandler())
+        ).exceptionHandling(ex -> ex
+            .accessDeniedHandler(customAccessDeniedHandler()) // 인가 실패 시
+            .authenticationEntryPoint(customAuthenticationEntryPoint()) // 인증 실패 시
         );
 
         http.logout(

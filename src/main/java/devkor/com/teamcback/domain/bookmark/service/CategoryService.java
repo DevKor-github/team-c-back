@@ -180,7 +180,7 @@ public class CategoryService {
 
     private void checkAuthority(User accessor, User owner) {
         if(!accessor.getUserId().equals(owner.getUserId())) {
-            throw new GlobalException(UNAUTHORIZED);
+            throw new GlobalException(FORBIDDEN);
         }
     }
 

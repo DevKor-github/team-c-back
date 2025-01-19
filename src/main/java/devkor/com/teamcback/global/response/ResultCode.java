@@ -20,7 +20,8 @@ public enum ResultCode {
     NOT_FOUND_FILE(HttpStatus.NOT_FOUND, 1009, "파일을 찾을 수 없습니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, 1010, "Refresh Token이 만료되었습니다."), // 로그인 관련
     DELETED_USER(HttpStatus.UNAUTHORIZED, 1011, "탈퇴한 사용자입니다."), // 로그인 관련
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 1012, "권한이 없는 사용자입니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 1012, "인증이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, 1013, "권한이 없는 사용자입니다."),
 
     // 사용자 2000번대
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, 2000, "사용자를 찾을 수 없습니다."),

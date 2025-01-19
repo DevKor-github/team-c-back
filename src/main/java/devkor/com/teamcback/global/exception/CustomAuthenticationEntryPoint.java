@@ -1,6 +1,6 @@
 package devkor.com.teamcback.global.exception;
 
-import static devkor.com.teamcback.global.response.ResultCode.FORBIDDEN;
+import static devkor.com.teamcback.global.response.ResultCode.UNAUTHORIZED;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -10,21 +10,21 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
-public class CustomAccessDeniedHandler implements AccessDeniedHandler{
+public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response,
-        AccessDeniedException accessDeniedException) {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+        AuthenticationException authException) {
         ObjectMapper objectMapper = new ObjectMapper();
-        response.setStatus(FORBIDDEN.getStatus().value());
+        response.setStatus(UNAUTHORIZED.getStatus().value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         try {
             response.getWriter().write(objectMapper.writeValueAsString(
-                new CommonResponse<>(FORBIDDEN)));
+                new CommonResponse<>(UNAUTHORIZED)));
         } catch (IOException e) {
             throw new GlobalException(ResultCode.SYSTEM_ERROR);
         }

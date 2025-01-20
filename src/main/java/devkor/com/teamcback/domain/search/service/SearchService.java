@@ -81,12 +81,25 @@ public class SearchService {
     @Transactional(readOnly = true)
     public GlobalSearchListRes globalSearch(String word, Long userId) {
         List<GlobalSearchRes> list = new ArrayList<>();
-        Map<GlobalSearchRes, Integer> scores = new HashMap<>();
 
         List<Place> places;
         List<Building> buildings;
 
         User user = userId != null ? findUser(userId) : null;
+
+        // 전체 키워드 검색
+        buildings = getBuildings(word);
+        places = getPlaces(word, null);
+
+        for(Building building : buildings) {
+            list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
+        }
+        for(Place place : places) {
+            if(!excludedTypes.contains(place.getName())) {
+                list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
+            }
+        }
+        Map<GlobalSearchRes, Integer> scores = new HashMap<>(calculateScore(list, word, null));
 
         // 건물이 입력됨
         if(word.contains(" ")) {
@@ -107,22 +120,8 @@ public class SearchService {
             if(!buildings.isEmpty()) {
                 scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
             }
-            return new GlobalSearchListRes(orderSequence(scores));
         }
-
-        buildings = getBuildings(word);
-        places = getPlaces(word, null);
-
-        for(Building building : buildings) {
-            list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
-        }
-        for(Place place : places) {
-            if(!excludedTypes.contains(place.getName())) {
-                list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
-            }
-        }
-
-        return new GlobalSearchListRes(orderSequence(calculateScore(list, word, null)));
+        return new GlobalSearchListRes(orderSequence(scores));
     }
 
     /**
@@ -497,7 +496,7 @@ public class SearchService {
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
         }
         else if(building == null) {
-            placeNicknames =placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
         }
 

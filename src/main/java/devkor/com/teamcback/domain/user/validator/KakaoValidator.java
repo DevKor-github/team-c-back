@@ -4,7 +4,7 @@ import static devkor.com.teamcback.global.response.ResultCode.LOG_IN_REQUIRED;
 import static devkor.com.teamcback.global.response.ResultCode.INVALID_TOKEN;
 
 import devkor.com.teamcback.domain.user.validator.client.KakaoClient;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.OIDC.OIDCUtil;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCDecodePayload;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeyDto;

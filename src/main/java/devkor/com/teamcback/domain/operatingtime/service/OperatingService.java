@@ -14,7 +14,7 @@ import devkor.com.teamcback.domain.operatingtime.entity.OperatingCondition;
 import devkor.com.teamcback.domain.operatingtime.entity.OperatingTime;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingConditionRepository;
 import devkor.com.teamcback.domain.operatingtime.repositoy.OperatingTimeRepository;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;

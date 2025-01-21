@@ -1,8 +1,8 @@
 package devkor.com.teamcback.global.security;
 
-import devkor.com.teamcback.global.exception.CustomAccessDeniedHandler;
-import devkor.com.teamcback.global.exception.CustomAuthenticationEntryPoint;
-import devkor.com.teamcback.global.exception.ExceptionHandlerFilter;
+import devkor.com.teamcback.global.exception.handler.CustomAccessDeniedHandler;
+import devkor.com.teamcback.global.exception.handler.CustomAuthenticationEntryPoint;
+import devkor.com.teamcback.global.exception.handler.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import devkor.com.teamcback.global.redis.RedisUtil;
@@ -78,16 +78,13 @@ public class SecurityConfig {
         http.authorizeHttpRequests((authorizeHttpRequests) ->
             authorizeHttpRequests
                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
-                .requestMatchers(HttpMethod.GET, "/api/search/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll()
-                .requestMatchers("/api/koyeon/**").permitAll() // 고연전 이후 삭제 필요
-                .requestMatchers("/api/users/login/**").permitAll()
-                .requestMatchers("/api/suggestions/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/search/**").authenticated()
+                .requestMatchers("/api/users/login/**").permitAll() // 로그인은 허용
+                .requestMatchers("/api/users/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/swagger-ui.html").permitAll()
-                .requestMatchers("/api-docs/**").permitAll()
-                .anyRequest().authenticated() // 그 외 모든 요청 인증처리
+                .requestMatchers("/api/categories/**").authenticated()
+                .requestMatchers("/api/bookmarks/**").authenticated()
+                .anyRequest().permitAll()
         ).exceptionHandling(ex -> ex
             .accessDeniedHandler(customAccessDeniedHandler()) // 인가 실패 시
             .authenticationEntryPoint(customAuthenticationEntryPoint()) // 인증 실패 시

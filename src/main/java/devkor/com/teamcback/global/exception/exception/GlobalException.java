@@ -1,4 +1,4 @@
-package devkor.com.teamcback.global.exception;
+package devkor.com.teamcback.global.exception.exception;
 
 import devkor.com.teamcback.global.response.ResultCode;
 import lombok.Getter;

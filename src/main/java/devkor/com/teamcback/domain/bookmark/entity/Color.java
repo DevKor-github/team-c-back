@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.bookmark.entity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.ResultCode;
 import java.util.Arrays;
 import lombok.Getter;

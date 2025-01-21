@@ -4,7 +4,7 @@ import static devkor.com.teamcback.global.response.ResultCode.DELETED_USER;
 
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

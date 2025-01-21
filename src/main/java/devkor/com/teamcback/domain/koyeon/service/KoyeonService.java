@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.koyeon.service;
 import devkor.com.teamcback.domain.koyeon.dto.response.*;
 import devkor.com.teamcback.domain.koyeon.entity.*;
 import devkor.com.teamcback.domain.koyeon.repository.*;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

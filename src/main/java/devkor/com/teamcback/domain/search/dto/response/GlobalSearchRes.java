@@ -70,7 +70,7 @@ public class GlobalSearchRes {
 
     public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding, Category category) {
         // 외부태그(편의시설) : id = null, buildingId = 0L, locationType = FACILITY
-        if(!hasBuilding && place.getType().getName().equals(place.getName())) {
+        if(!hasBuilding && place.getType().getName().equals(place.getName()) && place.getNode() == null) {
             this.id = null;
             this.buildingId = 0L;
             this.name = place.getName();

@@ -86,12 +86,20 @@ public class GlobalSearchRes {
         } else if (hasBuilding && place.getType().getName().equals(place.getName())) { //내부태그(편의시설)
             this.id = null;
             this.buildingId = place.getBuilding().getId();
-            this.name = place.getBuilding().getName() + " " + place.getName();
+            if(place.getBuilding().getId() == 0) {
+                this.name = place.getName();
+            } else {
+                this.name = place.getBuilding().getName() + " " + place.getName();
+            }
         } else { //특정 시설
             this.id = place.getId();
             this.buildingId = place.getBuilding().getId();
             this.floor = place.getFloor();
-            this.name = place.getBuilding().getName() + " " + place.getName();
+            if(place.getBuilding().getId() == 0) {
+                this.name = place.getName();
+            } else {
+                this.name = place.getBuilding().getName() + " " + place.getName();
+            }
             if(!place.getDetail().equals(".")) this.detail = place.getDetail();
         }
         this.longitude = place.getNode().getLongitude();

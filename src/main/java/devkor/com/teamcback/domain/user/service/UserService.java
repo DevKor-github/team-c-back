@@ -24,7 +24,7 @@ import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.domain.user.validator.AppleValidator;
 import devkor.com.teamcback.domain.user.validator.GoogleValidator;
 import devkor.com.teamcback.domain.user.validator.KakaoValidator;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.jwt.JwtUtil;
 import java.util.List;
 import java.util.UUID;

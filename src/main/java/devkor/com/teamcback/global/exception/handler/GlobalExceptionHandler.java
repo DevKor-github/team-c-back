@@ -1,5 +1,7 @@
-package devkor.com.teamcback.global.exception;
+package devkor.com.teamcback.global.exception.handler;
 
+import devkor.com.teamcback.global.exception.exception.AdminException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.response.ResultCode;
 import jakarta.validation.ConstraintViolationException;

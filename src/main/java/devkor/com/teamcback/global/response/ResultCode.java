@@ -23,6 +23,7 @@ public enum ResultCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 1012, "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, 1013, "권한이 없는 사용자입니다."),
     DB_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 1014, "DB 데이터 문제가 발생했습니다."),
+    UNSUPPORTED_REQUEST(HttpStatus.NOT_FOUND, 1015, "존재하지 않는 요청입니다."),
 
     // 사용자 2000번대
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, 2000, "사용자를 찾을 수 없습니다."),

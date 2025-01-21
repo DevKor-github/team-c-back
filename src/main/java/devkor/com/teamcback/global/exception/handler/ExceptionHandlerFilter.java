@@ -1,6 +1,7 @@
-package devkor.com.teamcback.global.exception;
+package devkor.com.teamcback.global.exception.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.response.ResultCode;
 import jakarta.servlet.FilterChain;

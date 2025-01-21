@@ -22,7 +22,7 @@ import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -62,8 +62,9 @@ public class SearchService {
     static final int BASE_SCORE_FACILITY_SPECIAL = 0;
     static final int BASE_SCORE_CLASSROOM_DEFAULT = 0;
     static final int BASE_SCORE_IS_BOOKMARKED = 5000;
+    static final int BASE_SCORE_OUTDOOR_TAG_DEFAULT = 750;
 
-    // 아이콘으로 표시할 편의시설 종류
+    // 건물 상세 모달 아이콘으로 표시할 편의시설 종류
     private final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA,
         PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM, PlaceType.BANK, PlaceType.GYM);
@@ -75,41 +76,25 @@ public class SearchService {
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
         PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
 
+    // 통합 검색 결과에서 "건물명 + 기본편의시설명"의 형태로 제공되어야 하는 편의시설 종류
+    private final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
+        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER,
+        PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK,
+        PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM);
+
     /**
      * 통합 검색
      */
     @Transactional(readOnly = true)
     public GlobalSearchListRes globalSearch(String word, Long userId) {
         List<GlobalSearchRes> list = new ArrayList<>();
-        Map<GlobalSearchRes, Integer> scores = new HashMap<>();
 
         List<Place> places;
         List<Building> buildings;
 
         User user = userId != null ? findUser(userId) : null;
 
-        // 건물이 입력됨
-        if(word.contains(" ")) {
-            // 건물 + 장소 조합
-            String firstBuildingWord = word.split(" ")[0];
-            String firstPlaceWord = word.substring(firstBuildingWord.length()).trim();
-
-            buildings = getBuildings(firstBuildingWord);
-            if(!buildings.isEmpty()) {
-                scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord, user));
-            }
-
-            // 장소 + 건물 조합(강의실명에 공백 있을 경우를 대비해 분리)
-            String lastBuildingWord = word.split(" ")[word.split(" ").length - 1];
-            String lastPlaceWord = word.substring(0, word.length() - lastBuildingWord.length()).trim();
-
-            buildings = getBuildings(lastBuildingWord);
-            if(!buildings.isEmpty()) {
-                scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
-            }
-            return new GlobalSearchListRes(orderSequence(scores));
-        }
-
+        // 전체 키워드 검색
         buildings = getBuildings(word);
         places = getPlaces(word, null);
 
@@ -121,8 +106,29 @@ public class SearchService {
                 list.add(new GlobalSearchRes(place, LocationType.PLACE, false, checkBookmarked(user, place)));
             }
         }
+        Map<GlobalSearchRes, Integer> scores = new HashMap<>(calculateScore(list, word, null));
 
-        return new GlobalSearchListRes(orderSequence(calculateScore(list, word, null)));
+        // 건물이 입력됨
+        if(word.contains(" ")) {
+            // 건물 + 장소 조합 (건물명이 앞에 있는 경우)
+            String firstBuildingWord = word.split(" ")[0];
+            String firstPlaceWord = word.substring(firstBuildingWord.length()).trim();
+
+            buildings = getBuildings(firstBuildingWord);
+            if(!buildings.isEmpty()) {
+                scores.putAll(getScores(word, buildings, firstPlaceWord, firstBuildingWord, user));
+            }
+
+            // 장소 + 건물 조합 (건물명이 뒤에 있는 경우)
+            String lastBuildingWord = word.split(" ")[word.split(" ").length - 1];
+            String lastPlaceWord = word.substring(0, word.length() - lastBuildingWord.length()).trim();
+
+            buildings = getBuildings(lastBuildingWord);
+            if(!buildings.isEmpty()) {
+                scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
+            }
+        }
+        return new GlobalSearchListRes(orderSequence(scores));
     }
 
     /**
@@ -365,10 +371,12 @@ public class SearchService {
         List<Place> places;
 
         for (Building building : buildings) {
+            // 빌딩 정보 추가
             list.add(new GlobalSearchRes(building, LocationType.BUILDING, checkBookmarked(user, building)));
             places = getPlaces(placeWord, building);
 
             for (Place place : places) {
+                // 해당 빌딩의 장소 정보 추가
                 checkBookmarked(user, place);
                 if(!excludedTypes.contains(place.getName())) {
                     list.add(new GlobalSearchRes(place, LocationType.PLACE, true, checkBookmarked(user, place)));
@@ -395,14 +403,14 @@ public class SearchService {
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
         int indexScore = 0;
-        int bookmarkScore = 0;
+        int bookmarkScore;
 
         for (GlobalSearchRes res : list) {
+            bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             if (res.getLocationType() == LocationType.BUILDING) {
                 // 건물+장소명인 경우 기본 "건물명"은 맨 밑으로
                 baseScore = buildingKeyword == null ? BASE_SCORE_BUILDING_DEFAULT : BASE_SCORE_BUILDING_WITH_KEYWORD;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
-                bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             }
             if (res.getLocationType() == LocationType.PLACE) {
                 if(res.getPlaceType().equals(PlaceType.CLASSROOM)) {
@@ -416,6 +424,10 @@ public class SearchService {
                     }
                     indexScore = calculateScoreByIndex(res.getName(), keyword);
                 }
+            }
+            if (res.getLocationType() == LocationType.FACILITY) {
+                baseScore = BASE_SCORE_OUTDOOR_TAG_DEFAULT;
+                indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             scores.put(res, baseScore + indexScore + bookmarkScore);
         }
@@ -483,6 +495,7 @@ public class SearchService {
 
     private List<Place> getPlaces(String word, Building building) {
         List<Place> places = new ArrayList<>();
+        // Nickname Table에 building 정보가 없기 때문에, 빌딩 제한이 있는 경우 전체를 불러오고 걸러내기
         if(building != null) {
             places = placeRepository.findAllByBuilding(building);
         }
@@ -491,21 +504,45 @@ public class SearchService {
         Pageable limit = PageRequest.of(0, 30, Sort.by("id").descending());
 
         // 강의실 조회
-        List<PlaceNickname> placeNicknames = new ArrayList<>();
-        if(building != null && !places.isEmpty()) {
+        List<PlaceNickname> placeNicknames;
+        List<Place> resultPlaces = new ArrayList<>();
+        if(building != null && !places.isEmpty()) { // 빌딩 제한 있는 경우
             placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
+            // 초성으로만 구성된 경우
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
-        }
-        else if(building == null) {
-            placeNicknames =placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
-        }
 
+            resultPlaces.addAll(placeNicknames.stream()
+                .map(PlaceNickname::getPlace)
+                .distinct()
+                .toList());
+
+            // 빌딩 + 편의시설명의 경우를 GlobalSearchRes로 추가하기 (Ex. 하나스퀘어 카페)
+            // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes)
+            for (PlaceType type : outerTagTypes) {
+                if(type.getName().contains(word)) {
+                    resultPlaces.add(new Place(type, building));
+                }
+            }
+        }
+        else if(building == null) { // 빌딩 제한 없는 전체 검색
+            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            // 초성으로만 구성된 경우
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
+
+            resultPlaces.addAll(placeNicknames.stream()
+                .map(PlaceNickname::getPlace)
+                .distinct()
+                .toList());
+
+            // 자체가 편의시설명인 경우 : 야외 태그
+            for (PlaceType type : outerTagTypes) {
+                if(type.getName().contains(word)) {
+                    resultPlaces.add(new Place(type, findBuilding(0L)));
+                }
+            }
+        }
         // 중복을 제거하여 List에 저장
-        return placeNicknames.stream()
-            .map(PlaceNickname::getPlace)
-            .distinct()
-            .toList();
+        return resultPlaces;
     }
 
     // 특정 건물 및 타입 리스트에 속하는 편의시설 검색

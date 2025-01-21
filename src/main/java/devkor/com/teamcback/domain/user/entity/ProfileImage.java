@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.user.entity;
 
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

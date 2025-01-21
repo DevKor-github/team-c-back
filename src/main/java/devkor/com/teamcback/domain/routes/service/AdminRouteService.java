@@ -19,7 +19,7 @@ import devkor.com.teamcback.domain.routes.dto.response.GetNodeRes;
 import devkor.com.teamcback.domain.routes.dto.response.ModifyNodeRes;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

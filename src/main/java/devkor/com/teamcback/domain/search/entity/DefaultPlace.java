@@ -1,11 +1,10 @@
 package devkor.com.teamcback.domain.search.entity;
 
 import devkor.com.teamcback.domain.place.entity.PlaceType;
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import static devkor.com.teamcback.global.response.ResultCode.INCORRECT_LEVEL;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_SUPPORTED_PLACE_TYPE;
 
 @Component

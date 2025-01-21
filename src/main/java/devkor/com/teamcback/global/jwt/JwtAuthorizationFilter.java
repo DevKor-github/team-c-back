@@ -3,7 +3,7 @@ package devkor.com.teamcback.global.jwt;
 import static devkor.com.teamcback.global.jwt.JwtUtil.ACCESS_TOKEN_HEADER;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
-import devkor.com.teamcback.global.exception.GlobalException;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.redis.RedisUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

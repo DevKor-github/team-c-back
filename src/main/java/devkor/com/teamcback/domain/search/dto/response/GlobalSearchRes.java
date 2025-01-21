@@ -69,14 +69,16 @@ public class GlobalSearchRes {
     }
 
     public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding, Category category) {
-        if(!hasBuilding && place.getType().getName().equals(place.getName())) {
+        // 외부태그(편의시설) : id = null, buildingId = 0L, locationType = FACILITY
+        if(!hasBuilding && place.getType().getName().equals(place.getName()) && place.getNode() == null) {
             this.id = null;
             this.buildingId = 0L;
             this.name = place.getName();
             // 야외는 노드가 없음
             this.longitude = null;
             this.latitude = null;
-        // 내부태그(편의시설) : id = null, buildingId = 특정 건물 ID
+            this.locationType = LocationType.FACILITY;
+            // 내부태그(편의시설) : id = null, buildingId = 특정 건물 ID, locationType = FACILITY
         } else if (hasBuilding && place.getType().getName().equals(place.getName())) { // 내부태그(편의시설)
             this.id = null;
             this.buildingId = place.getBuilding().getId();
@@ -87,6 +89,7 @@ public class GlobalSearchRes {
             }
             this.longitude = place.getBuilding().getNode().getLongitude();
             this.latitude = place.getBuilding().getNode().getLatitude();
+            this.locationType = LocationType.FACILITY;
         } else { // 일반 시설들
             this.id = place.getId();
             this.buildingId = place.getBuilding().getId();
@@ -99,8 +102,8 @@ public class GlobalSearchRes {
             if(!place.getDetail().equals(".")) this.detail = place.getDetail();
             this.longitude = place.getNode().getLongitude();
             this.latitude = place.getNode().getLatitude();
+            this.locationType = locationType;
         }
-        this.locationType = locationType;
         this.placeType = place.getType();
         if(category != null) {
             this.isBookmarked = true;

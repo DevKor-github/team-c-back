@@ -62,6 +62,7 @@ public class SearchService {
     static final int BASE_SCORE_FACILITY_SPECIAL = 0;
     static final int BASE_SCORE_CLASSROOM_DEFAULT = 0;
     static final int BASE_SCORE_IS_BOOKMARKED = 5000;
+    static final int BASE_SCORE_OUTDOOR_TAG_DEFAULT = 750;
 
     // 건물 상세 모달 아이콘으로 표시할 편의시설 종류
     private final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
@@ -402,14 +403,14 @@ public class SearchService {
         // 강의실, 특수명 편의시설은 baseScore = 0
         int baseScore = 0;
         int indexScore = 0;
-        int bookmarkScore = 0;
+        int bookmarkScore;
 
         for (GlobalSearchRes res : list) {
+            bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             if (res.getLocationType() == LocationType.BUILDING) {
                 // 건물+장소명인 경우 기본 "건물명"은 맨 밑으로
                 baseScore = buildingKeyword == null ? BASE_SCORE_BUILDING_DEFAULT : BASE_SCORE_BUILDING_WITH_KEYWORD;
                 indexScore = calculateScoreByIndex(res.getName(), keyword);
-                bookmarkScore = res.isBookmarked() ? BASE_SCORE_IS_BOOKMARKED : 0;
             }
             if (res.getLocationType() == LocationType.PLACE) {
                 if(res.getPlaceType().equals(PlaceType.CLASSROOM)) {
@@ -423,6 +424,10 @@ public class SearchService {
                     }
                     indexScore = calculateScoreByIndex(res.getName(), keyword);
                 }
+            }
+            if (res.getLocationType() == LocationType.FACILITY) {
+                baseScore = BASE_SCORE_OUTDOOR_TAG_DEFAULT;
+                indexScore = calculateScoreByIndex(res.getName(), keyword);
             }
             scores.put(res, baseScore + indexScore + bookmarkScore);
         }

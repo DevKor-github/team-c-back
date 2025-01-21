@@ -1,5 +1,5 @@
 package devkor.com.teamcback.domain.common;
 
 public enum LocationType {
-    BUILDING, PLACE
+    BUILDING, PLACE, FACILITY
 }

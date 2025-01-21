@@ -69,20 +69,7 @@ public class GlobalSearchRes {
     }
 
     public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding, Category category) {
-        if(place.getType().equals(PlaceType.CLASSROOM)) { //일반 교실들
-            this.id = place.getId();
-            this.buildingId = place.getBuilding().getId();
-            this.floor = place.getFloor();
-            if(!place.getDetail().equals(".")) this.detail = place.getDetail();
-            if(place.getBuilding().getId() == 0) {
-                this.name = place.getName();
-            } else {
-                this.name = place.getBuilding().getName() + " " + place.getName();
-            }
-            this.longitude = place.getNode().getLongitude();
-            this.latitude = place.getNode().getLatitude();
-        // 야외태그(편의시설) : id = null, buildingId = 0
-        } else if(!hasBuilding && place.getType().getName().equals(place.getName())) {
+        if(!hasBuilding && place.getType().getName().equals(place.getName())) {
             this.id = null;
             this.buildingId = 0L;
             this.name = place.getName();
@@ -100,7 +87,7 @@ public class GlobalSearchRes {
             }
             this.longitude = place.getBuilding().getNode().getLongitude();
             this.latitude = place.getBuilding().getNode().getLatitude();
-        } else { //특정 시설
+        } else { // 일반 시설들
             this.id = place.getId();
             this.buildingId = place.getBuilding().getId();
             this.floor = place.getFloor();

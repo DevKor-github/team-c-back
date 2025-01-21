@@ -69,33 +69,37 @@ public class GlobalSearchRes {
     }
 
     public GlobalSearchRes(Place place, LocationType locationType, boolean hasBuilding, Category category) {
-        if(place.getType().equals(PlaceType.CLASSROOM)) { //일반 교실들
-            this.id = place.getId();
+        if(!hasBuilding && place.getType().getName().equals(place.getName())) {
+            this.id = null;
+            this.buildingId = 0L;
+            this.name = place.getName();
+            // 야외는 노드가 없음
+            this.longitude = null;
+            this.latitude = null;
+        // 내부태그(편의시설) : id = null, buildingId = 특정 건물 ID
+        } else if (hasBuilding && place.getType().getName().equals(place.getName())) { // 내부태그(편의시설)
+            this.id = null;
             this.buildingId = place.getBuilding().getId();
-            this.floor = place.getFloor();
-            if(!place.getDetail().equals(".")) this.detail = place.getDetail();
             if(place.getBuilding().getId() == 0) {
                 this.name = place.getName();
             } else {
                 this.name = place.getBuilding().getName() + " " + place.getName();
             }
-        } else if(!hasBuilding && place.getType().getName().equals(place.getName())) { //야외태그(편의시설)
-            this.id = null;
-            this.buildingId = 0L;
-            this.name = place.getName();
-        } else if (hasBuilding && place.getType().getName().equals(place.getName())) { //내부태그(편의시설)
-            this.id = null;
-            this.buildingId = place.getBuilding().getId();
-            this.name = place.getBuilding().getName() + " " + place.getName();
-        } else { //특정 시설
+            this.longitude = place.getBuilding().getNode().getLongitude();
+            this.latitude = place.getBuilding().getNode().getLatitude();
+        } else { // 일반 시설들
             this.id = place.getId();
             this.buildingId = place.getBuilding().getId();
             this.floor = place.getFloor();
-            this.name = place.getBuilding().getName() + " " + place.getName();
+            if(place.getBuilding().getId() == 0) {
+                this.name = place.getName();
+            } else {
+                this.name = place.getBuilding().getName() + " " + place.getName();
+            }
             if(!place.getDetail().equals(".")) this.detail = place.getDetail();
+            this.longitude = place.getNode().getLongitude();
+            this.latitude = place.getNode().getLatitude();
         }
-        this.longitude = place.getNode().getLongitude();
-        this.latitude = place.getNode().getLatitude();
         this.locationType = locationType;
         this.placeType = place.getType();
         if(category != null) {

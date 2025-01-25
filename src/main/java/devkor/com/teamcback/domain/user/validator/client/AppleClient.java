@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @FeignClient(name = "appleClient", url = "https://appleid.apple.com")
 public interface AppleClient {
-    @Cacheable(value = "apple")
+    @Cacheable(value = "apple", key = "'data'")
     @GetMapping("/auth/keys")
     OIDCPublicKeysResponse getPublicKeys();
 }

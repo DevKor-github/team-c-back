@@ -15,6 +15,7 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,16 +25,25 @@ import org.springframework.stereotype.Component;
 public class OIDCUtil {
     private static final String KID = "kid";
     public String getKidFromUnsignedTokenHeader(String token, String aud, String iss) {
-        return (String) getUnsignedTokenClaims(token, aud, iss).getHeader().get(KID);
+        return (String) getUnsignedTokenClaims(token, new String[] {aud}, iss).getHeader().get(KID);
     }
 
-    public Jwt<Header, Claims> getUnsignedTokenClaims(String token, String aud, String iss) {
+    public Jwt<Header, Claims> getUnsignedTokenClaims(String token, String[] aud, String iss) {
         try {
-            return Jwts.parserBuilder()
-                .requireAudience(aud)
+            Jwt<Header, Claims> claims = Jwts.parserBuilder()
                 .requireIssuer(iss)
                 .build()
                 .parseClaimsJwt(getUnsignedToken(token));
+
+            // 추가적인 audience 검증
+            String audience = claims.getBody().getAudience();
+            if (audience == null || Arrays.stream(aud).noneMatch(audience::equals)) {
+                throw new GlobalException(INVALID_TOKEN);
+            }
+
+            return claims;
+        } catch (GlobalException e) {
+            throw new GlobalException(e.getResultCode());
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }

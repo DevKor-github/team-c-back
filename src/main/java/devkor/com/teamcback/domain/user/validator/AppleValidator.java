@@ -9,6 +9,7 @@ import devkor.com.teamcback.global.jwt.OIDC.OIDCUtil;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCDecodePayload;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeyDto;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeysResponse;
+import devkor.com.teamcback.global.redis.RedisUtil;
 import io.jsonwebtoken.Header;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,11 +20,14 @@ import org.springframework.stereotype.Component;
 public class AppleValidator {
     private final OIDCUtil oidcUtil;
     private final AppleClient appleClient;
+    private final RedisUtil redisUtil;
     private static final String KID = "kid";
     private static final String ALG = "alg";
 
     @Value("${jwt.social.apple.iss}")
     private String ISS;
+    @Value("${jwt.social.apple.dev-aud}")
+    private String DEV_AUD;
     @Value("${jwt.social.apple.aud}")
     private String AUD;
 
@@ -34,7 +38,7 @@ public class AppleValidator {
     public String validateToken(String token) {
         try {
             // id_token 정보
-            Header tokenInfo = oidcUtil.getUnsignedTokenClaims(token, AUD, ISS).getHeader();
+            Header tokenInfo = oidcUtil.getUnsignedTokenClaims(token, new String[] {DEV_AUD, AUD}, ISS).getHeader();
             String kid = (String) tokenInfo.get(KID);
             String alg = (String) tokenInfo.get(ALG);
 
@@ -51,7 +55,8 @@ public class AppleValidator {
 
             return payload.getSub();
         } catch(GlobalException e) {
-            throw new GlobalException(LOG_IN_REQUIRED);
+            redisUtil.deleteCache("apple::data");
+            throw new GlobalException(e.getResultCode());
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }

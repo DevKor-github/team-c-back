@@ -9,6 +9,7 @@ import devkor.com.teamcback.global.jwt.OIDC.OIDCUtil;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCDecodePayload;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeyDto;
 import devkor.com.teamcback.global.jwt.OIDC.dto.OIDCPublicKeysResponse;
+import devkor.com.teamcback.global.redis.RedisUtil;
 import io.jsonwebtoken.Header;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class AppleValidator {
     private final OIDCUtil oidcUtil;
     private final AppleClient appleClient;
+    private final RedisUtil redisUtil;
     private static final String KID = "kid";
     private static final String ALG = "alg";
 
@@ -51,7 +53,8 @@ public class AppleValidator {
 
             return payload.getSub();
         } catch(GlobalException e) {
-            throw new GlobalException(LOG_IN_REQUIRED);
+            redisUtil.deleteCache("apple::data");
+            throw new GlobalException(e.getResultCode());
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }

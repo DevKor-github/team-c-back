@@ -517,9 +517,9 @@ public class SearchService {
                 .toList());
 
             // 빌딩 + 편의시설명의 경우를 GlobalSearchRes로 추가하기 (Ex. 하나스퀘어 카페)
-            // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes)
+            // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes) && 빌딩에 해당 시설이 있는지 확인
             for (PlaceType type : outerTagTypes) {
-                if(type.getName().contains(word)) {
+                if(type.getName().contains(word) && placeRepository.existsByBuildingAndType(building, type)) {
                     resultPlaces.add(new Place(type, building));
                 }
             }

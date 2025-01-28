@@ -78,10 +78,8 @@ public class GlobalSearchRes {
             this.longitude = null;
             this.latitude = null;
             this.locationType = LocationType.FACILITY;
-            System.out.println("외부태그!!" + place.getName() + "   " + this.locationType);
             // 내부태그(편의시설) : id = null, buildingId = 특정 건물 ID, locationType = FACILITY
         } else if (hasBuilding && place.getType().getName().equals(place.getName())) { // 내부태그(편의시설)
-            System.out.println("내부태그!!" + place.getName());
             this.id = null;
             this.buildingId = place.getBuilding().getId();
             if(place.getBuilding().getId() == 0) {

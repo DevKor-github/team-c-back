@@ -553,7 +553,7 @@ public class SearchService {
 
     // 특정 건물 및 타입 리스트에 속하는 편의시설 검색
     private List<Place> getFacilitiesByBuildingAndTypes(Building building, List<PlaceType> types) {
-        return placeRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
+        return placeRepository.findAllByBuildingAndTypeInAndAvailabilityOrderByFloor(building, types, true);
     }
 
     // 특정 건물 및 타입에 속하는 편의시설 검색 (화장실 검색하는 경우 - 다른 화장실 모두 포함하도록)

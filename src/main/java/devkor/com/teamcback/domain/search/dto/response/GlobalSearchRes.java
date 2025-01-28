@@ -47,7 +47,7 @@ public class GlobalSearchRes {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GlobalSearchRes that = (GlobalSearchRes) o;
-        return name.equals(that.name);
+        return name.equals(that.name) && locationType.equals(that.locationType);
     }
 
     @Override

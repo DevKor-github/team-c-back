@@ -26,5 +26,5 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     Place findByBuildingAndFloorAndMaskIndex(Building building, double floor, Integer maskIndex);
 
-    List<Place> findAllByBuildingAndTypeInOrderByFloor(Building building, List<PlaceType> types);
+    List<Place> findAllByBuildingAndTypeInAndAvailabilityOrderByFloor(Building building, List<PlaceType> types, boolean availability);
 }

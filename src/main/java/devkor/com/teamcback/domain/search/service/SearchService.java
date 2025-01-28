@@ -511,6 +511,7 @@ public class SearchService {
             // 초성으로만 구성된 경우
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
 
+            // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
                 .map(PlaceNickname::getPlace)
                 .distinct()
@@ -529,6 +530,7 @@ public class SearchService {
             // 초성으로만 구성된 경우
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
 
+            // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
                 .map(PlaceNickname::getPlace)
                 .distinct()
@@ -541,7 +543,7 @@ public class SearchService {
                 }
             }
         }
-        // 중복을 제거하여 List에 저장
+
         return resultPlaces;
     }
 

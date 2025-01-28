@@ -511,16 +511,22 @@ public class SearchService {
             // 초성으로만 구성된 경우
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
 
+            // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
                 .map(PlaceNickname::getPlace)
                 .distinct()
                 .toList());
 
             // 빌딩 + 편의시설명의 경우를 GlobalSearchRes로 추가하기 (Ex. 하나스퀘어 카페)
-            // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes)
+            // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes) && 빌딩에 해당 시설이 있는지 확인
             for (PlaceType type : outerTagTypes) {
-                if(type.getName().contains(word)) {
-                    resultPlaces.add(new Place(type, building));
+                if((type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word)))) {
+                    List<Place> tempPlace = placeRepository.findAllByBuildingAndType(building, type);
+                    if(!tempPlace.isEmpty()) {
+                        resultPlaces.addAll(tempPlace);
+                        resultPlaces.add(new Place(type, building));
+                    }
+
                 }
             }
         }
@@ -529,6 +535,7 @@ public class SearchService {
             // 초성으로만 구성된 경우
             if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
 
+            // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
                 .map(PlaceNickname::getPlace)
                 .distinct()
@@ -536,18 +543,17 @@ public class SearchService {
 
             // 자체가 편의시설명인 경우 : 야외 태그
             for (PlaceType type : outerTagTypes) {
-                if(type.getName().contains(word)) {
+                if(type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word))) {
                     resultPlaces.add(new Place(type, findBuilding(0L)));
                 }
             }
         }
-        // 중복을 제거하여 List에 저장
         return resultPlaces;
     }
 
     // 특정 건물 및 타입 리스트에 속하는 편의시설 검색
     private List<Place> getFacilitiesByBuildingAndTypes(Building building, List<PlaceType> types) {
-        return placeRepository.findAllByBuildingAndTypeInOrderByFloor(building, types);
+        return placeRepository.findAllByBuildingAndTypeInAndAvailabilityOrderByFloor(building, types, true);
     }
 
     // 특정 건물 및 타입에 속하는 편의시설 검색 (화장실 검색하는 경우 - 다른 화장실 모두 포함하도록)

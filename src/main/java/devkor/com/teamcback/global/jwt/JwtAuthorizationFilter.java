@@ -10,20 +10,33 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Slf4j(topic = "JWT validation & authorization")
 @RequiredArgsConstructor
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
+
+    private static final List<RequestMatcher> whiteList =
+        List.of(
+            new AntPathRequestMatcher("/api/migration"),
+            new AntPathRequestMatcher("/api/koyeon/**"),
+            new AntPathRequestMatcher("/api/routes/**"),
+            new AntPathRequestMatcher("/api/search/**", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/suggestions"),
+            new AntPathRequestMatcher("/api/users/login/**"));
 
     private final JwtUtil jwtUtil;
     private final RedisUtil redisUtil;
@@ -51,6 +64,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // 현재 URL 이 화이트 리스트에 존재하는지 체크
+        return whiteList.stream().anyMatch(whitePath -> whitePath.matches(request));
     }
 
     /**

@@ -39,6 +39,7 @@ public class RouteService {
     private static final Double INIT_OUTDOOR_DISTANCE = Double.MAX_VALUE;
     private static final Double MAX_OUTDOOR_DISTANCE = 0.003;
     private static final Double MIN_OUTDOOR_DISTANCE = 0.0001;
+    private static final Double INDOOR_ROUTE_WEIGHT = 0.8;
 
     /**
      * 메인 경로탐색 메서드
@@ -47,6 +48,9 @@ public class RouteService {
     public List<GetRouteRes> findRoute(LocationType startType, Long startId, Double startLat, Double startLong,
         LocationType endType, Long endId, Double endLat, Double endLong, List<Conditions> conditions){
 
+        if (conditions == null){
+            conditions = new ArrayList<>();
+        }
         // 출발, 도착 노드 검색
         Node startNode = getNodeByType(startType, startId, startLat, startLong);
         Node endNode = getNodeByType(endType, endId, endLat, endLong);
@@ -171,17 +175,31 @@ public class RouteService {
     }
 
     /**
-     * 출발/도착지에 직접적으로 연결된 건물들이 있는 경우 buildingList에 추가하는 메서드
+     * 출발/도착지에 연결된 건물들이 있는 경우 buildingList에 추가하는 메서드
+     * 연쇄적으로 연결된 건물들도 반영하도록(ex: 엘포관-백기-중지-SK미래관...) 수정
      */
-    private void addConnectedBuildings(Building building, List<Building> buildingList) {
-        List<Long> connectedBuildingIds = connectedBuildingRepository.findConnectedBuildingsByBuilding(building);
-        for (Long connectedBuildingId : connectedBuildingIds) {
-            if (buildingList.stream()
-                .noneMatch(existingBuilding -> existingBuilding.getId().equals(connectedBuildingId))) {
-                buildingList.add(findBuilding(connectedBuildingId));
+    private void addConnectedBuildings(Building startBuilding, List<Building> buildingList) {
+        Queue<Building> queue = new LinkedList<>();
+        Set<Long> visited = new HashSet<>();
+
+        queue.add(startBuilding);
+        visited.add(startBuilding.getId());
+
+        while (!queue.isEmpty()) {
+            Building currentBuilding = queue.poll();
+
+            List<Long> connectedBuildingIds = connectedBuildingRepository.findConnectedBuildingsByBuilding(currentBuilding);
+            for (Long connectedBuildingId : connectedBuildingIds) {
+                if (!visited.contains(connectedBuildingId)) {
+                    Building connectedBuilding = findBuilding(connectedBuildingId);
+                    buildingList.add(connectedBuilding);
+                    queue.add(connectedBuilding);
+                    visited.add(connectedBuildingId);
+                }
             }
         }
     }
+
 
     /**
      * 그래프 요소 찾기(node, edge 묶음)
@@ -228,7 +246,12 @@ public class RouteService {
                 graphEdge.put(node.getId(), new ArrayList<>());
             }
             for (int i = 0; i < nextNodeId.length; i++) {
-                graphEdge.get(node.getId()).add(new Edge(distance[i], node.getId(), nextNodeId[i]));
+                Edge edge = new Edge(distance[i], node.getId(), nextNodeId[i]);
+
+                if (conditions.contains(Conditions.INNERROUTE) && node.getBuilding().getId() != OUTDOOR_ID) {
+                    edge.setWeight(Math.round(edge.getWeight() * INDOOR_ROUTE_WEIGHT));
+                }
+                graphEdge.get(node.getId()).add(edge);
             }
         }
         return new GetGraphRes(graphNode, graphEdge);
@@ -257,12 +280,12 @@ public class RouteService {
     private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode) {
         List<Node> nodes = graphRes.getGraphNode();
         Map<Long, List<Edge>> edges = graphRes.getGraphEdge();
-        Map<Long, Long> distances = new HashMap<>(); // 출발 노드부터의 거리
-        Map<Long, Long> previousNodes = new HashMap<>(); // 경로 반환을 위해 다시 거꾸로 추적하기 위한 노드 순서 저장
-        PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>(); // 시작 노드와 거리가 짧은 노드 순으로 선택 가능
-        Set<Long> visitedNodes = new HashSet<>(); // 이미 방문한 노드 id 체크
+        Map<Long, Long> distances = new HashMap<>();
+        Map<Long, Long> previousNodes = new HashMap<>();
+        PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
+        Set<Long> visitedNodes = new HashSet<>();
 
-        // 모든 노드를 초기화
+        // 모든 노드 초기화
         for (Node node : nodes) {
             if (node.equals(startNode)) {
                 distances.put(node.getId(), 0L);
@@ -273,27 +296,23 @@ public class RouteService {
             previousNodes.put(node.getId(), null);
         }
 
+        // Dijkstra 실행 (weight 기준)
         while (!priorityQueue.isEmpty()) {
             NodeDistancePair currentPair = priorityQueue.poll();
             Long currentNode = currentPair.node;
 
-            if (visitedNodes.contains(currentNode)) { // 방문한 노드면 패스
-                continue;
-            }
+            if (visitedNodes.contains(currentNode)) continue;
             visitedNodes.add(currentNode);
 
-            if (currentNode.equals(endNode.getId())) { // 도착하면 종료
-                break;
-            }
+            if (currentNode.equals(endNode.getId())) break;
 
-            if(!edges.containsKey(currentNode)) continue;
+            if (!edges.containsKey(currentNode)) continue;
             for (Edge edge : edges.get(currentNode)) {
                 Long neighbor = edge.getEndNode();
                 Long currentDistance = distances.get(currentNode);
-                if (currentDistance == null) {
-                    continue; // currentNode가 distances에 존재하지 않는 경우를 대비
-                }
-                Long newDist = currentDistance + edge.getDistance();
+                if (currentDistance == null) continue;
+
+                Long newDist = currentDistance + edge.getWeight(); //weight 기반 탐색으로 수정
                 Long neighborDist = distances.get(neighbor);
                 if (neighborDist == null || newDist < neighborDist) {
                     distances.put(neighbor, newDist);
@@ -303,20 +322,35 @@ public class RouteService {
             }
         }
 
-        // 경로 생성
+        //path 생성
         List<Node> path = new ArrayList<>();
-        Long finalDistance = distances.get(endNode.getId());
-        if (finalDistance.equals(INF)) {
-            return new DijkstraRes(-1L, Collections.emptyList()); // 경로가 존재하지 않을 때
-        }
-
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
             Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
             path.add(node);
         }
         Collections.reverse(path);
 
+        //예외처리: path가 제대로 나오지 않는 경우. 즉, 경로가 존재하지 않는 경우
+        if (path.isEmpty() || !path.get(0).equals(startNode)) {
+            throw new GlobalException(NOT_FOUND_ROUTE);
+        }
+
+        // path를 기반으로 distance 계산
+        Long finalDistance = 0L;
+        for (int i = 0; i < path.size() - 1; i++) {
+            Edge edge = findEdge(edges, path.get(i).getId(), path.get(i + 1).getId());
+            if (edge != null) {
+                finalDistance += edge.getDistance();
+            }
+        }
+
         return new DijkstraRes(finalDistance, path);
+    }
+    private Edge findEdge(Map<Long, List<Edge>> edges, Long from, Long to) {
+        return edges.get(from).stream()
+                .filter(edge -> edge.getEndNode().equals(to))
+                .findFirst()
+                .orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
     }
 
     /**

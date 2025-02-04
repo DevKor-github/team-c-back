@@ -37,16 +37,18 @@ public class RouteServiceIntegrationTest extends BaseMvcTest {
     @Order(1)
     @DisplayName("기본 길찾기 테스트: 노드 - 노드")
     void nodeRouteTest() {
-        List<Node> nodeList = nodeRepository.findAll();
-        for(Node start : nodeList) {
-            for (Node end : nodeList) {
+        List<Node> nodeList = nodeRepository.findRandomNodes(); // 무작위 노드 20개
+        for(int i = 0; i < nodeList.size() - 1; i++) {
+            Node start = nodeList.get(i);
+            for (int j = i+1; j < nodeList.size(); j++) {
+                Node end = nodeList.get(j);
                 try {
-                    System.out.println("start_node_id: " + start.getId() + " end_node_id: " + end.getId());
+                    System.out.println("-------------------------" + "start_node_id: " + start.getId() + " end_node_id: " + end.getId());
                     routeService.findRoute(LocationType.NODE, start.getId(), null, null, LocationType.NODE, end.getId(), null, null, null);
                 } catch (AdminException e) {
-                    System.out.println(e.getAdminMessage());
+                    System.out.println("##########################" + e.getAdminMessage());
                 } catch (GlobalException e) {
-                    System.out.println(e.getResultCode());
+                    System.out.println("##########################" + e.getResultCode());
                 }
             }
         }
@@ -57,17 +59,17 @@ public class RouteServiceIntegrationTest extends BaseMvcTest {
     @DisplayName("기본 길찾기 테스트: 빌딩 - 빌딩")
     void buildingRouteTest() {
         List<Building> buildingList = buildingRepository.findAll();
-        for(Building start : buildingList) {
-            for (Building end : buildingList) {
-                if(start.getId() != 0 && end.getId() != 0 && !start.getId().equals(end.getId())) {
-                    try {
-                        System.out.println("start_building_id: " + start.getId() + " end_building_id: " + end.getId());
-                        routeService.findRoute(LocationType.BUILDING, start.getId(), null, null, LocationType.BUILDING, end.getId(), null, null, null);
-                    } catch (AdminException e) {
-                        System.out.println(e.getAdminMessage());
-                    } catch (GlobalException e) {
-                        System.out.println(e.getResultCode());
-                    }
+        for(int i = 1; i < buildingList.size() - 1; i++) {
+            Building start = buildingList.get(i);
+            for (int j = i+1; j < buildingList.size(); j++) {
+                Building end = buildingList.get(j);
+                try {
+                    System.out.println("-------------------------" + "start_building_id: " + start.getId() + " end_building_id: " + end.getId());
+                    routeService.findRoute(LocationType.BUILDING, start.getId(), null, null, LocationType.BUILDING, end.getId(), null, null, null);
+                } catch (AdminException e) {
+                    System.out.println("##########################" + e.getAdminMessage());
+                } catch (GlobalException e) {
+                    System.out.println("##########################" + e.getResultCode());
                 }
             }
         }

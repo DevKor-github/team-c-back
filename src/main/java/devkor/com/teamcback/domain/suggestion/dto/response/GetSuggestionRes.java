@@ -25,6 +25,6 @@ public class GetSuggestionRes {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         this.createdAt = suggestion.getCreatedAt().format(formatter);
         this.isSolved = suggestion.isSolved();
-        this.userId = suggestion.getUser().getUserId();
+        this.userId = suggestion.getUser() == null ? null : suggestion.getUser().getUserId();
     }
 }

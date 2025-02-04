@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.routes.entity;
 
 import devkor.com.teamcback.domain.common.BaseEntity;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class Edge extends BaseEntity {
@@ -11,9 +12,14 @@ public class Edge extends BaseEntity {
 
     private Long endNode;
 
-    public Edge(long distance, Long startNode, Long endNode) {
+    @Setter
+    private long weight;
+
+    public Edge(long distance, long weight, Long startNode, Long endNode) {
         this.distance = distance;
+        this.weight = weight;
         this.startNode = startNode;
         this.endNode = endNode;
     }
+
 }

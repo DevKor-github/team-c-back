@@ -68,10 +68,6 @@ public class RouteService {
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
         DijkstraRes route = dijkstra(graphRes, startNode, endNode);
 
-        // 경로를 하나만 반환한다면 경로가 없을 때 예외 처리
-        if (route.getPath().isEmpty()) {
-            throw new GlobalException(NOT_FOUND_ROUTE);
-        }
         routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING));
 
         // 베리어프리만 추가로 적용하는 경우(임시)
@@ -358,7 +354,6 @@ public class RouteService {
         List<List<Node>> path = cutRoute(route.getPath()); // 분할된 경로
 
         //시작, 끝이 건물인 경우 해당 노드 지우기
-        //시작, 끝이 건물인 경우 해당 노드 지우기
         if (isStartBuilding) {
             // 첫번째 path의 길이에 따라 삭제 다르게 하기
             if(path.get(0).size() > 1) {
@@ -367,7 +362,10 @@ public class RouteService {
                 path.remove(0);
             }
         }
-        if (isEndBuilding) path.get(path.size()-1).remove(path.get(path.size()-1).size()-1);
+
+        if (isEndBuilding && path.get(path.size()-1).size() != 1) {
+            path.get(path.size()-1).remove(path.get(path.size()-1).size()-1);
+        }
 
         List<PartialRouteRes> totalRoute = new ArrayList<>();
 

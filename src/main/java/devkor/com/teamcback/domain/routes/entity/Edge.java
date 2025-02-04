@@ -15,9 +15,9 @@ public class Edge extends BaseEntity {
     @Setter
     private long weight;
 
-    public Edge(long distance, Long startNode, Long endNode) {
+    public Edge(long distance, long weight, Long startNode, Long endNode) {
         this.distance = distance;
-        this.weight = distance;
+        this.weight = weight;
         this.startNode = startNode;
         this.endNode = endNode;
     }

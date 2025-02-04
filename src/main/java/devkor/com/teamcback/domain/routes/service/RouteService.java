@@ -246,11 +246,8 @@ public class RouteService {
                 graphEdge.put(node.getId(), new ArrayList<>());
             }
             for (int i = 0; i < nextNodeId.length; i++) {
-                Edge edge = new Edge(distance[i], node.getId(), nextNodeId[i]);
-
-                if (conditions.contains(Conditions.INNERROUTE) && node.getBuilding().getId() != OUTDOOR_ID) {
-                    edge.setWeight(Math.round(edge.getWeight() * INDOOR_ROUTE_WEIGHT));
-                }
+                long weight = (conditions.contains(Conditions.INNERROUTE) && node.getBuilding().getId() != OUTDOOR_ID) ? Math.round(distance[i] * INDOOR_ROUTE_WEIGHT) : distance[i];
+                Edge edge = new Edge(distance[i], weight, node.getId(), nextNodeId[i]);
                 graphEdge.get(node.getId()).add(edge);
             }
         }
@@ -324,9 +321,16 @@ public class RouteService {
 
         //path 생성
         List<Node> path = new ArrayList<>();
+        Node pathPrevNode = null;
+        Long finalDistance = 0L;
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
             Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
+            if (pathPrevNode != null) {
+                Edge edge = findEdge(edges, node.getId(), pathPrevNode.getId());
+                finalDistance += edge.getDistance();
+            }
             path.add(node);
+            pathPrevNode = node;
         }
         Collections.reverse(path);
 
@@ -335,22 +339,13 @@ public class RouteService {
             throw new GlobalException(NOT_FOUND_ROUTE);
         }
 
-        // path를 기반으로 distance 계산
-        Long finalDistance = 0L;
-        for (int i = 0; i < path.size() - 1; i++) {
-            Edge edge = findEdge(edges, path.get(i).getId(), path.get(i + 1).getId());
-            if (edge != null) {
-                finalDistance += edge.getDistance();
-            }
-        }
-
         return new DijkstraRes(finalDistance, path);
     }
     private Edge findEdge(Map<Long, List<Edge>> edges, Long from, Long to) {
         return edges.get(from).stream()
                 .filter(edge -> edge.getEndNode().equals(to))
                 .findFirst()
-                .orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
+                .orElse(null);
     }
 
     /**

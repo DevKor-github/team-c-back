@@ -423,7 +423,7 @@ public class RouteService {
                 partialRoute.add(thisNode);
 
                 // 계단/엘리베이터를 통한 연속적인 층 이동을 감지하여 중간 층을 생략
-                while (count < route.size() - 1 && !Objects.equals(thisNode.getFloor(), nextNode.getFloor())) {
+                while (count < route.size() - 1 && !Objects.equals(thisNode.getFloor(), nextNode.getFloor()) && thisNode.getBuilding().equals(nextNode.getBuilding())) {
                     thisNode = route.get(count);
                     nextNode = route.get(count + 1);
                     count++;
@@ -433,6 +433,7 @@ public class RouteService {
 
                 // 끝 층의 시작 노드를 새 경로로 추가
                 partialRoute.add(thisNode);
+                count--;
             }
             else {
                 partialRoute.add(thisNode);

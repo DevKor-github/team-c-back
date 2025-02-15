@@ -10,16 +10,24 @@ import devkor.com.teamcback.domain.routes.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.*;
+import devkor.com.teamcback.domain.routes.repository.BusStopRepository;
 import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
+import devkor.com.teamcback.domain.routes.repository.ShuttleTimeRepository;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.Month;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.domain.routes.entity.Conditions.BARRIERFREE;
 import static devkor.com.teamcback.global.response.ResultCode.*;
@@ -33,6 +41,8 @@ public class RouteService {
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
     private final ConnectedBuildingRepository connectedBuildingRepository;
+    private final ShuttleTimeRepository shuttleTimeRepository;
+    private final BusStopRepository busStopRepository;
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
     private static final Long INF = Long.MAX_VALUE;
@@ -66,7 +76,7 @@ public class RouteService {
 
         // 경로를 하나만 반환하는 경우
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
-        DijkstraRes route = dijkstra(graphRes, startNode, endNode);
+        DijkstraRes route = dijkstra(graphRes, startNode, endNode, conditions);
 
         routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING));
 
@@ -270,21 +280,26 @@ public class RouteService {
     /**
      * 다익스트라 경로 생성
      */
-    private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode) {
+    private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode, List<Conditions> conditions) {
         List<Node> nodes = graphRes.getGraphNode();
         Map<Long, List<Edge>> edges = graphRes.getGraphEdge();
         Map<Long, Long> distances = new HashMap<>();
+        Map<Long, Long> weights = new HashMap<>();
         Map<Long, Long> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
         Set<Long> visitedNodes = new HashSet<>();
+        Map<Long, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getId, node -> node));
+        List<BusStops> busStops = busStopRepository.findAll();
 
         // 모든 노드 초기화
         for (Node node : nodes) {
             if (node.equals(startNode)) {
                 distances.put(node.getId(), 0L);
+                weights.put(node.getId(), 0L);
                 priorityQueue.add(new NodeDistancePair(node.getId(), 0L));
             } else {
                 distances.put(node.getId(), INF);
+                weights.put(node.getId(), INF);
             }
             previousNodes.put(node.getId(), null);
         }
@@ -303,30 +318,39 @@ public class RouteService {
             for (Edge edge : edges.get(currentNode)) {
                 Long neighbor = edge.getEndNode();
                 Long currentDistance = distances.get(currentNode);
-                if (currentDistance == null) continue;
+                Long currentWeight = weights.get(currentNode);
+                if (currentWeight == null) continue;
 
-                Long newDist = currentDistance + edge.getWeight(); //weight 기반 탐색으로 수정
-                Long neighborDist = distances.get(neighbor);
-                if (neighborDist == null || newDist < neighborDist) {
-                    distances.put(neighbor, newDist);
+                Long newWeight = currentWeight + edge.getWeight(); //weight 기반 탐색으로 수정
+                Long newDistance = currentDistance + edge.getDistance();
+                if(conditions.contains(Conditions.SHUTTLE) && isBusStop(busStops, nodeMap.get(currentNode)) && nodeMap.get(neighbor).getType() == NodeType.SHUTTLE){
+                    System.out.println("Processing node"+currentNode);
+                    System.out.println("Time:"+LocalTime.now());
+                    Long busDistance = calculateBusTime(newDistance, nodeMap.get(currentNode), summerSession());
+                    System.out.println("BusDistance:"+busDistance);
+                    if (busDistance >= INF) continue;
+                    newDistance = newDistance + busDistance;
+                    newWeight = newWeight + busDistance;
+                    System.out.println("Time:"+LocalTime.now());
+                    System.out.println();
+                }
+
+                Long neighborWeight = weights.get(neighbor);
+                if (neighborWeight == null || newWeight < neighborWeight && newWeight < INF) {
+                    weights.put(neighbor, newWeight);
+                    distances.put(neighbor, newDistance);
                     previousNodes.put(neighbor, currentNode);
-                    priorityQueue.add(new NodeDistancePair(neighbor, newDist));
+                    priorityQueue.add(new NodeDistancePair(neighbor, newWeight));
                 }
             }
         }
 
         //path 생성
         List<Node> path = new ArrayList<>();
-        Node pathPrevNode = null;
-        Long finalDistance = 0L;
+        Long finalDistance = weights.get(endNode.getId());
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
             Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
-            if (pathPrevNode != null) {
-                Edge edge = findEdge(edges, node.getId(), pathPrevNode.getId());
-                finalDistance += edge.getDistance();
-            }
             path.add(node);
-            pathPrevNode = node;
         }
         Collections.reverse(path);
 
@@ -337,11 +361,46 @@ public class RouteService {
 
         return new DijkstraRes(finalDistance, path);
     }
-    private Edge findEdge(Map<Long, List<Edge>> edges, Long from, Long to) {
-        return edges.get(from).stream()
-                .filter(edge -> edge.getEndNode().equals(to))
-                .findFirst()
-                .orElse(null);
+    private boolean isBusStop(List<BusStops> busStops, Node node){
+        for(BusStops busStop : busStops){
+            if (busStop.getBusStop().getNode() == node) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 학기중이면 0, 여름방학이면 1, 겨울방학이면 2 리턴하는 메서드
+     */
+    private int summerSession(){
+        int now = LocalDate.now().getMonth().getValue();
+        return switch (now) {
+            case 3, 4, 5, 6, 9, 10, 11, 12 -> 0;
+            case 7, 8 -> 1;
+            default -> 2;
+        };
+
+    }
+    private Long calculateBusTime(Long distance, Node node, int SummerSession){
+        //if (SummerSession == 2) return INF;
+        //boolean isSummerSession = SummerSession != 0;
+        boolean isSummerSession = false;
+        //테스트용 시간설정 코드
+        LocalTime startTime = LocalTime.of(13, 52, 0);
+        //LocalTime startTime = LocalTime.now();
+        startTime = startTime.plusSeconds(distance);
+        System.out.println("calculateBusTime On");
+        System.out.println("StartTime = "+startTime);
+        Place busStop = placeRepository.findByNode(node);
+        List<ShuttleTime> busStopSchedule = shuttleTimeRepository.findAllByPlaceIdAndSummerSession(busStop, isSummerSession, Sort.by(Sort.Direction.ASC, "time"));
+        for (ShuttleTime shuttleTime : busStopSchedule) {
+            LocalTime thisTime = shuttleTime.getTime();
+            System.out.println("ThisTime = "+thisTime);
+            if(startTime.isBefore(thisTime)){
+                return Duration.between(startTime, thisTime).getSeconds();
+            }
+        }
+        //
+        return INF;
     }
 
     /**
@@ -352,7 +411,6 @@ public class RouteService {
 
         Long duration = route.getDistance();
         List<List<Node>> path = cutRoute(route.getPath()); // 분할된 경로
-
         //시작, 끝이 건물인 경우 해당 노드 지우기
         if (isStartBuilding) {
             // 첫번째 path의 길이에 따라 삭제 다르게 하기

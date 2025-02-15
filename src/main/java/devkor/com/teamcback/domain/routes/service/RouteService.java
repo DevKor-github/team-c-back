@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -324,15 +323,10 @@ public class RouteService {
                 Long newWeight = currentWeight + edge.getWeight(); //weight 기반 탐색으로 수정
                 Long newDistance = currentDistance + edge.getDistance();
                 if(conditions.contains(Conditions.SHUTTLE) && isBusStop(busStops, nodeMap.get(currentNode)) && nodeMap.get(neighbor).getType() == NodeType.SHUTTLE){
-                    System.out.println("Processing node"+currentNode);
-                    System.out.println("Time:"+LocalTime.now());
                     Long busDistance = calculateBusTime(newDistance, nodeMap.get(currentNode), summerSession());
-                    System.out.println("BusDistance:"+busDistance);
                     if (busDistance >= INF) continue;
                     newDistance = newDistance + busDistance;
                     newWeight = newWeight + busDistance;
-                    System.out.println("Time:"+LocalTime.now());
-                    System.out.println();
                 }
 
                 Long neighborWeight = weights.get(neighbor);
@@ -381,25 +375,23 @@ public class RouteService {
 
     }
     private Long calculateBusTime(Long distance, Node node, int SummerSession){
-        //if (SummerSession == 2) return INF;
-        //boolean isSummerSession = SummerSession != 0;
-        boolean isSummerSession = false;
+        if (SummerSession == 2) return INF;
+        boolean isSummerSession = SummerSession != 0;
+        //테스트용 summersession 코드
+        //boolean isSummerSession = false;
+
+        LocalTime startTime = LocalTime.now();
         //테스트용 시간설정 코드
-        LocalTime startTime = LocalTime.of(13, 52, 0);
-        //LocalTime startTime = LocalTime.now();
+        //LocalTime startTime = LocalTime.of(13, 52, 0);
         startTime = startTime.plusSeconds(distance);
-        System.out.println("calculateBusTime On");
-        System.out.println("StartTime = "+startTime);
         Place busStop = placeRepository.findByNode(node);
         List<ShuttleTime> busStopSchedule = shuttleTimeRepository.findAllByPlaceIdAndSummerSession(busStop, isSummerSession, Sort.by(Sort.Direction.ASC, "time"));
         for (ShuttleTime shuttleTime : busStopSchedule) {
             LocalTime thisTime = shuttleTime.getTime();
-            System.out.println("ThisTime = "+thisTime);
             if(startTime.isBefore(thisTime)){
                 return Duration.between(startTime, thisTime).getSeconds();
             }
         }
-        //
         return INF;
     }
 
@@ -461,16 +453,19 @@ public class RouteService {
         List<Node> partialRoute = new ArrayList<>();
         int count = 0;
         Node thisNode, nextNode;
+        List<BusStops> busStops = busStopRepository.findAll();
 
 
         while (count < route.size() - 1) {
             thisNode = route.get(count);
             nextNode = route.get(count + 1);
 
-            // 새로운 건물로 이동할 때 & 체크포인트일때 & 외부에서 새로운 건물로 들어갈 때(입구 분리) 경로분할
+            // 새로운 건물로 이동할 때 & 체크포인트일때 & 외부에서 새로운 건물로 들어갈 때(입구 분리) & 셔틀버스 경로로 출입할때 경로분할
             if ((!thisNode.getBuilding().equals(nextNode.getBuilding()) && thisNode.getBuilding().getId() != OUTDOOR_ID)
                     || (thisNode.getType() != nextNode.getType() && thisNode.getType() == NodeType.CHECKPOINT)
-                    || (thisNode.getBuilding().getId() == OUTDOOR_ID && nextNode.getType() == NodeType.ENTRANCE)) {
+                    || (thisNode.getBuilding().getId() == OUTDOOR_ID && nextNode.getType() == NodeType.ENTRANCE)
+                    || (isBusStop(busStops, thisNode) && nextNode.getType() == NodeType.SHUTTLE)
+                    || (thisNode.getType() != nextNode.getType() && thisNode.getType() == NodeType.SHUTTLE)) {
                 partialRoute.add(thisNode);
                 returnRoute.add(new ArrayList<>(partialRoute));
                 partialRoute.clear();
@@ -531,11 +526,22 @@ public class RouteService {
      * nextNode에 null이 들어오면 경로 안내가 끝난 상황이라고 판단
      */
     private String makeInfo(Node prevNode, Node nextNode){
+        List<BusStops> busStops = busStopRepository.findAll();
         if (nextNode == null) return "도착";
 
         if (prevNode.getType() == NodeType.CHECKPOINT){
             String checkpointName = findCheckpoint(prevNode).getName();
             return checkpointName + "(으)로 이동하세요.";
+        }
+
+        //shuttle버스 탑승하는 경우
+        if (isBusStop(busStops, prevNode) && nextNode.getType() == NodeType.SHUTTLE){
+            return placeRepository.findByNode(prevNode).getDetail() + "에서 셔틀버스에 탑승하세요.";
+        }
+
+        //셔틀버스 내리는 경우
+        if (prevNode.getType() != nextNode.getType() && prevNode.getType() == NodeType.SHUTTLE){
+            return placeRepository.findByNode(nextNode).getDetail() + "에서 셔틀버스에서 내리세요.";
         }
 
         Building prevNodeBuilding = prevNode.getBuilding();

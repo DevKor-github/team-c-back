@@ -356,8 +356,8 @@ public class SearchService {
 
     private List<Building> getBuildings(String word) {
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
-        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word.replace(" ", "")));
+        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word.replace(" ", ""))));
 
         // 중복을 제거하여 List에 저장
         return buildingNicknames.stream()
@@ -507,9 +507,9 @@ public class SearchService {
         List<PlaceNickname> placeNicknames;
         List<Place> resultPlaces = new ArrayList<>();
         if(building != null && !places.isEmpty()) { // 빌딩 제한 있는 경우
-            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
+            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word.replace(" ", "")), places, limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word.replace(" ", "")), places, limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
@@ -520,7 +520,7 @@ public class SearchService {
             // 빌딩 + 편의시설명의 경우를 GlobalSearchRes로 추가하기 (Ex. 하나스퀘어 카페)
             // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes) && 빌딩에 해당 시설이 있는지 확인
             for (PlaceType type : outerTagTypes) {
-                if((type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word)))) {
+                if((type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word.replace(" ", ""))))) {
                     List<Place> tempPlace = placeRepository.findAllByBuildingAndType(building, type);
                     if(!tempPlace.isEmpty()) {
                         resultPlaces.addAll(tempPlace);
@@ -531,9 +531,9 @@ public class SearchService {
             }
         }
         else if(building == null) { // 빌딩 제한 없는 전체 검색
-            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word.replace(" ", "")), limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word.replace(" ", "")), limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
@@ -543,7 +543,7 @@ public class SearchService {
 
             // 자체가 편의시설명인 경우 : 야외 태그
             for (PlaceType type : outerTagTypes) {
-                if(type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word))) {
+                if(type.getName().contains(word.replace(" ", "")) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word.replace(" ", "")))) {
                     resultPlaces.add(new Place(type, findBuilding(0L)));
                 }
             }

@@ -12,4 +12,5 @@ public interface BuildingNicknameRepository extends JpaRepository<BuildingNickna
     List<BuildingNickname> findAllByJasoDecomposeContaining(String jaso);
     List<BuildingNickname> findByChosungIsNullOrJasoDecomposeIsNull();
     List<BuildingNickname> findAllByBuilding(Building building);
+    List<BuildingNickname> findAllByNicknameContaining(String blank);
 }

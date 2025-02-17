@@ -28,7 +28,7 @@ public class AdminPlaceNicknameService {
     @Transactional
     public SavePlaceNicknameRes saveClassroomNickname(Long placeId, SavePlaceNicknameReq req) {
         Place place = findPlace(placeId);
-        String nickname = req.getNickname();
+        String nickname = req.getNickname().replace(" ", "");
         PlaceNickname placeNickname = new PlaceNickname(place, nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
 
         placeNicknameRepository.save(placeNickname);
@@ -62,14 +62,25 @@ public class AdminPlaceNicknameService {
      */
     @Transactional
     public UpdatePlaceNicknamesRes updatePlaceNicknames() {
-        List<PlaceNickname> placeNicknames = placeNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
+        // 닉네임 자소분리/초성분리 로직
+        List<PlaceNickname> nonDecomposedPNicknames = placeNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
 
-        for (PlaceNickname p : placeNicknames) {
+        for (PlaceNickname p : nonDecomposedPNicknames) {
             String nickname = p.getNickname();
             p.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
         }
-        placeNicknameRepository.saveAll(placeNicknames);
-        return new UpdatePlaceNicknamesRes(placeNicknames.size());
+        placeNicknameRepository.saveAll(nonDecomposedPNicknames);
+
+        // 닉네임 공백제거 로직
+        List<PlaceNickname> blankPNicknames = placeNicknameRepository.findAllByNicknameContaining(" ");
+
+        for (PlaceNickname p : blankPNicknames) {
+            String nickname = p.getNickname().replace(" ", "");
+            p.update(nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        }
+        placeNicknameRepository.saveAll(blankPNicknames);
+
+        return new UpdatePlaceNicknamesRes(nonDecomposedPNicknames.size() + blankPNicknames.size());
     }
 
     private Place findPlace(Long placeId) {

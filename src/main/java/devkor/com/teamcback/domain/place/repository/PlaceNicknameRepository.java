@@ -16,4 +16,5 @@ public interface PlaceNicknameRepository extends JpaRepository<PlaceNickname, Lo
     List<PlaceNickname> findByChosungContainingAndPlaceInOrderByNickname(String chosung, List<Place> list, Pageable pageable);
     List<PlaceNickname> findByJasoDecomposeContainingAndPlaceInOrderByNickname(String jaso, List<Place> list, Pageable pageable);
     List<PlaceNickname> findByChosungIsNullOrJasoDecomposeIsNull();
+    List<PlaceNickname> findAllByNicknameContaining(String blank);
 }

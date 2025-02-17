@@ -354,10 +354,11 @@ public class SearchService {
         searchLogRedis.opsForList().leftPush(key, searchLog);
     }
 
-    private List<Building> getBuildings(String word) {
+    private List<Building> getBuildings(String tempWord) {
+        String word = tempWord.replace(" ", "");
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word.replace(" ", "")));
-        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word.replace(" ", ""))));
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
+        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
 
         // 중복을 제거하여 List에 저장
         return buildingNicknames.stream()
@@ -493,7 +494,8 @@ public class SearchService {
         return index;
     }
 
-    private List<Place> getPlaces(String word, Building building) {
+    private List<Place> getPlaces(String tempWord, Building building) {
+        String word = tempWord.replace(" ", "");
         List<Place> places = new ArrayList<>();
         // Nickname Table에 building 정보가 없기 때문에, 빌딩 제한이 있는 경우 전체를 불러오고 걸러내기
         if(building != null) {
@@ -507,9 +509,9 @@ public class SearchService {
         List<PlaceNickname> placeNicknames;
         List<Place> resultPlaces = new ArrayList<>();
         if(building != null && !places.isEmpty()) { // 빌딩 제한 있는 경우
-            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word.replace(" ", "")), places, limit);
+            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word.replace(" ", "")), places, limit));
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
@@ -520,13 +522,12 @@ public class SearchService {
             // 빌딩 + 편의시설명의 경우를 GlobalSearchRes로 추가하기 (Ex. 하나스퀘어 카페)
             // word가 편의시설명과 부분일치하는지 확인하기(outerTagTypes) && 빌딩에 해당 시설이 있는지 확인
             for (PlaceType type : outerTagTypes) {
-                if((type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word.replace(" ", ""))))) {
+                if((type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word)))) {
                     List<Place> tempPlace = placeRepository.findAllByBuildingAndType(building, type);
                     if(!tempPlace.isEmpty()) {
                         resultPlaces.addAll(tempPlace);
                         resultPlaces.add(new Place(type, building));
                     }
-
                 }
             }
         }

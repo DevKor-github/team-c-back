@@ -532,9 +532,9 @@ public class SearchService {
             }
         }
         else if(building == null) { // 빌딩 제한 없는 전체 검색
-            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word.replace(" ", "")), limit);
+            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word.replace(" ", "")), limit));
+            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()

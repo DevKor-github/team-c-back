@@ -354,7 +354,8 @@ public class SearchService {
         searchLogRedis.opsForList().leftPush(key, searchLog);
     }
 
-    private List<Building> getBuildings(String word) {
+    private List<Building> getBuildings(String tempWord) {
+        String word = tempWord.replace(" ", "");
         // 건물 조회
         List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
         if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
@@ -493,7 +494,8 @@ public class SearchService {
         return index;
     }
 
-    private List<Place> getPlaces(String word, Building building) {
+    private List<Place> getPlaces(String tempWord, Building building) {
+        String word = tempWord.replace(" ", "");
         List<Place> places = new ArrayList<>();
         // Nickname Table에 building 정보가 없기 때문에, 빌딩 제한이 있는 경우 전체를 불러오고 걸러내기
         if(building != null) {
@@ -526,7 +528,6 @@ public class SearchService {
                         resultPlaces.addAll(tempPlace);
                         resultPlaces.add(new Place(type, building));
                     }
-
                 }
             }
         }

@@ -544,7 +544,7 @@ public class SearchService {
 
             // 자체가 편의시설명인 경우 : 야외 태그
             for (PlaceType type : outerTagTypes) {
-                if(type.getName().contains(word.replace(" ", "")) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word.replace(" ", "")))) {
+                if(type.getName().contains(word) || Arrays.stream(type.getNickname()).anyMatch(nickname -> nickname.contains(word))) {
                     resultPlaces.add(new Place(type, findBuilding(0L)));
                 }
             }

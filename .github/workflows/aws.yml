@@ -101,7 +101,10 @@ jobs:
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
     - name: Create task definition file
-      run: echo '${{ secrets.TASK_DEFINITION_JSON }}' > .aws/task-definition.json
+      run: |
+        mkdir -p .aws  # 디렉토리 없으면 생성
+        echo '${{ secrets.TASK_DEFINITION_JSON }}' > .aws/task-definition.json
+
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def

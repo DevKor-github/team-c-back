@@ -35,7 +35,7 @@ env:
   ECR_REPOSITORY: ${{ secrets.ECR_REPO }}         # set this to your Amazon ECR repository name
   ECS_SERVICE: ${{ secrets.ECS_SERVICE }}                 # set this to your Amazon ECS service name
   ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}                # set this to your Amazon ECS cluster name
-  ECS_TASK_DEFINITION: ${{ secrets.TASK_DEFINITION }}  # set this to the path to your Amazon ECS task definition
+  ECS_TASK_DEFINITION: .aws/task-definition.json  # set this to the path to your Amazon ECS task definition
                                                # file, e.g. .aws/task-definition.json
   CONTAINER_NAME: kodaero           # set this to the name of the container in the
                                                # containerDefinitions section of your task definition
@@ -99,6 +99,9 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ./Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Create task definition file
+      run: echo '${{ secrets.TASK_DEFINITION_JSON }}' > .aws/task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def

@@ -28,7 +28,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static devkor.com.teamcback.domain.routes.entity.Conditions.BARRIERFREE;
+import static devkor.com.teamcback.domain.routes.entity.Conditions.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -49,6 +49,7 @@ public class RouteService {
     private static final Double MAX_OUTDOOR_DISTANCE = 0.003;
     private static final Double MIN_OUTDOOR_DISTANCE = 0.0001;
     private static final Double INDOOR_ROUTE_WEIGHT = 0.3;
+    private static final Double BETWEEN_WEIGHT = 0.0005;
 
     /**
      * 메인 경로탐색 메서드
@@ -71,7 +72,7 @@ public class RouteService {
         List<GetRouteRes> routeRes = new ArrayList<>();
 
         // 연결된 건물 찾기
-        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode);
+        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
 
         // 경로를 하나만 반환하는 경우
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
@@ -85,6 +86,9 @@ public class RouteService {
 //        if(route.getPath().isEmpty() && route2.getPath.isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
 //        routeRes.add(buildRouteResponse(route2, isStartBuilding, isEndBuilding));
 
+        for (Building building : buildingList) {
+            System.out.println(building.getName());
+        }
         return routeRes;
     }
 
@@ -167,10 +171,17 @@ public class RouteService {
     /**
      * 탐색 알고리즘의 효율성을 위해 이동할 만한 건물들만 추리는 메서드
      */
-    private HashSet<Building> getBuildingsForRoute(Node startNode, Node endNode) {
+    private HashSet<Building> getBuildingsForRoute(Node startNode, Node endNode, List<Conditions> conditions) {
         HashSet<Building> buildingList = new HashSet<>();
         buildingList.add(findBuilding(OUTDOOR_ID)); // 외부 경로 추가
-
+        //여기는 condition보고 결정해야 함
+        if (conditions.contains(INNERROUTE)) {
+            Node startSearchNode = startNode;
+            Node endSearchNode = endNode;
+            if (!startNode.getBuilding().getId().equals(OUTDOOR_ID)) startSearchNode = startNode.getBuilding().getNode();
+            if (!endNode.getBuilding().getId().equals(OUTDOOR_ID)) endSearchNode = endNode.getBuilding().getNode();
+            addInBetweenBuildings(startSearchNode, endSearchNode, buildingList);
+        }
         addConnectedBuildings(startNode.getBuilding(), buildingList);
         addConnectedBuildings(endNode.getBuilding(), buildingList);
 
@@ -206,6 +217,30 @@ public class RouteService {
         }
     }
 
+    /**
+     * 실내우선 경로 전용
+     * 시작/도착지역 기준 사이 건물들 추가하는 메서드
+     */
+    private void addInBetweenBuildings(Node startNode, Node endNode, HashSet<Building> buildingList) {
+        Vector2D startPoint = new Vector2D(startNode.getLatitude(), startNode.getLongitude());
+        Vector2D endPoint = new Vector2D(endNode.getLatitude(), endNode.getLongitude());
+        List<Building> allBuildings = buildingRepository.findAll();
+        Vector2D startToEnd = endPoint.subtract(startPoint);
+        for (Building building : allBuildings) {
+            if (building.getNode() != null){
+                Vector2D buildingPoint = new Vector2D(building.getNode().getLatitude(), building.getNode().getLongitude());
+                Vector2D startToBuilding = buildingPoint.subtract(startPoint);
+
+                double t = startToBuilding.dot(startToEnd) / startToEnd.normSquared();
+
+                if (t > 0 && t < 1){
+                    double distance = Math.sqrt(startToBuilding.normSquared() - t * t * startToEnd.normSquared());
+                    if (distance < BETWEEN_WEIGHT) buildingList.add(building);
+                }
+            }
+        }
+    }
+
 
     /**
      * 그래프 요소 찾기(node, edge 묶음)
@@ -218,6 +253,12 @@ public class RouteService {
         // 조건에 따른 노드 검색
 
         for (Building building : buildingList){
+            if(conditions.contains(OPERATING)) {
+                if (!building.isOperating()) continue;
+            }
+            if (conditions.contains(STUDENTCARD)) {
+                if (building.isNeedStudentCard()) continue;
+            }
             graphNode.addAll(findNodeWithConditions(building, conditions));
         }
 
@@ -630,6 +671,72 @@ public class RouteService {
         @Override
         public int compareTo(NodeDistancePair other) {
             return Long.compare(this.distance, other.distance);
+        }
+    }
+
+    /**
+     * 벡터 계산용 클래스
+     */
+    public class Vector2D {
+        private double x;
+        private double y;
+
+        // 생성자
+        public Vector2D(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        // getter 메서드
+        public double getX() {
+            return x;
+        }
+
+        public double getY() {
+            return y;
+        }
+
+        // 벡터 덧셈
+        public Vector2D add(Vector2D other) {
+            return new Vector2D(this.x + other.x, this.y + other.y);
+        }
+
+        // 벡터 뺄셈
+        public Vector2D subtract(Vector2D other) {
+            return new Vector2D(this.x - other.x, this.y - other.y);
+        }
+
+        // 스칼라 곱
+        public Vector2D multiply(double scalar) {
+            return new Vector2D(this.x * scalar, this.y * scalar);
+        }
+
+        // 내적 (dot product)
+        public double dot(Vector2D other) {
+            return this.x * other.x + this.y * other.y;
+        }
+
+        // 벡터의 크기 (norm)
+        public double norm() {
+            return Math.sqrt(x * x + y * y);
+        }
+
+        // 벡터의 제곱 크기 (norm squared)
+        public double normSquared() {
+            return x * x + y * y;
+        }
+
+        // 투영 (이 벡터를 other에 투영)
+        public Vector2D projectOnto(Vector2D other) {
+            double scalar = this.dot(other) / other.normSquared();
+            return other.multiply(scalar);
+        }
+
+
+
+        @Override
+        public String toString() {
+            return String.format("Vector2D(%.2f, %.2f)", x, y);
         }
     }
 

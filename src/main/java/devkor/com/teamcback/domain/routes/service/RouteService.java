@@ -71,7 +71,7 @@ public class RouteService {
         List<GetRouteRes> routeRes = new ArrayList<>();
 
         // 연결된 건물 찾기
-        List<Building> buildingList = getBuildingsForRoute(startNode, endNode);
+        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode);
 
         // 경로를 하나만 반환하는 경우
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
@@ -167,18 +167,15 @@ public class RouteService {
     /**
      * 탐색 알고리즘의 효율성을 위해 이동할 만한 건물들만 추리는 메서드
      */
-    private List<Building> getBuildingsForRoute(Node startNode, Node endNode) {
-        List<Building> buildingList = new ArrayList<>();
+    private HashSet<Building> getBuildingsForRoute(Node startNode, Node endNode) {
+        HashSet<Building> buildingList = new HashSet<>();
         buildingList.add(findBuilding(OUTDOOR_ID)); // 외부 경로 추가
 
-        if(startNode.getBuilding() != endNode.getBuilding()){
-            addConnectedBuildings(startNode.getBuilding(), buildingList);
-            addConnectedBuildings(endNode.getBuilding(), buildingList);
-        }
-        else addConnectedBuildings(startNode.getBuilding(), buildingList);
+        addConnectedBuildings(startNode.getBuilding(), buildingList);
+        addConnectedBuildings(endNode.getBuilding(), buildingList);
 
-        if(!buildingList.contains(startNode.getBuilding())) buildingList.add(startNode.getBuilding());
-        if(!buildingList.contains(endNode.getBuilding())) buildingList.add(endNode.getBuilding());
+        buildingList.add(startNode.getBuilding());
+        buildingList.add(endNode.getBuilding());
 
         return buildingList;
     }
@@ -187,7 +184,7 @@ public class RouteService {
      * 출발/도착지에 연결된 건물들이 있는 경우 buildingList에 추가하는 메서드
      * 연쇄적으로 연결된 건물들도 반영하도록(ex: 엘포관-백기-중지-SK미래관...) 수정
      */
-    private void addConnectedBuildings(Building startBuilding, List<Building> buildingList) {
+    private void addConnectedBuildings(Building startBuilding, HashSet<Building> buildingList) {
         Queue<Building> queue = new LinkedList<>();
         Set<Long> visited = new HashSet<>();
 
@@ -214,7 +211,7 @@ public class RouteService {
      * 그래프 요소 찾기(node, edge 묶음)
      * 노드 테이블의 String 인접 노드와 거리를 그래프로 변환
      */
-    private GetGraphRes getGraph(List<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
+    private GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 

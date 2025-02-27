@@ -44,4 +44,10 @@ public class BuildingNickname extends BaseEntity {
         this.chosung = chosung;
         this.jasoDecompose = jasoDecompose;
     }
+
+    public void update(String nickname, String chosung, String jasoDecompose) {
+        this.nickname = nickname;
+        this.chosung = chosung;
+        this.jasoDecompose = jasoDecompose;
+    }
 }

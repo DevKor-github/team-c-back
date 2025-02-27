@@ -27,11 +27,10 @@ public class AdminBuildingNicknameService {
     @Transactional
     public SaveBuildingNicknameRes saveBuildingNickname(Long buildingId, SaveBuildingNicknameReq req) {
         Building building = findBuilding(buildingId);
-        String nickname = req.getNickname();
+        String nickname = req.getNickname().replace(" ", "");
         BuildingNickname buildingNickname = new BuildingNickname(building, nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
 
         buildingNicknameRepository.save(buildingNickname);
-
         return new SaveBuildingNicknameRes();
     }
 
@@ -59,15 +58,24 @@ public class AdminBuildingNicknameService {
     // 건물 별명 테이블 업데이트
     @Transactional
     public UpdateBuildingNicknamesRes updateBuildingNicknames() {
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
+        // 닉네임 자소분리/초성분리 로직
+        List<BuildingNickname> nonDecomposedBNicknames = buildingNicknameRepository.findByChosungIsNullOrJasoDecomposeIsNull();
 
-        for (BuildingNickname b : buildingNicknames) {
+        for (BuildingNickname b : nonDecomposedBNicknames) {
             String nickname = b.getNickname();
             b.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
         }
-        buildingNicknameRepository.saveAll(buildingNicknames);
+        buildingNicknameRepository.saveAll(nonDecomposedBNicknames);
 
-        return new UpdateBuildingNicknamesRes(buildingNicknames.size());
+        // 닉네임 공백제거 로직
+        List<BuildingNickname> blankBNicknames = buildingNicknameRepository.findAllByNicknameContaining(" ");
+        for (BuildingNickname b : blankBNicknames) {
+            String nickname = b.getNickname().replace(" ", "");
+            b.update(nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        }
+        buildingNicknameRepository.saveAll(blankBNicknames);
+
+        return new UpdateBuildingNicknamesRes(nonDecomposedBNicknames.size() + blankBNicknames.size());
     }
 
     private Building findBuilding(Long buildingId) {

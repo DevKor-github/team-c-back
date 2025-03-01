@@ -76,9 +76,9 @@ public class RouteService {
 
         // 경로를 하나만 반환하는 경우
         GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
-        DijkstraRes route = dijkstra(graphRes, startNode, endNode, conditions);
+        DijkstraRes route = dijkstra(graphRes, startNode, endNode);
 
-        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING));
+        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING, conditions));
 
         // 베리어프리만 추가로 적용하는 경우(임시)
 //        GetGraphRes graphRes2 = getGraph(buildingList, startNode, endNode, List.of(BARRIERFREE));
@@ -174,7 +174,6 @@ public class RouteService {
     private HashSet<Building> getBuildingsForRoute(Node startNode, Node endNode, List<Conditions> conditions) {
         HashSet<Building> buildingList = new HashSet<>();
         buildingList.add(findBuilding(OUTDOOR_ID)); // 외부 경로 추가
-        //여기는 condition보고 결정해야 함
         if (conditions.contains(INNERROUTE)) {
             Node startSearchNode = startNode;
             Node endSearchNode = endNode;
@@ -321,7 +320,7 @@ public class RouteService {
     /**
      * 다익스트라 경로 생성
      */
-    private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode, List<Conditions> conditions) {
+    private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode) {
         List<Node> nodes = graphRes.getGraphNode();
         Map<Long, List<Edge>> edges = graphRes.getGraphEdge();
         Map<Long, Long> distances = new HashMap<>();
@@ -329,8 +328,6 @@ public class RouteService {
         Map<Long, Long> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
         Set<Long> visitedNodes = new HashSet<>();
-        Map<Long, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getId, node -> node));
-        List<BusStops> busStops = busStopRepository.findAll();
 
         // 모든 노드 초기화
         for (Node node : nodes) {
@@ -364,12 +361,6 @@ public class RouteService {
 
                 Long newWeight = currentWeight + edge.getWeight(); //weight 기반 탐색으로 수정
                 Long newDistance = currentDistance + edge.getDistance();
-                if(conditions.contains(Conditions.SHUTTLE) && isBusStop(busStops, nodeMap.get(currentNode)) && nodeMap.get(neighbor).getType() == NodeType.SHUTTLE){
-                    Long busDistance = calculateBusTime(newDistance, nodeMap.get(currentNode), summerSession());
-                    if (busDistance >= INF) continue;
-                    newDistance = newDistance + busDistance;
-                    newWeight = newWeight + busDistance;
-                }
 
                 Long neighborWeight = weights.get(neighbor);
                 if (neighborWeight == null || newWeight < neighborWeight && newWeight < INF) {
@@ -416,33 +407,90 @@ public class RouteService {
         };
 
     }
-    private Long calculateBusTime(Long distance, Node node, int SummerSession){
-        if (SummerSession == 2) return INF;
-        boolean isSummerSession = SummerSession != 0;
+    private LocalTime calculateBusTime(Long distance, Node node, LocalTime nowTime){
+        boolean isSummerSession = summerSession() != 0;
         //테스트용 summersession 코드
         //boolean isSummerSession = false;
 
-        LocalTime startTime = LocalTime.now();
-        //테스트용 시간설정 코드
-        //LocalTime startTime = LocalTime.of(13, 52, 0);
-        startTime = startTime.plusSeconds(distance);
+        LocalTime startTime = nowTime.plusSeconds(distance);
         Place busStop = placeRepository.findByNode(node);
         List<ShuttleTime> busStopSchedule = shuttleTimeRepository.findAllByPlaceIdAndSummerSession(busStop, isSummerSession, Sort.by(Sort.Direction.ASC, "time"));
         for (ShuttleTime shuttleTime : busStopSchedule) {
             LocalTime thisTime = shuttleTime.getTime();
             if(startTime.isBefore(thisTime)){
-                return Duration.between(startTime, thisTime).getSeconds();
+                return thisTime;
             }
         }
-        return INF;
+        return null;
+    }
+    private boolean isBusTime(){
+        int semester = summerSession();
+        boolean isSemester;
+        if (semester == 2) return false;
+        else isSemester = (semester == 0);
+        LocalTime now = LocalTime.now();
+        List<ShuttleTime> busStopSchedule = shuttleTimeRepository.findAllBySummerSession(isSemester, Sort.by(Sort.Direction.ASC, "time"));
+        LocalTime firstTime = busStopSchedule.get(0).getTime();
+        LocalTime lastTime = busStopSchedule.get(busStopSchedule.size() - 1).getTime();
+        return (now.isAfter(firstTime.minusMinutes(20)) && now.isBefore(lastTime.minusMinutes(20)));
+    }
+    /**
+     * 셔틀버스용 생성된 경로 수정
+     */
+    private List<LocalTime> modifyRoute(DijkstraRes route){
+        boolean isShuttleRoute = false;
+        List<Node> path = route.getPath();
+        //버스를 2번 이상 탑승 가능하므로 list형태로 저장
+        List<Integer> shuttleIdx = new ArrayList<>();
+        List<LocalTime> busTimes = new ArrayList<>();
+        for (int i = 0; i < path.size() - 1; i++) {
+            if (path.get(i).getType() != NodeType.SHUTTLE && path.get(i + 1).getType() == NodeType.SHUTTLE) {
+                isShuttleRoute = true;
+                shuttleIdx.add(i);
+            }
+        }
+        //셔틀을 이용한 경로가 반환되지 않았을 경우 NOT_FOUND_ROUTE
+        if (!isShuttleRoute) throw new GlobalException(NOT_FOUND_ROUTE);
+        if (isBusTime()){
+            LocalTime currentTime = LocalTime.now();
+            for (Integer idx : shuttleIdx) {
+                Long distToShuttle = countDistance(path, idx);
+                LocalTime busTime = calculateBusTime(distToShuttle, path.get(idx), currentTime);
+                busTimes.add(busTime);
+                route.setDistance(route.getDistance() + Duration.between(currentTime, busTime).getSeconds());
+            }
+            return busTimes;
+        }
+        else{
+            route.setDistance(route.getDistance() + 300);
+            return null;
+        }
+    }
+
+    private Long countDistance(List<Node> route, int shuttleIdx){
+        long distance = 0L;
+        for (int i = 0; i < shuttleIdx; i++) {
+            String[] adjNodes = route.get(i).getAdjacentNode().split(",");
+            String[] adjDists = route.get(i).getDistance().split(",");
+            for (int j = 0; j < adjNodes.length; j++) {
+                if (Long.parseLong(adjNodes[j]) == route.get(i+1).getId()) {
+                    distance += Long.parseLong(adjDists[j]);
+                    break;
+                }
+            }
+        }
+        return distance;
     }
 
     /**
      * 경로를 분할하고 응답 형식에 맞게 변환
      */
-    private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding) {
+    private GetRouteRes buildRouteResponse(DijkstraRes route, boolean isStartBuilding, boolean isEndBuilding, List<Conditions> conditions) {
 //        if (route.getPath().isEmpty()) return new GetRouteRes(1);//경로 미탐색 막기 위해 임의로 추가
 
+        List<LocalTime> busTimeStamps = null;
+        int busIdx = 0;
+        if (conditions.contains(SHUTTLE)) busTimeStamps = modifyRoute(route);
         Long duration = route.getDistance();
         List<List<Node>> path = cutRoute(route.getPath()); // 분할된 경로
         //시작, 끝이 건물인 경우 해당 노드 지우기
@@ -474,9 +522,15 @@ public class RouteService {
 
             // 부분 경로의 마지막 노드인 경우 설명 추가
             if (i + 1 == path.size()) {
-                partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), null));
+                partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), null, null));
             } else {
-                partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), path.get(i + 1).get(0)));
+                if (busTimeStamps == null) partialRouteRes.setInfo(makeInfo(thisPath.get(thisPath.size() - 1), path.get(i + 1).get(0), null));
+                else{
+                    String info = makeInfo(thisPath.get(thisPath.size() - 1), path.get(i + 1).get(0), busTimeStamps.get(busIdx));
+                    if (info.contains("탑승하세요") && busIdx < busTimeStamps.size() - 1) busIdx++;
+                    partialRouteRes.setInfo(info);
+                }
+
             }
 
             totalRoute.add(partialRouteRes);
@@ -565,7 +619,7 @@ public class RouteService {
      * 나눠진 기준으로 두 노드를 받아 비교하여 간단한 설명 생성
      * nextNode에 null이 들어오면 경로 안내가 끝난 상황이라고 판단
      */
-    private String makeInfo(Node prevNode, Node nextNode){
+    private String makeInfo(Node prevNode, Node nextNode, LocalTime timeStamp){
         List<BusStops> busStops = busStopRepository.findAll();
         if (nextNode == null) return "도착";
 
@@ -576,7 +630,12 @@ public class RouteService {
 
         //shuttle버스 탑승하는 경우
         if (isBusStop(busStops, prevNode) && nextNode.getType() == NodeType.SHUTTLE){
-            return placeRepository.findByNode(prevNode).getDetail() + "에서 셔틀버스에 탑승하세요.";
+            if(timeStamp == null){
+                return placeRepository.findByNode(prevNode).getDetail() + "에서 셔틀버스에 탑승하세요.";
+            }
+            else{
+                return placeRepository.findByNode(prevNode).getDetail() + "에서 셔틀버스에 탑승하세요. (" + timeStamp.getHour() + "시 " + timeStamp.getMinute() + "분 버스)";
+            }
         }
 
         //셔틀버스 내리는 경우
@@ -687,15 +746,6 @@ public class RouteService {
             this.y = y;
         }
 
-        // getter 메서드
-        public double getX() {
-            return x;
-        }
-
-        public double getY() {
-            return y;
-        }
-
         // 벡터 덧셈
         public Vector2D add(Vector2D other) {
             return new Vector2D(this.x + other.x, this.y + other.y);
@@ -706,33 +756,15 @@ public class RouteService {
             return new Vector2D(this.x - other.x, this.y - other.y);
         }
 
-        // 스칼라 곱
-        public Vector2D multiply(double scalar) {
-            return new Vector2D(this.x * scalar, this.y * scalar);
-        }
-
         // 내적 (dot product)
         public double dot(Vector2D other) {
             return this.x * other.x + this.y * other.y;
-        }
-
-        // 벡터의 크기 (norm)
-        public double norm() {
-            return Math.sqrt(x * x + y * y);
         }
 
         // 벡터의 제곱 크기 (norm squared)
         public double normSquared() {
             return x * x + y * y;
         }
-
-        // 투영 (이 벡터를 other에 투영)
-        public Vector2D projectOnto(Vector2D other) {
-            double scalar = this.dot(other) / other.normSquared();
-            return other.multiply(scalar);
-        }
-
-
 
         @Override
         public String toString() {

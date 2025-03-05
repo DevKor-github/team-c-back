@@ -48,6 +48,8 @@ public class OperatingScheduler {
 //    @Scheduled(cron = "30 35 * * * *") // 테스트용
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
+        setState();
+
         log.info("운영 여부 업데이트");
         LocalTime nowTime = LocalTime.now();
 
@@ -56,6 +58,8 @@ public class OperatingScheduler {
 
     @Scheduled(cron = "0 0,30 0-8,19-23 * * *") // 30분마다
     public void updateOperating() {
+        setState();
+
         log.info("운영 여부 업데이트");
         LocalTime nowTime = LocalTime.now();
 

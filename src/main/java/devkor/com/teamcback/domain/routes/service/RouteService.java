@@ -4,16 +4,17 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.building.repository.ConnectedBuildingRepository;
 import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.dto.response.DijkstraRes;
 import devkor.com.teamcback.domain.routes.dto.response.GetGraphRes;
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.*;
-import devkor.com.teamcback.domain.routes.repository.BusStopRepository;
 import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.routes.repository.ShuttleTimeRepository;
+import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.domain.routes.entity.Conditions.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
@@ -41,15 +41,16 @@ public class RouteService {
     private final CheckpointRepository checkpointRepository;
     private final ConnectedBuildingRepository connectedBuildingRepository;
     private final ShuttleTimeRepository shuttleTimeRepository;
-    private final BusStopRepository busStopRepository;
+    private final HangeulUtils hangeulUtils;
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
     private static final Long INF = Long.MAX_VALUE;
     private static final Double INIT_OUTDOOR_DISTANCE = Double.MAX_VALUE;
     private static final Double MAX_OUTDOOR_DISTANCE = 0.003;
     private static final Double MIN_OUTDOOR_DISTANCE = 0.0001;
-    private static final Double INDOOR_ROUTE_WEIGHT = 0.3;
+    private static final Double INDOOR_ROUTE_WEIGHT = 0.5;
     private static final Double BETWEEN_WEIGHT = 0.0005;
+    private static final LocalTime TEST_TIME = LocalTime.of(14, 20, 0);
 
     /**
      * 메인 경로탐색 메서드
@@ -86,9 +87,12 @@ public class RouteService {
 //        if(route.getPath().isEmpty() && route2.getPath.isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
 //        routeRes.add(buildRouteResponse(route2, isStartBuilding, isEndBuilding));
 
+        //건물 제대로 탐색되었는지 테스트코드
+        /*
         for (Building building : buildingList) {
             System.out.println(building.getName());
         }
+        */
         return routeRes;
     }
 
@@ -174,6 +178,9 @@ public class RouteService {
     private HashSet<Building> getBuildingsForRoute(Node startNode, Node endNode, List<Conditions> conditions) {
         HashSet<Building> buildingList = new HashSet<>();
         buildingList.add(findBuilding(OUTDOOR_ID)); // 외부 경로 추가
+        buildingList.add(startNode.getBuilding());
+        buildingList.add(endNode.getBuilding());
+
         if (conditions.contains(INNERROUTE)) {
             Node startSearchNode = startNode;
             Node endSearchNode = endNode;
@@ -181,12 +188,10 @@ public class RouteService {
             if (!endNode.getBuilding().getId().equals(OUTDOOR_ID)) endSearchNode = endNode.getBuilding().getNode();
             addInBetweenBuildings(startSearchNode, endSearchNode, buildingList);
         }
-        addConnectedBuildings(startNode.getBuilding(), buildingList);
-        addConnectedBuildings(endNode.getBuilding(), buildingList);
-
-        buildingList.add(startNode.getBuilding());
-        buildingList.add(endNode.getBuilding());
-
+        HashSet<Building> buildingListCpy = new HashSet<>(buildingList);
+        for (Building building : buildingListCpy) {
+            addConnectedBuildings(building, buildingList);
+        }
         return buildingList;
     }
 
@@ -374,7 +379,7 @@ public class RouteService {
 
         //path 생성
         List<Node> path = new ArrayList<>();
-        Long finalDistance = weights.get(endNode.getId());
+        Long finalDistance = distances.get(endNode.getId());
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
             Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
             path.add(node);
@@ -388,9 +393,9 @@ public class RouteService {
 
         return new DijkstraRes(finalDistance, path);
     }
-    private boolean isBusStop(List<BusStops> busStops, Node node){
-        for(BusStops busStop : busStops){
-            if (busStop.getBusStop().getNode() == node) return true;
+    private boolean isBusStop(List<Place> busStops, Node node){
+        for(Place busStop : busStops){
+            if (busStop.getNode() == node) return true;
         }
         return false;
     }
@@ -429,6 +434,8 @@ public class RouteService {
         if (semester == 2) return false;
         else isSemester = (semester == 0);
         LocalTime now = LocalTime.now();
+        //테스트용 now 설정
+        //LocalTime now = TEST_TIME;
         List<ShuttleTime> busStopSchedule = shuttleTimeRepository.findAllBySummerSession(isSemester, Sort.by(Sort.Direction.ASC, "time"));
         LocalTime firstTime = busStopSchedule.get(0).getTime();
         LocalTime lastTime = busStopSchedule.get(busStopSchedule.size() - 1).getTime();
@@ -451,12 +458,16 @@ public class RouteService {
         }
         //셔틀을 이용한 경로가 반환되지 않았을 경우 NOT_FOUND_ROUTE
         if (!isShuttleRoute) throw new GlobalException(NOT_FOUND_ROUTE);
+        Long shuttleWaitTime = 0L;
         if (isBusTime()){
             LocalTime currentTime = LocalTime.now();
+            //테스트용 currentTime 설정
+            //LocalTime currentTime = TEST_TIME;
             for (Integer idx : shuttleIdx) {
-                Long distToShuttle = countDistance(path, idx);
+                Long distToShuttle = countDistance(path, idx) + shuttleWaitTime;
                 LocalTime busTime = calculateBusTime(distToShuttle, path.get(idx), currentTime);
                 busTimes.add(busTime);
+                shuttleWaitTime += Duration.between(currentTime, busTime).getSeconds();
                 route.setDistance(route.getDistance() + Duration.between(currentTime, busTime).getSeconds());
             }
             return busTimes;
@@ -549,7 +560,7 @@ public class RouteService {
         List<Node> partialRoute = new ArrayList<>();
         int count = 0;
         Node thisNode, nextNode;
-        List<BusStops> busStops = busStopRepository.findAll();
+        List<Place> busStops = placeRepository.findAllByType(PlaceType.SHUTTLE_BUS);
 
 
         while (count < route.size() - 1) {
@@ -620,12 +631,12 @@ public class RouteService {
      * nextNode에 null이 들어오면 경로 안내가 끝난 상황이라고 판단
      */
     private String makeInfo(Node prevNode, Node nextNode, LocalTime timeStamp){
-        List<BusStops> busStops = busStopRepository.findAll();
+        List<Place> busStops = placeRepository.findAllByType(PlaceType.SHUTTLE_BUS);
         if (nextNode == null) return "도착";
 
         if (prevNode.getType() == NodeType.CHECKPOINT){
             String checkpointName = findCheckpoint(prevNode).getName();
-            return checkpointName + "(으)로 이동하세요.";
+            return makeString(checkpointName);
         }
 
         //shuttle버스 탑승하는 경우
@@ -650,7 +661,7 @@ public class RouteService {
         // 미리 출입구에서 한 번 추가적으로 끊기 때문.
         if (Objects.equals(prevNodeBuilding, nextNodeBuilding) && prevNodeBuilding.getId() == OUTDOOR_ID){
             Building enteringBuilding = findLinkedBuilding(nextNode);
-            return enteringBuilding.getName() + "(으)로 이동하세요.";
+            return makeString(enteringBuilding.getName());
         }
 
         int nextNodeFloor = nextNode.getFloor().intValue();
@@ -670,6 +681,18 @@ public class RouteService {
 
         // 건물 사이를 바로 이동하는 경우
         return "출입구를 통해 " + nextNodeBuilding.getName() + " " + floor + "층으로 이동하세요.";
+    }
+    /**
+     * makeinfo에서 활용하는 로/으로 구분 메서드
+     */
+    private String makeString(String name){
+        String decomposedName = hangeulUtils.decomposeHangulString(name);
+        if (decomposedName.endsWith("ㄹ") || !hangeulUtils.isConsonantOnly(decomposedName.substring(decomposedName.length() - 1))){
+            return name + "로 이동하세요.";
+        }
+        else{
+            return name + "으로 이동하세요.";
+        }
     }
 
     /**

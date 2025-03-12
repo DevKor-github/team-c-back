@@ -13,10 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,11 +38,13 @@ public class SuggestionController {
     })
     @PostMapping
     public CommonResponse<CreateSuggestionRes> createSuggestion(
-        @Parameter(description = "사용자정보")
+            @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,
-        @Parameter(description = "건의 제목, 분류, 내용", required = true)
-        @RequestBody CreateSuggestionReq req) {
+            @Parameter(description = "건의 제목, 분류, 내용, 이메일", required = true)
+            @RequestPart(value = "req") CreateSuggestionReq req,
+            @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images
+            ) {
         Long userId = userDetail == null ? null : userDetail.getUser().getUserId();
-        return CommonResponse.success(suggestionService.createSuggestion(userId, req));
+        return CommonResponse.success(suggestionService.createSuggestion(userId, req, images));
     }
 }

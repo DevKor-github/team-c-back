@@ -20,4 +20,8 @@ public class SuggestionImage {
     @JoinColumn(name = "suggestionId", nullable = false)
     private Suggestion suggestion;
 
+    public SuggestionImage(String imageUrl, Suggestion suggestion) {
+        this.imageUrl = imageUrl;
+        this.suggestion = suggestion;
+    }
 }

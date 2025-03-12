@@ -39,7 +39,7 @@ public class SuggestionController {
     @PostMapping
     public CommonResponse<CreateSuggestionRes> createSuggestion(
             @Parameter(description = "사용자정보")
-        @AuthenticationPrincipal UserDetailsImpl userDetail,
+            @AuthenticationPrincipal UserDetailsImpl userDetail,
             @Parameter(description = "건의 제목, 분류, 내용, 이메일", required = true)
             @RequestPart(value = "req") CreateSuggestionReq req,
             @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images

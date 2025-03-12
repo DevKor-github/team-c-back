@@ -9,6 +9,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Table(name = "tb_suggestion")
@@ -31,16 +34,24 @@ public class Suggestion extends BaseEntity {
     @Column(nullable = false)
     private boolean isSolved = false;
 
+    @Column
+    private String email;
+
     @Setter
     @ManyToOne
     @JoinColumn(name = "userId")
     private User user;
+
+    @Setter
+    @OneToMany(mappedBy = "suggestion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SuggestionImage> images = new ArrayList<>();
 
     public Suggestion(CreateSuggestionReq req, User user) {
         this.title = req.getTitle();
         this.suggestionType = req.getType();
         this.content = req.getContent();
         this.user = user;
+        this.email = req.getEmail();
     }
 
     public void updateIsSolved(boolean solved) {

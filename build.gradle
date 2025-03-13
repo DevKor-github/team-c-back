@@ -26,6 +26,9 @@ ext {
 }
 
 dependencies {
+    // 비속어 라이브러리
+    implementation 'io.github.vaneproject:badwordfiltering:1.0.0'
+
     // Redisson
     implementation 'org.redisson:redisson-spring-boot-starter:3.27.0'
 

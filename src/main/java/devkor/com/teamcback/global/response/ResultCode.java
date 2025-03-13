@@ -31,6 +31,7 @@ public enum ResultCode {
     USERNAME_IN_USE(HttpStatus.IM_USED, 2002, "현재 설정된 별명과 다른 별명을 입력해주세요."),
     INCORRECT_LEVEL(HttpStatus.BAD_REQUEST, 2003, "존재하지 않는 레벨입니다."),
     EMPTY_USERNAME(HttpStatus.BAD_REQUEST, 2004, "별명을 입력해주세요."),
+    BAD_WORD_IN_USERNAME(HttpStatus.BAD_REQUEST, 2005, "별명에는 비속어가 포함될 수 없습니다."),
 
     // 건물 3000번대
     NOT_FOUND_BUILDING(HttpStatus.NOT_FOUND, 3000, "건물을 찾을 수 없습니다."),

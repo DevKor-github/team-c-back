@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.user.service;
 
+import com.vane.badwordfiltering.BadWordFiltering;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.entity.Color;
@@ -203,6 +204,12 @@ public class UserService {
         // username이 입력되지 않은 경우
         if(username.isEmpty()) {
             throw new GlobalException(EMPTY_USERNAME);
+        }
+
+        // 비속어 확인
+        BadWordFiltering badWordFiltering = new BadWordFiltering();
+        if (badWordFiltering.blankCheck(username)) {
+            throw new GlobalException(BAD_WORD_IN_USERNAME);
         }
     }
 

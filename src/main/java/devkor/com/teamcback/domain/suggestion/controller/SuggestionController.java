@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,7 +37,7 @@ public class SuggestionController {
         @ApiResponse(responseCode = "400", description = "입력이 잘못되었습니다.",
             content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResponse<CreateSuggestionRes> createSuggestion(
             @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,

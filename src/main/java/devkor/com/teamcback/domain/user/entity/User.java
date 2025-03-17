@@ -38,6 +38,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Long score = 0L;
 
+    @Column(nullable = false)
+    private boolean isUpgraded = false;
+
     @Setter
     @Column(unique = true)
     private String code;
@@ -48,13 +51,20 @@ public class User extends BaseEntity {
         this.role = role;
         this.provider = provider;
         this.score = 0L;
+        this.isUpgraded = false;
     }
 
     public void updateUsername(String username) {
         this.username = username;
     }
-    public void updateScore(Long score) {
+
+    public void updateScore(Long score, boolean isUpgraded) {
         this.score = score;
+        this.isUpgraded = isUpgraded;
+    }
+
+    public void updateUpgraded(boolean isUpgraded) {
+        this.isUpgraded = isUpgraded;
     }
 
 }

@@ -59,7 +59,6 @@ public class UpdateScoreAspect {
             // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
             if (arg instanceof CreateBookmarkReq req) {
                 if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
-                    log.info("중복 Log: 점수가 증가하지 않습니다.");
                     needUpdate = false;
                 }
             }
@@ -88,10 +87,7 @@ public class UpdateScoreAspect {
 
         // 변했으면 true
         boolean isChanged = beforeLv != afterLv;
-        if(isChanged) log.info("레벨 변경: {} -> {}", beforeLv.name(), afterLv.name());
-
         user.updateScore(newScore, isChanged);
-        log.info("점수 증가: {} {}", user.getUserId(), newScore);
     }
 
     private Level getLevel(Long score) {

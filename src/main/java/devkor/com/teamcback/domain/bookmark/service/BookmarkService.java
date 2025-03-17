@@ -72,12 +72,6 @@ public class BookmarkService {
                 }
             }
 
-            Bookmark bookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(req.getLocationId(), req.getLocationType(), userCategoryList);
-            if(bookmark == null) {
-                bookmark = bookmarkRepository.save(new Bookmark(req));
-            }
-
-
             for (Category category : userCategoryList) {
                 boolean isSelected = req.getCategoryIdList().contains(category.getId());
                 Bookmark existedBookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_Category(
@@ -91,6 +85,11 @@ public class BookmarkService {
                     deleteCategoryBookmark(categoryBookmark);
                 } else if (existedBookmark == null && isSelected) { // 북마크 x -> 선택 o
                     // 해당 카테고리의 북마크 생성
+                    Bookmark bookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(req.getLocationId(), req.getLocationType(), userCategoryList);
+                    if(bookmark == null) {
+                        bookmark = bookmarkRepository.save(new Bookmark(req));
+                    }
+
                     CategoryBookmark categoryBookmark = new CategoryBookmark();
                     categoryBookmark.setCategoryAndBookmark(category, bookmark);
                     categoryBookmarkRepository.save(categoryBookmark);

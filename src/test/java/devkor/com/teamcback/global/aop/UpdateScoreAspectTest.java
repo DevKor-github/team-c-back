@@ -43,7 +43,6 @@ public class UpdateScoreAspectTest {
     private BookmarkService bookmarkService;
 
     @Test
-    @Disabled
     public void suggestionScoreTest() {
         Long userId = 36L; // 임시로 제 계정 사용했습니다.
         User user = findUser(userId);
@@ -77,14 +76,13 @@ public class UpdateScoreAspectTest {
     }
 
     @Test
-    @Disabled
     public void bookmarkScoreTest() {
         Long userId = 36L; // 임시로 제 계정 사용했습니다.
         List<Long> list = new ArrayList<>();
 
         list.add(96L); // 카테고리 ID : 새 로그 검사용
         LocationType type = LocationType.PLACE;
-        long placeId = 58L;
+        long placeId = 60L;
         String memo = "memo";
 
         User user = findUser(userId);
@@ -116,17 +114,17 @@ public class UpdateScoreAspectTest {
             log.info("레벨이 오르지 않았습니다.");
         }
 
-//        // 3. 다른 카테고리에 동일 장소 북마크 추가 : 점수 증가X
-//        log.info("북마크 재생성 전 Score : " + afterScore);
-//        list.clear();
-//        list.add(99L);
-//        req = new CreateBookmarkReq(list, type, placeId, memo);
-//        bookmarkService.createBookmark(userId, req);
-//
-//        user = findUser(userId);
-//        long againScore = user.getScore();
-//        log.info("북마크 재생성 후 Score : " + againScore);
-//        Assertions.assertThat(afterScore).isEqualTo(againScore);
+        // 3. 다른 카테고리에 동일 장소 북마크 추가 : 점수 증가X
+        log.info("북마크 재생성 전 Score : " + afterScore);
+        list.clear();
+        list.add(99L);
+        req = new CreateBookmarkReq(list, type, placeId, memo);
+        bookmarkService.createBookmark(userId, req);
+
+        user = findUser(userId);
+        long againScore = user.getScore();
+        log.info("북마크 재생성 후 Score : " + againScore);
+        Assertions.assertThat(afterScore).isEqualTo(againScore);
     }
 
     private User findUser(Long userId) {

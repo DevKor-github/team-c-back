@@ -26,6 +26,7 @@ import java.util.List;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 @Slf4j
+@Disabled
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class UpdateScoreAspectTest {

@@ -36,6 +36,7 @@ public class UpdateScoreAspectTest {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private SuggestionService suggestionService;
 
@@ -82,7 +83,7 @@ public class UpdateScoreAspectTest {
 
         list.add(96L); // 카테고리 ID : 새 로그 검사용
         LocationType type = LocationType.PLACE;
-        long placeId = 60L;
+        long placeId = 61L;
         String memo = "memo";
 
         User user = findUser(userId);

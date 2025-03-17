@@ -9,10 +9,9 @@ import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
@@ -27,19 +26,14 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 @RequiredArgsConstructor
 public class UpdateScoreAspect {
 
-    private boolean needUpdate = true;
-    private User user = null;
-    private int addScore;
-
     private final UserRepository userRepository;
     private final UserBookmarkLogRepository userBookmarkLogRepository;
 
-    @Before("@annotation(updateScore)")
-    public void checkUpdatable(JoinPoint joinPoint, UpdateScore updateScore) {
-        log.info("AOP 확인 절차 수행");
-
-        // score 저장
-        addScore = updateScore.addScore();
+    @Around("@annotation(updateScore)")
+    public Object checkUpdatable(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
+        boolean needUpdate = true;
+        int addScore = updateScore.addScore();
+        User user = null;
 
         // User 정보 찾기 (매개변수 검사로 찾기)
         Object[] args = joinPoint.getArgs();
@@ -57,35 +51,36 @@ public class UpdateScoreAspect {
 
         // 유저 정보가 없으면 AOP 실행하지 않음
         if (user == null) {
-            log.warn("user 또는 userId 부재");
+            log.warn("User 정보를 찾을 수 없습니다.");
             needUpdate = false;
-            return;
         }
 
-        // 유저 정보 로깅
-        log.info("User : {}", user.getUserId());
-
         for (Object arg : args) {
-            // 북마크 추가 시 점수 증가 여부 확인
+            // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
             if (arg instanceof CreateBookmarkReq req) {
                 if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
                     log.info("중복 Log: 점수가 증가하지 않습니다.");
                     needUpdate = false;
-                    return;
                 }
             }
         }
+
+        // 비지니스 로직 수행
+        Object result;
+        try {
+            result = joinPoint.proceed();
+        } catch (Exception e) {
+            log.info("비지니스 로직에서 예외가 발생했습니다.");
+            throw e; // 기존 흐름 유지
+        }
+
+        // 점수 증가
+        if (needUpdate) increaseScore(user, addScore);
+
+        return result;
     }
 
-    @AfterReturning(pointcut = "@annotation(devkor.com.teamcback.global.annotation.UpdateScore)")
-    public void updateScore () {
-        log.info("AOP 호출");
-
-        // 점수 증가 필요한 경우에만 로직 실행
-        if (needUpdate) increaseScore(user);
-    }
-
-    public void increaseScore(User user) {
+    public void increaseScore(User user, int addScore) {
         long newScore = user.getScore() + addScore;
         // 이전 레벨 계산
         Level beforeLv = getLevel(user.getScore());

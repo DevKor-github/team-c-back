@@ -66,7 +66,7 @@ public class UserService {
     /**
      * 마이페이지 정보 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
         Level level = getLevel(user.getScore());
@@ -76,7 +76,14 @@ public class UserService {
         if(nextLevel != null) {
             percent = (int) (100 * (user.getScore() - level.getMinScore()) / (nextLevel.getMinScore() - level.getMinScore()));
         }
-        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), remainScoreToNextLevel, percent);
+
+        //조회 후 isUpgraded = false로 업데이트
+        boolean isUpgraded = user.isUpgraded();
+        if(isUpgraded) {
+            user.updateUpgraded(false);
+        }
+
+        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), remainScoreToNextLevel, percent, isUpgraded);
     }
 
     /**

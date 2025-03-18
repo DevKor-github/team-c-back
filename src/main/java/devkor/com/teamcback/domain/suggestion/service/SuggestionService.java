@@ -13,6 +13,7 @@ import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
@@ -40,6 +41,7 @@ public class SuggestionService {
      * 건의 생성
      */
     @Transactional
+    @UpdateScore(addScore = 3)
     public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
         User user = null;
         if(userId != null) user = findUser(userId);
@@ -56,11 +58,6 @@ public class SuggestionService {
         suggestion.setImages(suggestionImages);
 
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
-
-        //건의 생성 시 score 증가
-        if(user != null) {
-            user.updateScore(user.getScore() + 3);
-        }
 
         return new CreateSuggestionRes(savedSuggestion);
     }

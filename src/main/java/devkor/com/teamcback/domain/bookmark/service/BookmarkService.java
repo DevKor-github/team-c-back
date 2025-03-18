@@ -1,7 +1,5 @@
 package devkor.com.teamcback.domain.bookmark.service;
 
-import static devkor.com.teamcback.global.response.ResultCode.*;
-
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyBookmarkReq;
 import devkor.com.teamcback.domain.bookmark.dto.response.CreateBookmarkRes;
@@ -20,12 +18,16 @@ import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
 @Service
@@ -43,6 +45,7 @@ public class BookmarkService {
      * 즐겨찾기 업데이트
      */
     @Transactional
+    @UpdateScore(addScore = 1)
     public CreateBookmarkRes createBookmark(Long userId, CreateBookmarkReq req) {
         User user = findUser(userId);
 
@@ -69,12 +72,6 @@ public class BookmarkService {
                 }
             }
 
-            Bookmark bookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(req.getLocationId(), req.getLocationType(), userCategoryList);
-            if(bookmark == null) {
-                bookmark = bookmarkRepository.save(new Bookmark(req));
-            }
-
-
             for (Category category : userCategoryList) {
                 boolean isSelected = req.getCategoryIdList().contains(category.getId());
                 Bookmark existedBookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_Category(
@@ -88,6 +85,11 @@ public class BookmarkService {
                     deleteCategoryBookmark(categoryBookmark);
                 } else if (existedBookmark == null && isSelected) { // 북마크 x -> 선택 o
                     // 해당 카테고리의 북마크 생성
+                    Bookmark bookmark = bookmarkRepository.findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(req.getLocationId(), req.getLocationType(), userCategoryList);
+                    if(bookmark == null) {
+                        bookmark = bookmarkRepository.save(new Bookmark(req));
+                    }
+
                     CategoryBookmark categoryBookmark = new CategoryBookmark();
                     categoryBookmark.setCategoryAndBookmark(category, bookmark);
                     categoryBookmarkRepository.save(categoryBookmark);
@@ -95,8 +97,11 @@ public class BookmarkService {
 
             }
 
-            // 첫 저장이면 Score 증가
-            addScoreIfNewBookmarkLog(user, req);
+            // 첫 저장이면 log 추가 & Score 증가
+            if(!userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+                userBookmarkLogRepository.save(new UserBookmarkLog(req.getLocationId(), req.getLocationType(), user));
+                log.info("북마크 로그 추가");
+            }
         }
 
         return new CreateBookmarkRes();
@@ -163,14 +168,6 @@ public class BookmarkService {
             throw new GlobalException(NOT_FOUND_BUILDING);
         } else if (LocationType.PLACE.equals(locationType) && !placeRepository.existsById(locationId)) {
             throw new GlobalException(NOT_FOUND_PLACE);
-        }
-    }
-
-    private void addScoreIfNewBookmarkLog(User user, CreateBookmarkReq req) {
-        // log에 없으면 Score 1점 증가
-        if(!userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
-            user.updateScore(user.getScore() + 1);
-            userBookmarkLogRepository.save(new UserBookmarkLog(req.getLocationId(), req.getLocationType(), user));
         }
     }
 

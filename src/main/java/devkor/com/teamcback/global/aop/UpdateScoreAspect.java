@@ -30,15 +30,15 @@ public class UpdateScoreAspect {
     private final UserBookmarkLogRepository userBookmarkLogRepository;
 
     @Around("@annotation(updateScore)")
-    public Object checkUpdatable(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
+    public Object updateScore(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
         boolean needUpdate = true;
         int addScore = updateScore.addScore();
         User user = null;
 
-        // User 정보 찾기 (매개변수 검사로 찾기)
-        Object[] args = joinPoint.getArgs();
-        String[] paramNames = ((MethodSignature) joinPoint.getSignature()).getParameterNames();
+        Object[] args = joinPoint.getArgs(); // 변수값
+        String[] paramNames = ((MethodSignature) joinPoint.getSignature()).getParameterNames(); // 변수명
 
+        // User 정보 찾기
         for (int i = 0; i < args.length; i++) {
             if (paramNames[i].equals("user") && args[i] instanceof User) {
                 user = (User) args[i];
@@ -53,13 +53,13 @@ public class UpdateScoreAspect {
         if (user == null) {
             log.warn("User 정보를 찾을 수 없습니다.");
             needUpdate = false;
-        }
-
-        for (Object arg : args) {
-            // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
-            if (arg instanceof CreateBookmarkReq req) {
-                if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
-                    needUpdate = false;
+        } else { // 기타 조건 확인 로직
+            for (Object arg : args) {
+                // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
+                if (arg instanceof CreateBookmarkReq req) {
+                    if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+                        needUpdate = false;
+                    }
                 }
             }
         }
@@ -81,7 +81,7 @@ public class UpdateScoreAspect {
 
     public void increaseScore(User user, int addScore) {
         long newScore = user.getScore() + addScore;
-        // 이전 레벨 계산
+        // 전후 레벨 계산
         Level beforeLv = getLevel(user.getScore());
         Level afterLv = getLevel(newScore);
 

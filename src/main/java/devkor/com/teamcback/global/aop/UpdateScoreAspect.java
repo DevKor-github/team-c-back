@@ -31,7 +31,6 @@ public class UpdateScoreAspect {
 
     @Around("@annotation(updateScore)")
     public Object updateScore(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
-        boolean needUpdate = true;
         int addScore = updateScore.addScore();
 
         Object[] args = joinPoint.getArgs(); // 변수값
@@ -40,8 +39,10 @@ public class UpdateScoreAspect {
         // User 정보 찾기
         User user = getUser(args, paramNames);
 
-        // 점수 갱신 여부 확인
-        needUpdate = checkUpdatable(user, needUpdate, args);
+        // 점수 갱신 불가 확인
+        if(!checkUpdatable(user, args)) {
+            return joinPoint.proceed();
+        }
 
         // 비지니스 로직 수행
         Object result;
@@ -52,8 +53,8 @@ public class UpdateScoreAspect {
             throw e; // 기존 흐름 유지
         }
 
-        // 필요 시 점수 증가
-        if (needUpdate) increaseScore(user, addScore);
+        // 점수 증가
+        increaseScore(user, addScore);
 
         return result;
     }
@@ -72,22 +73,23 @@ public class UpdateScoreAspect {
         return user;
     }
 
-    private boolean checkUpdatable(User user, boolean needUpdate, Object[] args) {
+    private boolean checkUpdatable(User user, Object[] args) {
         // 유저 정보가 없으면 AOP 실행하지 않음
         if (user == null) {
             log.warn("User 정보를 찾을 수 없습니다.");
-            needUpdate = false;
-        } else { // 기타 조건 확인 로직
-            for (Object arg : args) {
-                // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
-                if (arg instanceof CreateBookmarkReq req) {
-                    if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
-                        needUpdate = false;
-                    }
+            return false;
+        }
+
+        // 기타 조건 확인
+        for (Object arg : args) {
+            // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
+            if (arg instanceof CreateBookmarkReq req) {
+                if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+                    return false;
                 }
             }
         }
-        return needUpdate;
+        return true;
     }
 
     public void increaseScore(User user, int addScore) {

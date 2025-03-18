@@ -33,12 +33,33 @@ public class UpdateScoreAspect {
     public Object updateScore(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
         boolean needUpdate = true;
         int addScore = updateScore.addScore();
-        User user = null;
 
         Object[] args = joinPoint.getArgs(); // 변수값
         String[] paramNames = ((MethodSignature) joinPoint.getSignature()).getParameterNames(); // 변수명
 
         // User 정보 찾기
+        User user = getUser(args, paramNames);
+
+        // 점수 갱신 여부 확인
+        needUpdate = checkUpdatable(user, needUpdate, args);
+
+        // 비지니스 로직 수행
+        Object result;
+        try {
+            result = joinPoint.proceed();
+        } catch (Exception e) {
+            log.info("비지니스 로직에서 예외가 발생했습니다.");
+            throw e; // 기존 흐름 유지
+        }
+
+        // 필요 시 점수 증가
+        if (needUpdate) increaseScore(user, addScore);
+
+        return result;
+    }
+
+    private User getUser(Object[] args, String[] paramNames) {
+        User user = null;
         for (int i = 0; i < args.length; i++) {
             if (paramNames[i].equals("user") && args[i] instanceof User) {
                 user = (User) args[i];
@@ -48,7 +69,10 @@ public class UpdateScoreAspect {
                 break;
             }
         }
+        return user;
+    }
 
+    private boolean checkUpdatable(User user, boolean needUpdate, Object[] args) {
         // 유저 정보가 없으면 AOP 실행하지 않음
         if (user == null) {
             log.warn("User 정보를 찾을 수 없습니다.");
@@ -63,20 +87,7 @@ public class UpdateScoreAspect {
                 }
             }
         }
-
-        // 비지니스 로직 수행
-        Object result;
-        try {
-            result = joinPoint.proceed();
-        } catch (Exception e) {
-            log.info("비지니스 로직에서 예외가 발생했습니다.");
-            throw e; // 기존 흐름 유지
-        }
-
-        // 점수 증가
-        if (needUpdate) increaseScore(user, addScore);
-
-        return result;
+        return needUpdate;
     }
 
     public void increaseScore(User user, int addScore) {

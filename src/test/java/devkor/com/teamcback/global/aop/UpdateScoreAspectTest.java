@@ -26,7 +26,7 @@ import java.util.List;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 @Slf4j
-@Disabled
+//@Disabled
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 public class UpdateScoreAspectTest {
@@ -83,7 +83,7 @@ public class UpdateScoreAspectTest {
 
         list.add(96L); // 카테고리 ID : 새 로그 검사용
         LocationType type = LocationType.PLACE;
-        long placeId = 61L;
+        long placeId = 66L;
         String memo = "memo";
 
         User user = findUser(userId);
@@ -125,7 +125,15 @@ public class UpdateScoreAspectTest {
         user = findUser(userId);
         long againScore = user.getScore();
         log.info("북마크 재생성 후 Score : " + againScore);
-        Assertions.assertThat(afterScore).isEqualTo(againScore);
+        Assertions.assertThat(againScore).isEqualTo(afterScore);
+
+        // 4. 동일 북마크 다시 넣었을 때 점수 증가 X
+        bookmarkService.createBookmark(userId, req);
+
+        user = findUser(userId);
+        long dupScore = user.getScore();
+        log.info("중복 북마크 생성 후 Score (저장X) : " + dupScore);
+        Assertions.assertThat(dupScore).isEqualTo(againScore);
     }
 
     private User findUser(Long userId) {

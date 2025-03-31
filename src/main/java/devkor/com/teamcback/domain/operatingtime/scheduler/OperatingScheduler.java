@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.operatingtime.scheduler;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
+import devkor.com.teamcback.global.redis.RedisLockUtil;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class OperatingScheduler {
     private final OperatingService operatingService;
     private final HolidayService holidayService;
+    private final RedisLockUtil redisLockUtil;
 
     private static final int SUMMER_VACATION_START_MONTH = 6;
     private static final int SUMMER_VACATION_START_DAY = 22;
@@ -39,9 +41,12 @@ public class OperatingScheduler {
     @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
         setState();
-
         log.info("운영 시간 업데이트");
-        operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
+
+        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+            operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
+            return null;
+        });
     }
 
 
@@ -49,25 +54,29 @@ public class OperatingScheduler {
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
         log.info("운영 여부 업데이트");
-        LocalTime nowTime = LocalTime.now();
-
-        operatingService.updateIsOperating(nowTime, dayOfWeek, isHoliday, isVacation, isEvenWeek);
+        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+            operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
+            return null;
+        });
     }
 
     @Scheduled(cron = "0 0,30 0-8,19-23 * * *") // 30분마다
     public void updateOperating() {
         log.info("운영 여부 업데이트");
-        LocalTime nowTime = LocalTime.now();
-
-        operatingService.updateIsOperating(nowTime, dayOfWeek, isHoliday, isVacation, isEvenWeek);
+        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+            operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
+            return null;
+        });
     }
 
     // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
     @EventListener(ApplicationReadyEvent.class)
     public void updatePlaceOperatingTime() {
         log.info("장소 운영 시간 업데이트");
-
-        operatingService.updatePlaceOperatingTime();
+        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+            operatingService.updatePlaceOperatingTime();
+            return null;
+        });
     }
 
     private void setState() {

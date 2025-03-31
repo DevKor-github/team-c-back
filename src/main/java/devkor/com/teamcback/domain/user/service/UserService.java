@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.user.service;
 
+import com.vane.badwordfiltering.BadWordFiltering;
 import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.bookmark.entity.Color;
@@ -65,7 +66,7 @@ public class UserService {
     /**
      * 마이페이지 정보 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
         Level level = getLevel(user.getScore());
@@ -75,7 +76,14 @@ public class UserService {
         if(nextLevel != null) {
             percent = (int) (100 * (user.getScore() - level.getMinScore()) / (nextLevel.getMinScore() - level.getMinScore()));
         }
-        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), remainScoreToNextLevel, percent);
+
+        //조회 후 isUpgraded = false로 업데이트
+        boolean isUpgraded = user.isUpgraded();
+        if(isUpgraded) {
+            user.updateUpgraded(false);
+        }
+
+        return new GetUserInfoRes(user, categoryRepository.countAllByUser(user), level.getLevelNumber(), remainScoreToNextLevel, percent, isUpgraded);
     }
 
     /**
@@ -203,6 +211,12 @@ public class UserService {
         // username이 입력되지 않은 경우
         if(username.isEmpty()) {
             throw new GlobalException(EMPTY_USERNAME);
+        }
+
+        // 비속어 확인
+        BadWordFiltering badWordFiltering = new BadWordFiltering();
+        if (badWordFiltering.blankCheck(username)) {
+            throw new GlobalException(BAD_WORD_IN_USERNAME);
         }
     }
 

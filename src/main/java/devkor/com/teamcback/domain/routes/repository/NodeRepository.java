@@ -6,6 +6,7 @@ import devkor.com.teamcback.domain.routes.entity.NodeType;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface NodeRepository extends JpaRepository<Node, Long> {
     List<Node> findByBuildingAndRoutingAndTypeNot(Building building, boolean routing, NodeType type);
@@ -16,4 +17,6 @@ public interface NodeRepository extends JpaRepository<Node, Long> {
     List<Node> findByBuildingAndRoutingAndTypeIn(Building building, boolean routing, List<NodeType> type);
     @Query("SELECT e FROM Node e ORDER BY FUNCTION('RAND') LIMIT 20")
     List<Node> findRandomNodes();
+    @Query("SELECT e FROM Node e WHERE e.building = :building ORDER BY FUNCTION('RAND') LIMIT 2")
+    List<Node> findRandomNodesByBuilding(@Param("building") Building building);
 }

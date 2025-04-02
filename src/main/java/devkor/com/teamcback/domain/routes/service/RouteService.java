@@ -250,7 +250,7 @@ public class RouteService {
      * 그래프 요소 찾기(node, edge 묶음)
      * 노드 테이블의 String 인접 노드와 거리를 그래프로 변환
      */
-    private GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
+    public GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
@@ -793,6 +793,49 @@ public class RouteService {
         public String toString() {
             return String.format("Vector2D(%.2f, %.2f)", x, y);
         }
+    }
+
+    /**
+     * 테스트용 map이용 경로탐색 메서드
+     */
+    @Transactional(readOnly = true)
+    public List<GetRouteRes> findRouteUsingGraph(LocationType startType, Long startId, Double startLat, Double startLong,
+                                       LocationType endType, Long endId, Double endLat, Double endLong, List<Conditions> conditions, HashMap<Building, GetGraphRes> graphResMap){
+
+        if (conditions == null){
+            conditions = new ArrayList<>();
+        }
+        // 출발, 도착 노드 검색
+        Node startNode = getNodeByType(startType, startId, startLat, startLong);
+        Node endNode = getNodeByType(endType, endId, endLat, endLong);
+
+        // 에러 조건 확인
+        checkLocationError(startNode, endNode, startType, endType, startId, endId);
+
+        // 길찾기 응답 리스트 생성
+        List<GetRouteRes> routeRes = new ArrayList<>();
+
+        // 연결된 건물 찾기
+        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
+
+        // 경로를 하나만 반환하는 경우
+        GetGraphRes graphRes = mergeGraph(buildingList, graphResMap);
+        DijkstraRes route = dijkstra(graphRes, startNode, endNode);
+
+        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING, conditions));
+
+        return routeRes;
+    }
+
+    private GetGraphRes mergeGraph(HashSet<Building> buildingList, HashMap<Building, GetGraphRes> graphResMap){
+        GetGraphRes returnGraphRes = new GetGraphRes(graphResMap.get(buildingRepository.findById(0L)).getGraphNode(), graphResMap.get(buildingRepository.findById(0L)).getGraphEdge());
+        for (Building building : buildingList) {
+            if (building.getId() != 0L) {
+                returnGraphRes.getGraphNode().addAll(graphResMap.get(building).getGraphNode());
+                returnGraphRes.getGraphEdge().putAll(graphResMap.get(building).getGraphEdge());
+            }
+        }
+        return returnGraphRes;
     }
 
 }

@@ -19,7 +19,6 @@ import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.entity.DefaultPlace;
 import devkor.com.teamcback.domain.search.entity.SearchLog;
-import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
@@ -37,6 +36,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.domain.routes.entity.NodeType.*;
+import static devkor.com.teamcback.domain.search.util.HangeulUtils.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -53,7 +53,6 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
-    private final HangeulUtils hangeulUtils;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -80,7 +79,7 @@ public class SearchService {
     private final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER,
         PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK,
-        PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM);
+        PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.HEALTH_OFFICE);
 
     /**
      * 통합 검색
@@ -357,8 +356,8 @@ public class SearchService {
     private List<Building> getBuildings(String tempWord) {
         String word = tempWord.replace(" ", "");
         // 건물 조회
-        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(hangeulUtils.decomposeHangulString(word));
-        if(hangeulUtils.isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(hangeulUtils.extractChosung(word)));
+        List<BuildingNickname> buildingNicknames = buildingNicknameRepository.findAllByJasoDecomposeContaining(decomposeHangulString(word));
+        if(isConsonantOnly(word)) buildingNicknames.addAll(buildingNicknameRepository.findAllByChosungContaining(extractChosung(word)));
 
         // 중복을 제거하여 List에 저장
         return buildingNicknames.stream()
@@ -509,9 +508,9 @@ public class SearchService {
         List<PlaceNickname> placeNicknames;
         List<Place> resultPlaces = new ArrayList<>();
         if(building != null && !places.isEmpty()) { // 빌딩 제한 있는 경우
-            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(hangeulUtils.decomposeHangulString(word), places, limit);
+            placeNicknames = placeNicknameRepository.findByJasoDecomposeContainingAndPlaceInOrderByNickname(decomposeHangulString(word), places, limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(hangeulUtils.extractChosung(word), places, limit));
+            if(isConsonantOnly(word)) placeNicknames.addAll(placeNicknameRepository.findByChosungContainingAndPlaceInOrderByNickname(extractChosung(word), places, limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()
@@ -532,9 +531,9 @@ public class SearchService {
             }
         }
         else if(building == null) { // 빌딩 제한 없는 전체 검색
-            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(hangeulUtils.decomposeHangulString(word), limit);
+            placeNicknames = placeNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(decomposeHangulString(word), limit);
             // 초성으로만 구성된 경우
-            if(hangeulUtils.isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(hangeulUtils.extractChosung(word), limit));
+            if(isConsonantOnly(word)) placeNicknames.addAll( placeNicknameRepository.findAllByChosungContainingOrderByNickname(extractChosung(word), limit));
 
             // 중복을 제거하여 List에 저장
             resultPlaces.addAll(placeNicknames.stream()

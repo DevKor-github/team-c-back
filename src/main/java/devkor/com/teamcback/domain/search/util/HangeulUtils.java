@@ -1,8 +1,5 @@
 package devkor.com.teamcback.domain.search.util;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class HangeulUtils {
     private static final char HANGUL_BASE = 0xAC00;
     private static final char[] CHOSUNG = {
@@ -16,12 +13,12 @@ public class HangeulUtils {
     };
     private static final String CHOSUNG_ONLY_REGEX = "^[ㄱ-ㅎ]+$";
 
-    public boolean isConsonantOnly(String str) {
+    public static boolean isConsonantOnly(String str) {
         return str.matches(CHOSUNG_ONLY_REGEX);
     }
 
     // 초성 분리 메소드
-    public String extractChosung(String s) {
+    public static String extractChosung(String s) {
         StringBuilder result = new StringBuilder();
         for (char c : s.toCharArray()) {
             if (c >= HANGUL_BASE && c <= (HANGUL_BASE + 11171)) {
@@ -37,7 +34,7 @@ public class HangeulUtils {
     }
 
     // 자소 분리 메소드
-    public String decomposeHangulString(String s) {
+    public static String decomposeHangulString(String s) {
         StringBuilder result = new StringBuilder();
         for (char c : s.toCharArray()) {
             String[] parts = decomposeHangul(c);
@@ -48,7 +45,7 @@ public class HangeulUtils {
         return result.toString();
     }
 
-    public String[] decomposeHangul(char c) {
+    public static String[] decomposeHangul(char c) {
         if (c < HANGUL_BASE || c > HANGUL_BASE + 11171) {
             return new String[]{Character.toString(c)};
         }
@@ -65,7 +62,7 @@ public class HangeulUtils {
         return new String[]{Character.toString(CHOSUNG[chosungIdx]), jungsung, processedJong};
     }
 
-    private String decomposeJungsung(char jungsung) {
+    private static String decomposeJungsung(char jungsung) {
         return switch (jungsung) {
             case 'ㅘ' -> "ㅗㅏ";
             case 'ㅙ' -> "ㅗㅐ";
@@ -78,7 +75,7 @@ public class HangeulUtils {
     }
 
     // 종성 처리
-    private String processJongsung(String jong) {
+    private static String processJongsung(String jong) {
         return switch (jong) {
             case "ㄵ" -> "ㄴㅈ";
             case "ㄶ" -> "ㄴㅎ";

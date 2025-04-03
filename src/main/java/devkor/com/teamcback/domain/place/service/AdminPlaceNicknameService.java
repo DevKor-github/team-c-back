@@ -6,7 +6,6 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
-import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static devkor.com.teamcback.domain.search.util.HangeulUtils.decomposeHangulString;
+import static devkor.com.teamcback.domain.search.util.HangeulUtils.extractChosung;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE_NICKNAME;
 
@@ -22,14 +23,13 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE_NI
 public class AdminPlaceNicknameService {
     private final PlaceNicknameRepository placeNicknameRepository;
     private final PlaceRepository placeRepository;
-    private final HangeulUtils hangeulUtils;
 
     // 강의실 별명 저장
     @Transactional
     public SavePlaceNicknameRes saveClassroomNickname(Long placeId, SavePlaceNicknameReq req) {
         Place place = findPlace(placeId);
         String nickname = req.getNickname().replace(" ", "");
-        PlaceNickname placeNickname = new PlaceNickname(place, nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        PlaceNickname placeNickname = new PlaceNickname(place, nickname, extractChosung(nickname), decomposeHangulString(nickname));
 
         placeNicknameRepository.save(placeNickname);
 
@@ -67,7 +67,7 @@ public class AdminPlaceNicknameService {
 
         for (PlaceNickname p : nonDecomposedPNicknames) {
             String nickname = p.getNickname();
-            p.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+            p.update(extractChosung(nickname), decomposeHangulString(nickname));
         }
         placeNicknameRepository.saveAll(nonDecomposedPNicknames);
 
@@ -76,7 +76,7 @@ public class AdminPlaceNicknameService {
 
         for (PlaceNickname p : blankPNicknames) {
             String nickname = p.getNickname().replace(" ", "");
-            p.update(nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+            p.update(nickname, extractChosung(nickname), decomposeHangulString(nickname));
         }
         placeNicknameRepository.saveAll(blankPNicknames);
 

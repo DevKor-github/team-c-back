@@ -35,7 +35,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             new AntPathRequestMatcher("/api/koyeon/**"),
             new AntPathRequestMatcher("/api/routes/**"),
             new AntPathRequestMatcher("/api/search/**", HttpMethod.GET.name()),
-            new AntPathRequestMatcher("/api/suggestions"),
             new AntPathRequestMatcher("/api/users/login/**"));
 
     private final JwtUtil jwtUtil;

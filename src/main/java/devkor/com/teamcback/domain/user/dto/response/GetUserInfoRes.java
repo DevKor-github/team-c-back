@@ -25,11 +25,13 @@ public class GetUserInfoRes {
     private Long remainScoreToNextLevel;
     @Schema(description = "percent", example = "75")
     private int percent;
+    @Schema(description = "isUpgraded", example = "true")
+    private boolean isUpgraded;
     @Schema(description = "categoryCount", example = "2")
     private Long categoryCount;
     //TODO: 이웃 수, 게시물 수 정보 추가하기
 
-    public GetUserInfoRes(User user, Long categoryCount, int level, Long remainScoreToNextLevel, int percent) {
+    public GetUserInfoRes(User user, Long categoryCount, int level, Long remainScoreToNextLevel, int percent, boolean isUpgraded) {
         this.username = user.getUsername();
         this.email = user.getEmail();
         this.provider = user.getProvider();
@@ -38,6 +40,7 @@ public class GetUserInfoRes {
         this.score = user.getScore();
         this.remainScoreToNextLevel = remainScoreToNextLevel;
         this.percent = percent;
+        this.isUpgraded = isUpgraded;
         this.categoryCount = categoryCount;
     }
 }

@@ -1,34 +1,35 @@
 package devkor.com.teamcback.domain.building.service;
 
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
-import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_NICKNAME;
-
 import devkor.com.teamcback.domain.building.dto.request.SaveBuildingNicknameReq;
 import devkor.com.teamcback.domain.building.dto.response.*;
 import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+import static devkor.com.teamcback.domain.search.util.HangeulUtils.decomposeHangulString;
+import static devkor.com.teamcback.domain.search.util.HangeulUtils.extractChosung;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING_NICKNAME;
 
 @Service
 @RequiredArgsConstructor
 public class AdminBuildingNicknameService {
     private final BuildingNicknameRepository buildingNicknameRepository;
     private final BuildingRepository buildingRepository;
-    private final HangeulUtils hangeulUtils;
 
     // 건물 별명 저장
     @Transactional
     public SaveBuildingNicknameRes saveBuildingNickname(Long buildingId, SaveBuildingNicknameReq req) {
         Building building = findBuilding(buildingId);
         String nickname = req.getNickname().replace(" ", "");
-        BuildingNickname buildingNickname = new BuildingNickname(building, nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+        BuildingNickname buildingNickname = new BuildingNickname(building, nickname, extractChosung(nickname), decomposeHangulString(nickname));
 
         buildingNicknameRepository.save(buildingNickname);
         return new SaveBuildingNicknameRes();
@@ -63,7 +64,7 @@ public class AdminBuildingNicknameService {
 
         for (BuildingNickname b : nonDecomposedBNicknames) {
             String nickname = b.getNickname();
-            b.update(hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+            b.update(extractChosung(nickname), decomposeHangulString(nickname));
         }
         buildingNicknameRepository.saveAll(nonDecomposedBNicknames);
 
@@ -71,7 +72,7 @@ public class AdminBuildingNicknameService {
         List<BuildingNickname> blankBNicknames = buildingNicknameRepository.findAllByNicknameContaining(" ");
         for (BuildingNickname b : blankBNicknames) {
             String nickname = b.getNickname().replace(" ", "");
-            b.update(nickname, hangeulUtils.extractChosung(nickname), hangeulUtils.decomposeHangulString(nickname));
+            b.update(nickname, extractChosung(nickname), decomposeHangulString(nickname));
         }
         buildingNicknameRepository.saveAll(blankBNicknames);
 

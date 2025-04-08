@@ -154,15 +154,6 @@ public class BookmarkService {
         }
     }
 
-    private void checkPlaceDuplication(Category category, LocationType locationType, Long locationId) {
-        CategoryBookmark categoryBookmark = categoryBookmarkRepository.findByCategoryAndBookmarkLocationIdAndBookmarkLocationType(category, locationId, locationType);
-
-        // 같은 카테고리에 동일 북마크가 존재하는 경우
-        if (categoryBookmark != null) {
-            throw new GlobalException(DUPLICATED_BOOKMARK);
-        }
-    }
-
     private void checkPlaceExists(LocationType locationType, Long locationId) {
         if (LocationType.BUILDING.equals(locationType) && !buildingRepository.existsById(locationId)) {
             throw new GlobalException(NOT_FOUND_BUILDING);

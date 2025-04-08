@@ -4,18 +4,23 @@ import devkor.com.teamcback.domain.bookmark.entity.Bookmark;
 import devkor.com.teamcback.domain.bookmark.entity.Category;
 import devkor.com.teamcback.domain.common.LocationType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
-    List<Bookmark> findAllByCategoryBookmarkList_CategoryId(Long categoryId);
+    @Query("select cb.bookmark from CategoryBookmark cb where cb.category.id = :categoryId")
+    List<Bookmark> findAllByCategoryBookmarkList_CategoryId(@Param("categoryId") Long categoryId);
 
-    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_Category(Long locationId, LocationType locationType, Category category);
+    @Query("select b from Bookmark b join b.categoryBookmarkList cb where b.locationId = :locationId and b.locationType = :locationType and cb.category = :category")
+    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_Category(@Param("locationId")Long locationId, @Param("locationType")LocationType locationType, @Param("category")Category category);
 
-    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(Long locationId, LocationType locationType,
-        List<Category> userCategoryList);
+    @Query("select b from Bookmark b join b.categoryBookmarkList cb where b.locationId = :locationId and b.locationType = :locationType and cb.category IN :categories")
+    Bookmark findByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(@Param("locationId")Long locationId, @Param("locationType")LocationType locationType,
+                                                                               @Param("categories")List<Category> userCategoryList);
 
-    boolean existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(Long locationId, LocationType locationType,
-        List<Category> categories);
+    @Query("select case when count(b) > 0 then true else false end from Bookmark b join b.categoryBookmarkList cb where b.locationId = :locationId and b.locationType = :locationType and cb.category IN :categories")
+    boolean existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(@Param("locationId")Long locationId, @Param("locationType")LocationType locationType,
+                                                                                @Param("categories") List<Category> categories);
 }

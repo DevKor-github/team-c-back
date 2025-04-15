@@ -13,10 +13,12 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findAllByUser(User user);
     Long countAllByUser(User user);
 
-    @Query("SELECT c FROM CategoryBookmark cb " +
-        "JOIN cb.category c " +
-        "JOIN cb.bookmark b " +
-        "WHERE c.user = :user AND b.locationType = :locationType AND b.locationId = :locationId")
+    @Query("""
+        SELECT c FROM CategoryBookmark cb
+        JOIN cb.category c
+        JOIN cb.bookmark b
+        WHERE c.user = :user AND b.locationType = :locationType AND b.locationId = :locationId
+        """)
     List<Category> findCategoriesByUserAndLocationTypeAndLocationId(
         @Param("user") User user,
         @Param("locationType") LocationType locationType,

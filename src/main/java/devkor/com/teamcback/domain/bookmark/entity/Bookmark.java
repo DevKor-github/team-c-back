@@ -35,7 +35,6 @@ public class Bookmark extends BaseEntity {
         this.memo = req.getMemo();
         this.locationType = req.getLocationType();
         this.locationId = req.getLocationId();
-
     }
 
     public void update(String memo) {

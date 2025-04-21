@@ -40,7 +40,8 @@ public class MetricsInterceptor implements HandlerInterceptor {
                 "/api/search/buildings",
                 "/api/search/buildings/{buildingId}",
                 "/api/search/buildings/{buildingId}/facilities",
-                "/api/search/facilities"
+                "/api/search/facilities",
+                "/api/search/place/{placeId}"
         ).contains(uri);
     }
 }

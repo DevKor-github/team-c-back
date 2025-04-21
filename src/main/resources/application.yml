@@ -30,15 +30,6 @@ spring:
       port: 6379
       password: ${REDIS_PASSWORD}
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: prometheus, health, info, metrics
-  prometheus:
-    metrics:
-      export:
-        enabled: true
 
 logging:
   level:

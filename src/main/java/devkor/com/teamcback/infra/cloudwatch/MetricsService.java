@@ -21,18 +21,20 @@ public class MetricsService {
     @Value("${metrics.environment}")
     private String environment;
 
+    private final String TARGET = "dev"; // 테스트 후 prod로 변경
+
     private final CloudWatchAsyncClient cloudWatchAsyncClient;
     private final Map<String, AtomicInteger> uriCountMap = new ConcurrentHashMap<>();
 
     public void recordApiRequest(String uri) {
-        if("prod".equalsIgnoreCase(environment)) {
+        if(TARGET.equalsIgnoreCase(environment)) {
             uriCountMap.computeIfAbsent(uri, k -> new AtomicInteger(0)).incrementAndGet();
         }
     }
 
     @Scheduled(fixedRate = 60_000)
     public void sendMetricsToCloudWatch() {
-        if ("prod".equalsIgnoreCase(environment)) {
+        if (TARGET.equalsIgnoreCase(environment)) {
             List<MetricDatum> metricDataList = uriCountMap.entrySet().stream()
                     .map(entry -> {
                         String uri = entry.getKey();

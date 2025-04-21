@@ -103,3 +103,6 @@ date:
       end-point: ${HOLIDAY_API_END_POINT}
       encoded-key: ${HOLIDAY_API_ENCODED_KEY}
       decoded-key: ${HOLIDAY_API_DECODED_KEY}
+
+metrics:
+  environment: dev

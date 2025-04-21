@@ -19,7 +19,7 @@ public class MetricsInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if(handler instanceof HandlerMethod) {
-            String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+            String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
             if(shouldTrack(pattern)) {
                 metricsService.recordApiRequest(pattern);
             }

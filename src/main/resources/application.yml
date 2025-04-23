@@ -105,4 +105,4 @@ date:
       decoded-key: ${HOLIDAY_API_DECODED_KEY}
 
 metrics:
-  environment: dev
+  environment: ${METRICS_ENV}

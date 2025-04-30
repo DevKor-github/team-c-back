@@ -66,4 +66,27 @@ public class RouteController {
 
         return CommonResponse.success(routeService.findRoute(startType, startId, startLat, startLong, endType, endId, endLat, endLong, conditions));
     }
+
+    /***
+     * 시작과 끝 정보를 param으로 받아 경로 리턴
+     * @param locationType 정보 타입(COORD, BUILDING, PLACE, NODE)
+     * @param conditions 필터링 conditions의 리스트
+     *
+     */
+    @GetMapping("/routeTest")
+    @Operation(summary = "경로 탐색 테스트",
+            description = "경로 탐색 테스트")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<String> routeTest(
+            @Parameter(name = "locationType", description = "출발 장소의 LocationType", example = "PLACE", required = true)
+            @RequestParam LocationType locationType,
+            @Parameter(name = "conditions", description = "경로 탐색의 조건")
+            @RequestParam(required = false) List<Conditions> conditions) {
+        routeService.routeTest(locationType, conditions);
+        return CommonResponse.success("테스트 완료");
+    }
 }

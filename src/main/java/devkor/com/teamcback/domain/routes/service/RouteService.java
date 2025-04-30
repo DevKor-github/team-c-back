@@ -20,6 +20,7 @@ import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.domain.routes.entity.Conditions.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
@@ -250,7 +252,7 @@ public class RouteService {
      * 그래프 요소 찾기(node, edge 묶음)
      * 노드 테이블의 String 인접 노드와 거리를 그래프로 변환
      */
-    public GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
+    private GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions){
         List<Node> graphNode = new ArrayList<>();
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
@@ -799,32 +801,43 @@ public class RouteService {
      * 테스트용 map이용 경로탐색 메서드
      */
     @Transactional(readOnly = true)
-    public List<GetRouteRes> findRouteUsingGraph(LocationType startType, Long startId, Double startLat, Double startLong,
-                                       LocationType endType, Long endId, Double endLat, Double endLong, List<Conditions> conditions, HashMap<Building, GetGraphRes> graphResMap){
-
+    public void routeTest(LocationType locationType, List<Conditions> conditions){
+        List<Place> placeList = placeRepository.findAll();
+        //count는 알아서 조정 가능
+        List<Pair<Place, Place>> placePair = makePair(placeList, 50);
+        List<Building> buildingList = buildingRepository.findAll();
+        HashMap<Building, GetGraphRes> graphResMap = new HashMap<>();
         if (conditions == null){
             conditions = new ArrayList<>();
         }
-        // 출발, 도착 노드 검색
-        Node startNode = getNodeByType(startType, startId, startLat, startLong);
-        Node endNode = getNodeByType(endType, endId, endLat, endLong);
+        for (Building building : buildingList) {
+            GetGraphRes newGraphRes = getLocalGraph(building, conditions);
+            if (newGraphRes == null) continue;
+            graphResMap.put(building, newGraphRes);
+        }
+        try {
+            for (Pair<Place, Place> pair : placePair) {
+                Place place1 = pair.getFirst();
+                Place place2 = pair.getSecond();
+                for (int i = 0; i < 1; i++){
+                    Node startNode = place1.getNode();
+                    Node endNode = place2.getNode();
+                    checkLocationError(startNode, endNode, locationType, locationType, startNode.getId(), endNode.getId());
+                    List<GetRouteRes> routeRes = new ArrayList<>();
+                    HashSet<Building> buildingHashSet = getBuildingsForRoute(startNode, endNode, conditions);
+                    GetGraphRes graphRes = mergeGraph(buildingHashSet, graphResMap);
+                    DijkstraRes route = dijkstra(graphRes, startNode, endNode);
+                    routeRes.add(buildRouteResponse(route, locationType == LocationType.BUILDING, locationType == LocationType.BUILDING, conditions));
+                    System.out.println("place " + place1.getName() + " -> place " + place2.getName() + " success - distance: " + routeRes.get(0).getDuration());
+                }
+            }
+        } catch (AdminException e) {
+            System.out.println("##########################" + e.getAdminMessage());
+        } catch (GlobalException e) {
+            System.out.println("##########################" + e.getResultCode());
+        }
 
-        // 에러 조건 확인
-        checkLocationError(startNode, endNode, startType, endType, startId, endId);
 
-        // 길찾기 응답 리스트 생성
-        List<GetRouteRes> routeRes = new ArrayList<>();
-
-        // 연결된 건물 찾기
-        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
-
-        // 경로를 하나만 반환하는 경우
-        GetGraphRes graphRes = mergeGraph(buildingList, graphResMap);
-        DijkstraRes route = dijkstra(graphRes, startNode, endNode);
-
-        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING, conditions));
-
-        return routeRes;
     }
 
     private GetGraphRes mergeGraph(HashSet<Building> buildingList, HashMap<Building, GetGraphRes> graphResMap){
@@ -836,6 +849,26 @@ public class RouteService {
             }
         }
         return returnGraphRes;
+    }
+
+    private GetGraphRes getLocalGraph(Building building, List<Conditions> conditions){
+        List<Node> random2Nodes = nodeRepository.findRandomNodesByBuilding(building);
+        if (random2Nodes.size() < 2) return null;
+        HashSet<Building> buildingList = new HashSet<>();
+        buildingList.add(building);
+        return getGraph(buildingList, random2Nodes.get(0), random2Nodes.get(1), conditions);
+    }
+    private List<Pair<Place, Place>> makePair(List<Place> placeList, int count){
+        List<Pair<Place, Place>> pairs = new ArrayList<>();
+        for (int i = 0; i < placeList.size(); i++) {
+            for (int j = i + 1; j < placeList.size(); j++) {
+                pairs.add(Pair.of(placeList.get(i), placeList.get(j)));
+            }
+        }
+        Collections.shuffle(pairs);
+        return pairs.stream()
+                .limit(count)
+                .collect(Collectors.toList());
     }
 
 }

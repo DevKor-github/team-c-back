@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 @Entity
 @Getter
 @Table(name = "tb_free_pub")
@@ -38,4 +42,17 @@ public class FreePub {
 
     @Column(nullable = false)
     private Double longitude;
+
+    @Column
+    private Date operatingDate;
+
+    @Column(length = 1500)
+    private String content;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
+    @OneToMany(mappedBy = "freePub", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PubImage> images = new ArrayList<>();
 }

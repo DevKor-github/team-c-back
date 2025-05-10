@@ -34,7 +34,8 @@ public enum PlaceType {
     BOOK_RETURN_MACHINE("도서반납기", new String[]{"책반납기계", "도서반납기계"}),
     TUMBLER_WASHER("텀블러세척기", new String[]{}),
     ONESTOP_AUTO_MACHINE("원스탑무인발급기", new String[]{"원스톱무인발급기", "증명서", "ONE-STOP", "ONESTOP"}),
-    HEALTH_OFFICE("건강센터", new String[]{"약받는곳", "보건실", "양호실", "응급약", "약받을수있는", "다쳤을때"});
+    HEALTH_OFFICE("건강센터", new String[]{"약받는곳", "보건실", "양호실", "응급약", "약받을수있는", "다쳤을때"}),
+    DISABLED_PARKING("장애인주차장", new String[] {"장애인주차장", "베리어프리", "휠체어주차장"});
 
     private final String name;
     private final String[] nickname;

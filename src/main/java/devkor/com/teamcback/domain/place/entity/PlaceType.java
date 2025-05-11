@@ -10,6 +10,7 @@ public enum PlaceType {
     TOILET("화장실", new String[]{}),
     MEN_TOILET("남자화장실", new String[]{}),
     WOMEN_TOILET("여자화장실", new String[]{}),
+    HANDICAPPED_TOILET("장애인화장실", new String[]{}),
     MEN_HANDICAPPED_TOILET("남자장애인화장실", new String[]{}),
     WOMEN_HANDICAPPED_TOILET("여자장애인화장실", new String[]{}),
     VENDING_MACHINE("자판기", new String[]{"벤딩머신"}),

@@ -211,7 +211,13 @@ public class SearchService {
              placeList.stream().map(SearchRoomDetailRes::new).toList());
 
          List<SearchNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloorAndTypeIn(building, floor, List.of(ENTRANCE, STAIR, ELEVATOR))
-             .stream().map(SearchNodeRes::new).toList();
+             .stream()
+             .filter(node -> { // 출입구 중 placeList에 존재하지 않는 것들만 추가
+                 if (node.getType() != ENTRANCE) return true;
+                 return placeList.stream()
+                     .noneMatch(p -> p.getNode().getId().equals(node.getId()));
+             })
+             .map(SearchNodeRes::new).toList();
 
          return new SearchFloorInfoRes(roomDetailRes, nodeList);
     }

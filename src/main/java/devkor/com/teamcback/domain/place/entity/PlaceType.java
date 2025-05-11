@@ -10,6 +10,7 @@ public enum PlaceType {
     TOILET("화장실", new String[]{}),
     MEN_TOILET("남자화장실", new String[]{}),
     WOMEN_TOILET("여자화장실", new String[]{}),
+    HANDICAPPED_TOILET("장애인화장실", new String[]{}),
     MEN_HANDICAPPED_TOILET("남자장애인화장실", new String[]{}),
     WOMEN_HANDICAPPED_TOILET("여자장애인화장실", new String[]{}),
     VENDING_MACHINE("자판기", new String[]{"벤딩머신"}),
@@ -35,7 +36,8 @@ public enum PlaceType {
     TUMBLER_WASHER("텀블러세척기", new String[]{}),
     ONESTOP_AUTO_MACHINE("원스탑무인발급기", new String[]{"원스톱무인발급기", "증명서", "ONE-STOP", "ONESTOP"}),
     HEALTH_OFFICE("건강센터", new String[]{"약받는곳", "보건실", "양호실", "응급약", "약받을수있는", "다쳤을때"}),
-    DISABLED_PARKING("장애인주차장", new String[] {"장애인주차장", "베리어프리", "휠체어주차장"});
+    DISABLED_PARKING("장애인주차장", new String[] {"장애인주차장", "베리어프리", "휠체어주차장"}),
+    BARRIER_FREE_ENTRANCE("배리어프리출입문", new String[] {});
 
     private final String name;
     private final String[] nickname;

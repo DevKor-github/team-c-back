@@ -41,7 +41,8 @@ public class OperatingService {
     private static final List<Long> alwaysOpenBuildings = List.of(0L, 23L, 27L, 60L);
 
     // 출입 권한 필요 혹은 정보가 없는 건물
-    private static final List<Long> alwaysAccessRequiredOrWithoutInfoBuildings = List.of(1L, 16L, 17L, 19L, 29L, 31L, 35L, 36L, 37L, 38L, 52L, 54L);
+    private static final List<Long> alwaysAccessRequiredOrWithoutInfoBuildings = List.of(1L, 16L, 17L, 19L, 29L, 31L, 35L, 36L, 37L, 38L, 52L, 54L,
+            62L, 63L, 64L, 65L, 66L, 67L, 68L, 69L, 70L, 71L, 72L);
     private static final String DEFAULT_OPERATING_TIME = "00:00-23:59";
 
     /**

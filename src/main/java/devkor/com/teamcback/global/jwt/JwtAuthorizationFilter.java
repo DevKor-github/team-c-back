@@ -34,7 +34,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             new AntPathRequestMatcher("/api/migration"),
             new AntPathRequestMatcher("/api/koyeon/**"),
             new AntPathRequestMatcher("/api/routes/**"),
-            new AntPathRequestMatcher("/api/search/**", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search/buildings", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search/buildings/**/facilities/**", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search/buildings/**/floor/**", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search/facilities", HttpMethod.GET.name()),
+            new AntPathRequestMatcher("/api/search/place/**/mask", HttpMethod.GET.name()),
             new AntPathRequestMatcher("/api/users/login/**"));
 
     private final JwtUtil jwtUtil;

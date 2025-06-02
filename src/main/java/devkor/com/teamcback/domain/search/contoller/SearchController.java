@@ -188,7 +188,7 @@ public class SearchController {
     })
     @GetMapping("/buildings/{buildingId}")
     public CommonResponse<SearchBuildingDetailRes> searchBuildingDetail(
-        @Parameter(description = "사용자정보", required = false)
+        @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
         @PathVariable Long buildingId) {
@@ -209,7 +209,7 @@ public class SearchController {
     })
     @GetMapping("/place/{placeId}")
     public CommonResponse<SearchPlaceDetailRes> searchPlaceDetail(
-        @Parameter(description = "사용자정보", required = false)
+        @Parameter(description = "사용자정보")
         @AuthenticationPrincipal UserDetailsImpl userDetail,
         @Parameter(name = "placeId", description = "placeId", example = "1", required = true)
         @PathVariable Long placeId) {

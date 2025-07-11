@@ -27,3 +27,7 @@ jobs:
           SPRING_PROFILES_ACTIVE: test
         run: ./gradlew clean build --stacktrace
         shell: bash
+
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag kodaero:$(date +%s)

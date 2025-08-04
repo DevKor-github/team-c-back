@@ -106,3 +106,12 @@ date:
 
 metrics:
   environment: ${METRICS_ENV}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info
+  metrics:
+    tags:
+      application: kodaero

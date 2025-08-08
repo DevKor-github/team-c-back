@@ -20,6 +20,7 @@ import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SuggestionService {
@@ -46,7 +48,7 @@ public class SuggestionService {
      */
     @Transactional
     @UpdateScore(addScore = 3)
-    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) throws MessagingException {
+    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
         User user = null;
         if(userId != null) user = findUser(userId);
         Suggestion suggestion = new Suggestion(req, user);
@@ -64,11 +66,16 @@ public class SuggestionService {
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
 
         // 이메일 전송
-        emailService.sendNotificationMessage(savedSuggestion.getTitle(),
-                user == null ? "익명" : user.getUsername(),
-                savedSuggestion.getSuggestionType().getType(),
-                savedSuggestion.getContent(),
-                savedSuggestion.getImages());
+        try {
+            // 이메일 전송
+            emailService.sendNotificationMessage(savedSuggestion.getTitle(),
+                    user == null ? "익명" : user.getUsername(),
+                    savedSuggestion.getSuggestionType().getType(),
+                    savedSuggestion.getContent(),
+                    savedSuggestion.getImages());
+        } catch (MessagingException e) {
+            log.error("이메일 전송 실패: {}", e.getMessage());
+        }
 
         return new CreateSuggestionRes(savedSuggestion);
     }

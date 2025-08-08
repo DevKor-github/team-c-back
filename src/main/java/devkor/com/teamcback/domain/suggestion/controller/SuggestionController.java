@@ -44,8 +44,7 @@ public class SuggestionController {
             @AuthenticationPrincipal UserDetailsImpl userDetail,
             @Parameter(description = "건의 제목, 분류, 내용, 이메일", required = true)
             @RequestPart(value = "req") CreateSuggestionReq req,
-            @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images
-            ) throws MessagingException {
+            @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         Long userId = userDetail == null ? null : userDetail.getUser().getUserId();
         return CommonResponse.success(suggestionService.createSuggestion(userId, req, images));
     }

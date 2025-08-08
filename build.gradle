@@ -105,6 +105,10 @@ dependencies {
 
     // prometheus
     implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // email
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 }
 dependencyManagement {
     imports {

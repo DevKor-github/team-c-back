@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.suggestion.service;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTION;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
+import devkor.com.teamcback.domain.common.EmailService;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
@@ -17,12 +18,14 @@ import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.mail.MailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,13 +39,14 @@ public class SuggestionService {
     private final SuggestionRepository suggestionRepository;
     private final UserRepository userRepository;
     private final S3Util s3Util;
+    private final EmailService emailService;
 
     /**
      * 건의 생성
      */
     @Transactional
     @UpdateScore(addScore = 3)
-    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
+    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) throws MessagingException {
         User user = null;
         if(userId != null) user = findUser(userId);
         Suggestion suggestion = new Suggestion(req, user);
@@ -58,6 +62,13 @@ public class SuggestionService {
         suggestion.setImages(suggestionImages);
 
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
+
+        // 이메일 전송
+        emailService.sendNotificationMessage(savedSuggestion.getTitle(),
+                user == null ? "익명" : user.getUsername(),
+                savedSuggestion.getSuggestionType().getType(),
+                savedSuggestion.getContent(),
+                savedSuggestion.getImages());
 
         return new CreateSuggestionRes(savedSuggestion);
     }

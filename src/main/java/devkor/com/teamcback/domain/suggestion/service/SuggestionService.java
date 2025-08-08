@@ -48,7 +48,7 @@ public class SuggestionService {
      */
     @Transactional
     @UpdateScore(addScore = 3)
-    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) throws MessagingException {
+    public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
         User user = null;
         if(userId != null) user = findUser(userId);
         Suggestion suggestion = new Suggestion(req, user);

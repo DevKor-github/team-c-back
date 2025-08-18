@@ -22,6 +22,7 @@ import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -64,22 +65,26 @@ public class SearchService {
     static final int BASE_SCORE_OUTDOOR_TAG_DEFAULT = 750;
 
     // 건물 상세 모달 아이콘으로 표시할 편의시설 종류
-    private final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
+    private static final List<PlaceType> iconTypes = Arrays.asList(PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.LOUNGE,
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA,
         PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM, PlaceType.BANK, PlaceType.GYM);
 
     // 통합 검색 결과에 표시하지 않을 편의시설 종류
     //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
-    private final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
+    private static final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
         PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
 
     // 통합 검색 결과에서 "건물명 + 기본편의시설명"의 형태로 제공되어야 하는 편의시설 종류
-    private final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
+    private static final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
         PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER,
         PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK,
         PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.HEALTH_OFFICE, PlaceType.DISABLED_PARKING);
+
+    // 건물 상세 조회 : 대표 편의시설 종류
+    private static final List<PlaceType> mainFacilityTypes = Arrays.asList(PlaceType.LOUNGE, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA,
+        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM);
 
     /**
      * 통합 검색
@@ -264,10 +269,8 @@ public class SearchService {
     public SearchBuildingDetailRes searchBuildingDetail(Long userId, Long buildingId) {
         Building building = findBuilding(buildingId);
 
-        //(임의) 가져올 대표 시설 정보 List (라운지, 카페, 편의점, 식당, 헬스장, 열람실, 스터디룸, 수면실, 샤워실)
-        //자세한 회의 후 List 수정하기
-        List<PlaceType> types = Arrays.asList(PlaceType.LOUNGE, PlaceType.CAFE, PlaceType.CONVENIENCE_STORE, PlaceType.CAFETERIA, PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.SHOWER_ROOM);
-        List<Place> mainFacilities = getFacilitiesByBuildingAndTypes(building, types);
+        // TODO: 배포 버전 수정 후 편의시설 조회 제거
+        List<Place> mainFacilities = getFacilitiesByBuildingAndTypes(building, mainFacilityTypes);
         List<SearchMainFacilityRes> res = new ArrayList<>();
 
         for (Place place : mainFacilities) {
@@ -292,10 +295,22 @@ public class SearchService {
                 bookmarked = true;
             }
         }
-
-        // TODO: 커뮤니티 구상 완료되면 커뮤니티 정보 넣기
-
         return new SearchBuildingDetailRes(res, containPlaceTypes, building, bookmarked);
+    }
+
+    @Transactional(readOnly = true)
+    public CursorPageRes<SearchMainFacilityRes> searchBuildingMainFacilityList(Long buildingId, Long lastPlaceId, int size) {
+        Place lastPlace = (lastPlaceId == null) ? null : findPlace(lastPlaceId);
+
+        List<SearchMainFacilityRes> mainFacilities = placeRepository.getFacilitiesByBuildingAndTypesWithPage(buildingId, mainFacilityTypes, lastPlace, size + 1)
+            .stream().map(SearchMainFacilityRes::new).collect(Collectors.toList());
+
+        boolean hasNext = mainFacilities.size() > size;
+        if (hasNext) mainFacilities.remove(size);
+
+        Long lastCursorId = mainFacilities.isEmpty() ? null : mainFacilities.get(mainFacilities.size() - 1).getPlaceId();
+
+        return new CursorPageRes<>(mainFacilities, hasNext, lastCursorId);
     }
 
     /**

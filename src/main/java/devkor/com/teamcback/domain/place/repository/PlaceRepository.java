@@ -4,11 +4,11 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.routes.entity.Node;
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PlaceRepository extends JpaRepository<Place, Long> {
+import java.util.List;
+
+public interface PlaceRepository extends JpaRepository<Place, Long>, CustomPlaceRepository {
 
     List<Place> findAllByBuildingAndType(Building building, PlaceType type);
 

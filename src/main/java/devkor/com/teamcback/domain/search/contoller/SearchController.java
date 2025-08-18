@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
 import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.response.CommonResponse;
+import devkor.com.teamcback.global.response.CursorPageRes;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -194,6 +195,29 @@ public class SearchController {
         @PathVariable Long buildingId) {
         Long userId = (userDetail != null) ? userDetail.getUser().getUserId() : null;
         return CommonResponse.success(searchService.searchBuildingDetail(userId, buildingId));
+    }
+
+    /**
+     * 건물 대표 편의시설 목록 조회 (no-offset)
+     * @param buildingId 건물 id
+     * @param lastPlaceId 마지막 편의시설 id
+     * @param size 한 번에 가져올 크기
+     */
+    @Operation(summary = "건물 주요 편의시설 조회", description = "건물 주요 편의시설 조회")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+        @ApiResponse(responseCode = "404", description = "Not Found",
+            content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/buildings/{buildingId}/main-facilities")
+    public CommonResponse<CursorPageRes<SearchMainFacilityRes>> searchBuildingMainFacilityList(
+        @Parameter(name = "buildingId", description = "건물 id", example = "1", required = true)
+        @PathVariable Long buildingId,
+        @Parameter(description = "마지막 편의시설 ID")
+        @RequestParam(required = false) Long lastPlaceId,
+        @Parameter(description = "한 번에 가져올 크기")
+        @RequestParam(defaultValue = "8") int size) {
+        return CommonResponse.success(searchService.searchBuildingMainFacilityList(buildingId, lastPlaceId, size));
     }
 
     /**

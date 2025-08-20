@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,8 +44,7 @@ public class SuggestionController {
             @AuthenticationPrincipal UserDetailsImpl userDetail,
             @Parameter(description = "건의 제목, 분류, 내용, 이메일", required = true)
             @RequestPart(value = "req") CreateSuggestionReq req,
-            @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images
-            ) {
+            @Parameter(description = "건의 사진") @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         Long userId = userDetail == null ? null : userDetail.getUser().getUserId();
         return CommonResponse.success(suggestionService.createSuggestion(userId, req, images));
     }

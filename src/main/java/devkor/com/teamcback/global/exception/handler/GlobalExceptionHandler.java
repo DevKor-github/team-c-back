@@ -5,7 +5,7 @@ import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.response.ResultCode;
 import jakarta.validation.ConstraintViolationException;
-import java.sql.SQLException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +15,18 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(GlobalException.class)
     public ResponseEntity<CommonResponse<Void>> handleException(GlobalException e) {
+        log.warn("⚠️GlobalException 발생: code={}, status={}, message={}",
+            e.getResultCode().getCode(),
+            e.getResultCode().getStatus(),
+            e.getResultCode().getMessage()
+        );
         return ResponseEntity.status(e.getResultCode().getStatus())
             .body(new CommonResponse<>(e.getResultCode()));
     }

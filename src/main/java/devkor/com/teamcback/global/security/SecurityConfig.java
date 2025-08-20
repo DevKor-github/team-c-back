@@ -5,6 +5,7 @@ import devkor.com.teamcback.global.exception.handler.CustomAuthenticationEntryPo
 import devkor.com.teamcback.global.exception.handler.ExceptionHandlerFilter;
 import devkor.com.teamcback.global.jwt.JwtAuthorizationFilter;
 import devkor.com.teamcback.global.jwt.JwtUtil;
+import devkor.com.teamcback.global.logging.LoggingFilter;
 import devkor.com.teamcback.global.redis.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -66,6 +67,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public LoggingFilter loggingFilter() {
+        return new LoggingFilter();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // CSRF 설정
         http.csrf(AbstractHttpConfigurer::disable);
@@ -100,8 +106,8 @@ public class SecurityConfig {
         // 필터 관리
         http.addFilterBefore(jwtAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(exceptionHandlerFilter(), JwtAuthorizationFilter.class);
+        http.addFilterAfter(loggingFilter(), JwtAuthorizationFilter.class);
 
         return http.build();
     }
-
 }

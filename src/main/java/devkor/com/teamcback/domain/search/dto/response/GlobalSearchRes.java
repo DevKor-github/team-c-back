@@ -87,8 +87,10 @@ public class GlobalSearchRes {
             } else {
                 this.name = place.getBuilding().getName() + " " + place.getName();
             }
-            this.longitude = place.getBuilding().getNode().getLongitude();
-            this.latitude = place.getBuilding().getNode().getLatitude();
+            if(place.getBuilding().getNode() != null) {
+                this.longitude = place.getBuilding().getNode().getLongitude();
+                this.latitude = place.getBuilding().getNode().getLatitude();
+            }
             this.locationType = LocationType.FACILITY;
         } else { // 일반 시설들
             this.id = place.getId();
@@ -100,8 +102,10 @@ public class GlobalSearchRes {
                 this.name = place.getBuilding().getName() + " " + place.getName();
             }
             if(!place.getDetail().equals(".")) this.detail = place.getDetail();
-            this.longitude = place.getNode().getLongitude();
-            this.latitude = place.getNode().getLatitude();
+            if(place.getBuilding().getNode() != null) {
+                this.longitude = place.getBuilding().getNode().getLongitude();
+                this.latitude = place.getBuilding().getNode().getLatitude();
+            }
             this.locationType = locationType;
         }
         this.placeType = place.getType();

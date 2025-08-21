@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -25,6 +26,7 @@ public class BuildingImage {
     @Column(nullable = false) // 추후 삭제
     private String image;
 
+    @Setter
     @Column(nullable = false)
     private String fileUuid;
 
@@ -38,7 +40,14 @@ public class BuildingImage {
         this.building = building;
     }
 
+    public BuildingImage(Double floor, Building building, String fileUuid) {
+        this.floor = floor;
+        this.fileUuid = fileUuid;
+        this.building = building;
+    }
+
     public void update(String imageUrl) {
         this.image = imageUrl;
     }
+
 }

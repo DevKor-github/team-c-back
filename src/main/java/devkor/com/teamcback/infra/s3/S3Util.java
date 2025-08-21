@@ -8,6 +8,9 @@ import static devkor.com.teamcback.global.response.ResultCode.SYSTEM_ERROR;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -15,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -38,7 +42,19 @@ public class S3Util {
         return metadata;
     }
 
-    public String uploadFile(MultipartFile multipartFile, FilePath filePath) {
+    private static ObjectMetadata setObjectMetadata(InputStream inputStream) throws IOException {
+        // 업로드할 파일의 메타데이터를 설정하는 메소드
+        ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentLength(inputStream.available());
+        return metadata;
+    }
+
+    // TODO: 추후 정리
+    public String uploadFile(MultipartFile file, FilePath filePath) {
+        return uploadFile(file, filePath, UUID.randomUUID().toString());
+    }
+
+    public String uploadFile(MultipartFile multipartFile, FilePath filePath, String fileUuid) {
         // 업로드할 파일이 존재하지 않거나 비어있으면 null 반환
         if (multipartFile == null || multipartFile.isEmpty()) {
             return null;
@@ -56,10 +72,8 @@ public class S3Util {
             throw new GlobalException(MAXIMUM_UPLOAD_FILE_SIZE);
         }
 
-        // 업로드할 파일의 고유한 파일명 생성
-        String fileName = createFileName(multipartFile.getOriginalFilename());
         // 파일명을 UTF-8로 디코딩
-        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        String fileName = URLDecoder.decode(fileUuid, StandardCharsets.UTF_8);
         // 업로드할 파일의 메타데이터 생성
         ObjectMetadata metadata = setObjectMetadata(multipartFile);
 
@@ -76,6 +90,26 @@ public class S3Util {
         return getFileUrl(fileName, filePath);
     }
 
+    public String uploadFile(InputStream inputStream, String fileUuid, FilePath filePath) {
+        // 파일명을 UTF-8로 디코딩
+        String fileName = URLDecoder.decode(fileUuid, StandardCharsets.UTF_8);
+
+        try {
+            // 업로드할 파일의 메타데이터 생성
+            ObjectMetadata metadata = setObjectMetadata(inputStream);
+            // S3에 파일 업로드
+            amazonS3Client.putObject(
+                    bucketName, filePath.getPath() + "thumb/" + fileName, inputStream, metadata);
+        } catch (Exception e) {
+            // 업로드 중에 예외 발생 시 전역 예외(GlobalException) 발생
+            log.info("error message: {}", e.getMessage());
+            throw new GlobalException(SYSTEM_ERROR);
+        }
+        // 업로드한 파일의 URL 반환
+        return getFileUrl(fileName, filePath);
+    }
+
+    // TODO: 추후 정리
     public void deleteFile(String fileUrl, FilePath filePath) {
         // 주어진 파일 URL로부터 파일명을 추출
         String fileName = getFileNameFromFileUrl(fileUrl, filePath);
@@ -90,6 +124,21 @@ public class S3Util {
         amazonS3Client.deleteObject(bucketName, filePath.getPath() + fileName);
     }
 
+    public void deleteFile(String fileUrl, String filePath) {
+        // 주어진 파일 URL로부터 파일명을 추출
+        String fileName = getFileNameFromFileUrl(fileUrl, filePath);
+        // 파일명을 UTF-8로 디코딩
+        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        // 파일명이 비어있거나 해당 파일이 존재하지 않으면 예외 발생
+        if (fileName.isBlank()
+                || !amazonS3Client.doesObjectExist(bucketName, filePath + fileName)) {
+            throw new GlobalException(NOT_FOUND_FILE);
+        }
+        // S3에서 파일 삭제
+        amazonS3Client.deleteObject(bucketName, filePath + fileName);
+    }
+
+    // TODO: 추후 정리
     public boolean exists(String fileUrl, FilePath filePath) {
         // 주어진 파일 URL로부터 파일명을 추출
         String fileName = getFileNameFromFileUrl(fileUrl, filePath);
@@ -103,18 +152,38 @@ public class S3Util {
         return true;
     }
 
+    public boolean exists(String fileUrl, String filePath) {
+        // 주어진 파일 URL로부터 파일명을 추출
+        String fileName = getFileNameFromFileUrl(fileUrl, filePath);
+        // 파일명을 UTF-8로 디코딩
+        fileName = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        // S3에 파일이 존재하는지 확인
+        if (fileName.isBlank()
+                || !amazonS3Client.doesObjectExist(bucketName, filePath + fileName)) {
+            return false; // 파일을 찾을 수 없음
+        }
+        return true;
+    }
+
+    // TODO: 추후 정리
     private String getFileUrl(String fileName, FilePath filePath) {
         // AWS S3 클라이언트를 사용하여 주어진 버킷, 파일 경로 및 파일명에 해당하는 파일의 URL을 얻어옴
         return amazonS3Client.getUrl(bucketName, filePath.getPath() + fileName).toString();
     }
 
+    private String getFileUrl(String fileName, String filePath) {
+        // AWS S3 클라이언트를 사용하여 주어진 버킷, 파일 경로 및 파일명에 해당하는 파일의 URL을 얻어옴
+        return amazonS3Client.getUrl(bucketName, filePath+ fileName).toString();
+    }
+
+    // TODO: 추후 정리
     private String getFileNameFromFileUrl(String fileUrl, FilePath filePath) {
         // 파일 URL에서 파일 경로 다음의 문자열부터 파일명의 끝까지 추출하여 반환
         return fileUrl.substring(fileUrl.lastIndexOf(filePath.getPath()) + filePath.getPath().length());
     }
 
-    private String createFileName(String fileName) {
-        // UUID를 사용하여 고유한 문자열을 생성하고, 주어진 파일명과 연결하여 반환
-        return UUID.randomUUID().toString().concat(fileName);
+    private String getFileNameFromFileUrl(String fileUrl, String filePath) {
+        // 파일 URL에서 파일 경로 다음의 문자열부터 파일명의 끝까지 추출하여 반환
+        return fileUrl.substring(fileUrl.lastIndexOf(filePath) + filePath.length());
     }
 }

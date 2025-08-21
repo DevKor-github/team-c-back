@@ -31,12 +31,17 @@ public class File extends BaseEntity {
     private Long fileSize;      // 파일 사이즈
 
     @Column
-    private Long thumbSize;     // 썸네일 사이즈
-
-    @Column
     private String extension;   // 파일 확장자
 
     @Column(nullable = false)
     private Long sortNum;       // 파일 순서
 
+    public File(String fileUuid, String fileOriginalName, String fileSavedName, Long fileSize, String extension, Long sortNum) {
+        this.fileUuid = fileUuid;
+        this.fileOriginalName = fileOriginalName;
+        this.fileSavedName = fileSavedName;
+        this.fileSize = fileSize;
+        this.extension = extension;
+        this.sortNum = sortNum;
+    }
 }

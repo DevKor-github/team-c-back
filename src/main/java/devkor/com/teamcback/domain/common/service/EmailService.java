@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.common;
+package devkor.com.teamcback.domain.common.service;
 
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionImage;
 import jakarta.mail.MessagingException;

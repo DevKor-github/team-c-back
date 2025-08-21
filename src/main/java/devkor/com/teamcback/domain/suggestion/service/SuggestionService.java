@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.suggestion.service;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTION;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
-import devkor.com.teamcback.domain.common.EmailService;
+import devkor.com.teamcback.domain.common.service.EmailService;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
@@ -26,7 +26,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.mail.MailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;

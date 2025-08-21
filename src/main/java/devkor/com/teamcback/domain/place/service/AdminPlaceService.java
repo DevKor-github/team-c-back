@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.place.service;
 
+import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -18,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
@@ -29,15 +30,27 @@ public class AdminPlaceService {
     private final BuildingRepository buildingRepository;
     private final PlaceRepository placeRepository;
     private final NodeRepository nodeRepository;
+    private final FileUtil fileUtil;
 
     // 건물 id와 층에 해당하는 장소 리스트 조회
     @Transactional(readOnly = true)
     public GetPlaceListRes getPlaceList(Long buildingId, Double floor) {
         Building building = findBuilding(buildingId);
-        List<GetPlaceRes> placeList = placeRepository.findAllByBuildingAndFloor(building, floor).stream().map(GetPlaceRes::new).collect(Collectors.toList());;
-        if(placeList.isEmpty()) throw new GlobalException(NOT_FOUND_PLACE);
+        List<GetPlaceRes> placeResList = new ArrayList<>();
+        List<Place> placeList = placeRepository.findAllByBuildingAndFloor(building, floor);
+        for (Place place : placeList) {
+            String imageUrl = null;
+            if(place.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+            }
 
-        return new GetPlaceListRes(placeList);
+            placeResList.add(new GetPlaceRes(place, imageUrl));
+        }
+
+
+        if(placeResList.isEmpty()) throw new GlobalException(NOT_FOUND_PLACE);
+
+        return new GetPlaceListRes(placeResList);
     }
 
     // 장소 생성

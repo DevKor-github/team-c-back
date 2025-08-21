@@ -27,7 +27,7 @@ public class BuildingImage {
     private String image;
 
     @Setter
-    @Column(nullable = false)
+    @Column
     private String fileUuid;
 
     @ManyToOne

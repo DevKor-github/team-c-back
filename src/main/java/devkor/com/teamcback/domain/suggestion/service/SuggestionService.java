@@ -4,6 +4,7 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTI
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
 import devkor.com.teamcback.domain.common.util.EmailUtil;
+import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
@@ -17,7 +18,6 @@ import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.infra.s3.FilePath;
-import devkor.com.teamcback.infra.s3.S3Util;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ import java.util.List;
 public class SuggestionService {
     private final SuggestionRepository suggestionRepository;
     private final UserRepository userRepository;
-    private final S3Util s3Util;
+    private final FileUtil fileUtil;
     private final EmailUtil emailUtil;
 
     /**
@@ -50,28 +50,27 @@ public class SuggestionService {
     public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
         User user = null;
         if(userId != null) user = findUser(userId);
-        Suggestion suggestion = new Suggestion(req, user);
 
-        List<SuggestionImage> suggestionImages = new ArrayList<>();
-        if (images != null) {
-            for (MultipartFile image : images) {
-                String imageUrl = s3Util.uploadFile(image, FilePath.SUGGESTION);
-                suggestionImages.add(new SuggestionImage(imageUrl, suggestion));
-            }
-        }
-
-        suggestion.setImages(suggestionImages);
-
+        // 건의 저장
+        String fileUuid = fileUtil.createFileUuid();
+        Suggestion suggestion = new Suggestion(req, user, fileUuid);
         Suggestion savedSuggestion = suggestionRepository.save(suggestion);
+
+        // 파일 업로드
+        if (images != null) {
+            fileUtil.upload(images, fileUuid, null, FilePath.SUGGESTION);
+        }
 
         // 이메일 전송
         try {
+            List<String> uploadedFiles = fileUtil.getOriginalFiles(fileUuid);
+
             // 이메일 전송
             emailUtil.sendNotificationMessage(savedSuggestion.getTitle(),
                     user == null ? "익명" : user.getUsername(),
                     savedSuggestion.getSuggestionType().getType(),
                     savedSuggestion.getContent(),
-                    savedSuggestion.getImages());
+                    uploadedFiles);
         } catch (MessagingException e) {
             log.error("이메일 전송 실패: {}", e.getMessage());
         }

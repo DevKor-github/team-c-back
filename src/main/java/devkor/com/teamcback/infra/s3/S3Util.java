@@ -14,11 +14,11 @@ import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -42,10 +42,11 @@ public class S3Util {
         return metadata;
     }
 
-    private static ObjectMetadata setObjectMetadata(InputStream inputStream) throws IOException {
+    private static ObjectMetadata setObjectMetadata(InputStream inputStream, String contentType) throws IOException {
         // 업로드할 파일의 메타데이터를 설정하는 메소드
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(inputStream.available());
+        metadata.setContentType(contentType);
         return metadata;
     }
 
@@ -90,13 +91,13 @@ public class S3Util {
         return getFileUrl(fileName, filePath);
     }
 
-    public String uploadFile(InputStream inputStream, String fileUuid, FilePath filePath) {
+    public String uploadFile(InputStream inputStream, String fileUuid, FilePath filePath, String contentType) {
         // 파일명을 UTF-8로 디코딩
         String fileName = URLDecoder.decode(fileUuid, StandardCharsets.UTF_8);
 
         try {
             // 업로드할 파일의 메타데이터 생성
-            ObjectMetadata metadata = setObjectMetadata(inputStream);
+            ObjectMetadata metadata = setObjectMetadata(inputStream, contentType);
             // S3에 파일 업로드
             amazonS3Client.putObject(
                     bucketName, filePath.getPath() + "thumb/" + fileName, inputStream, metadata);
@@ -106,7 +107,7 @@ public class S3Util {
             throw new GlobalException(SYSTEM_ERROR);
         }
         // 업로드한 파일의 URL 반환
-        return getFileUrl(fileName, filePath);
+        return getFileUrl(fileName, filePath.getPath() + "thumb/");
     }
 
     // TODO: 추후 정리

@@ -25,15 +25,17 @@ import static devkor.com.teamcback.global.response.ResultCode.SYSTEM_ERROR;
 public class FileUtil {
     private final S3Util s3Util;
     private final FileRepository fileRepository;
+    private static final String IMAGE_JPG = "image/jpeg";
+    private static final String IMAGE_PNG = "image/png";
 
     /**
      * 파일 리스트 저장
      * @param fileList
      * @param fileUuid
-     * @param sortNum
+     * @param sortNumList
      */
     @Transactional
-    public void upload(List<MultipartFile> fileList, String fileUuid, List<Long> sortNum, FilePath filePath) {
+    public void upload(List<MultipartFile> fileList, String fileUuid, List<Long> sortNumList, FilePath filePath) {
 
         // 입력 파일 없는 경우
         if(fileList == null || fileList.isEmpty()) {
@@ -45,12 +47,20 @@ public class FileUtil {
             MultipartFile file = fileList.get(i);
             String fileOriginalName = file.getOriginalFilename();
             long fileSize = file.getSize();
+            long sortNum = sortNumList == null ? i+1 : sortNumList.get(i);
             String extension = fileOriginalName.substring(fileOriginalName.lastIndexOf(".") + 1);
 
             // 원본 파일 S3 저장
             String fileSavedName = s3Util.uploadFile(file, filePath);
 
-            File savedFile = new File(fileUuid, fileOriginalName, fileSavedName, fileSize, extension, sortNum.get(i));
+            // 기존 파일 엔티티 가져오기
+            File savedFile = fileRepository.findByFileUuidAndSortNum(fileUuid, sortNum);
+            if(savedFile == null) {
+                savedFile = new File(fileUuid, sortNum);
+            }
+
+            // 업데이트
+            savedFile.update(fileUuid, fileOriginalName, fileSavedName, fileSize, extension, sortNum);
 
             // 썸네일 생성
             uploadThumb(savedFile, file, 400, 400, filePath);
@@ -73,6 +83,11 @@ public class FileUtil {
             return;
         }
 
+        File savedFile = fileRepository.findByFileUuidAndSortNum(fileUuid, sortNum);
+        if(savedFile == null) {
+            savedFile = new File(fileUuid, sortNum);
+        }
+
         // originalName, savedName, fileSize, extension, sortNum 필요 정보 추출
         String fileOriginalName = uploadFile.getOriginalFilename();
         long fileSize = uploadFile.getSize();
@@ -81,7 +96,7 @@ public class FileUtil {
         // 원본 파일 S3 저장
         String fileSavedName = s3Util.uploadFile(uploadFile, filePath);
 
-        File savedFile = new File(fileUuid, fileOriginalName, fileSavedName, fileSize, extension, sortNum);
+        savedFile.update(fileUuid, fileOriginalName, fileSavedName, fileSize, extension, sortNum);
 
         // 썸네일 생성
         uploadThumb(savedFile, uploadFile, 400, 400, filePath);
@@ -98,6 +113,13 @@ public class FileUtil {
      */
     @Transactional
     public void uploadThumb(File savedFile, MultipartFile file, Integer width, Integer height, FilePath filePath) {
+
+        // 이미지 파일인지 확인
+        String fileType = file.getContentType();
+        if(fileType == null || (!fileType.equals(IMAGE_JPG) && !fileType.equals(IMAGE_PNG))) {
+            return;
+        }
+
         // 썸네일 생성
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
@@ -115,7 +137,7 @@ public class FileUtil {
         InputStream inputStream = new ByteArrayInputStream(os.toByteArray());
 
         // 저장
-        String thumbSavedName = s3Util.uploadFile(inputStream, savedFile.getFileUuid(), filePath);
+        String thumbSavedName = s3Util.uploadFile(inputStream, savedFile.getFileUuid(), filePath, file.getContentType());
         savedFile.setThumbSavedName(thumbSavedName);
     }
 
@@ -129,6 +151,8 @@ public class FileUtil {
         List<File> savedFileList = fileRepository.findAllByFileUuid(fileUuid);
 
         for (File savedFile : savedFileList) {
+            if(savedFile.getFileSavedName() == null || savedFile.getFileSavedName().isEmpty()) continue;
+
             // s3 파일 삭제
             if(savedFile != null && s3Util.exists(savedFile.getFileSavedName(), FilePath.BUILDING_IMAGE)) {
                 s3Util.deleteFile(savedFile.getFileSavedName(), FilePath.BUILDING_IMAGE); // 기존 사진 S3에서 삭제
@@ -143,26 +167,32 @@ public class FileUtil {
         fileRepository.deleteAll(savedFileList);
     }
 
-    public String getOriginalFile(String fileUuid, Long sortNum) {
-        if(sortNum == null || sortNum <= 0) {
-            sortNum = 1L;
-        }
-        File file = fileRepository.findByFileUuidAndSortNum(fileUuid, sortNum);
+    public List<String> getOriginalFiles(String fileUuid) {
+        List<String> fileList = fileRepository.findAllByFileUuid(fileUuid).stream().map(File::getFileSavedName).toList();
 
-        if(file == null) return null;
-
-        return file.getFileSavedName();
+        return fileList;
     }
 
-    public String getThumbnail(String fileUuid, Long sortNum) {
-        if(sortNum == null || sortNum <= 0) {
-            sortNum = 1L;
-        }
-        File file = fileRepository.findByFileUuidAndSortNum(fileUuid, sortNum);
+    public List<String> getThumbnailFiles(String fileUuid) {
+        List<String> fileList = fileRepository.findAllByFileUuid(fileUuid).stream().map(File::getThumbSavedName).toList();
 
-        if(file == null) return null;
+        return fileList;
+    }
 
-        return file.getThumbSavedName();
+    public String getOriginalFile(String fileUuid) {
+
+        List<String> originalFiles = getOriginalFiles(fileUuid);
+        if(originalFiles.isEmpty()) return null;
+
+        return originalFiles.get(0);
+    }
+
+    public String getThumbnail(String fileUuid) {
+
+        List<String> thumbnailFiles = getThumbnailFiles(fileUuid);
+        if(thumbnailFiles.isEmpty()) return null;
+
+        return thumbnailFiles.get(0);
     }
 
     /**

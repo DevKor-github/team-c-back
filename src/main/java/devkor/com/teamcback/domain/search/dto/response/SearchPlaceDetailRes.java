@@ -41,7 +41,7 @@ public class SearchPlaceDetailRes {
     private String starAverage;
     private List<SearchPlaceImageRes> placeImages;
 
-    public SearchPlaceDetailRes(Place place, boolean bookmarked, List<SearchPlaceImageRes> placeImages) {
+    public SearchPlaceDetailRes(Place place, String imageUrl, boolean bookmarked, List<SearchPlaceImageRes> placeImages) {
         this.buildingId = place.getBuilding().getId();
         this.floor = place.getFloor().intValue();
         this.type = LocationType.PLACE;
@@ -59,7 +59,7 @@ public class SearchPlaceDetailRes {
         this.detail = place.getDetail();
         this.availability = place.isAvailability();
         this.plugAvailability = place.isPlugAvailability();
-        this.imageUrl = place.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
         this.weekdayOperatingTime = place.getWeekdayOperatingTime();
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();
         this.sundayOperatingTime = place.getSundayOperatingTime();

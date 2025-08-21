@@ -85,7 +85,7 @@ public class AdminBuildingImageService {
         Building building = findBuilding(buildingId);
         BuildingImage buildingImage = findBuildingImage(building, floor);
 
-        String fileName = fileUtil.getOriginalFile(buildingImage.getFileUuid(), 1L);
+        String fileName = fileUtil.getOriginalFile(buildingImage.getFileUuid());
         if(fileName == null){    // TODO: 추후 삭제
             return new SearchBuildingImageRes(buildingImage);
         }

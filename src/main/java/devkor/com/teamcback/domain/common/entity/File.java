@@ -44,4 +44,18 @@ public class File extends BaseEntity {
         this.extension = extension;
         this.sortNum = sortNum;
     }
+
+    public File(String fileUuid, Long sortNum) {
+        this.fileUuid = fileUuid;
+        this.sortNum = sortNum;
+    }
+
+    public void update(String fileUuid, String fileOriginalName, String fileSavedName, long fileSize, String extension, Long sortNum) {
+        this.fileUuid = fileUuid;
+        this.fileOriginalName = fileOriginalName;
+        this.fileSavedName = fileSavedName;
+        this.fileSize = fileSize;
+        this.extension = extension;
+        this.sortNum = sortNum;
+    }
 }

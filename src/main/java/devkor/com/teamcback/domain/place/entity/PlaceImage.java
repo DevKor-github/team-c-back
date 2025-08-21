@@ -24,9 +24,6 @@ public class PlaceImage extends BaseEntity {
     @Column(nullable = false)
     private String image;   // 추후 삭제
 
-    @Column(nullable = false)
-    private String fileUuid;
-
     @ManyToOne
     @JoinColumn(name = "place_id")
     private Place place;

@@ -36,7 +36,7 @@ public class EmailUtil {
      * 건의사항 이메일 전송
      */
     @Async
-    public void sendNotificationMessage(String title, String writer, String type, String content, List<SuggestionImage> images) throws MessagingException {
+    public void sendNotificationMessage(String title, String writer, String type, String content, List<String> images) throws MessagingException {
 
         // 내용 설정
         Map<String, String> contents = new HashMap<>();
@@ -51,7 +51,7 @@ public class EmailUtil {
     /**
      * 일반 이메일 전송
      */
-    private void sendSimpleEmail(String title, String type, String writer, Map<String, String> contents, List<SuggestionImage> images) {
+    private void sendSimpleEmail(String title, String type, String writer, Map<String, String> contents, List<String> images) {
 
         for(String notifyEmail : notifyEmails.split(",")) {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -69,7 +69,7 @@ public class EmailUtil {
             if(images != null) {
                 content += "\n - 첨부 파일:";
                 for (int i = 0; i < images.size(); i++) {
-                    content += "\n[" + (i+1) + "] link: " + images.get(i).getImageUrl();
+                    content += "\n[" + (i+1) + "] link: " + images.get(i);
                 }
             }
 
@@ -85,7 +85,7 @@ public class EmailUtil {
     /**
      * HTML 이메일 전송
      */
-    private void sendHtmlEmail(String title, String type, String writer, Map<String, String> contents, List<SuggestionImage> images) throws MessagingException {
+    private void sendHtmlEmail(String title, String type, String writer, Map<String, String> contents, List<String> images) throws MessagingException {
 
         for(String notifyEmail : notifyEmails.split(",")) {
 
@@ -108,7 +108,7 @@ public class EmailUtil {
             if(images != null) {
                 html += "<p><strong>첨부 파일:</strong><br>";
                 for (int i = 0; i < images.size(); i++) {
-                    html += "<a href='" + images.get(i).getImageUrl() + "'>[" + (i+1) + "]</a> ";
+                    html += "<a href='" + images.get(i) + "'>[" + (i+1) + "]</a> ";
                 }
                 html += "</p>";
             }

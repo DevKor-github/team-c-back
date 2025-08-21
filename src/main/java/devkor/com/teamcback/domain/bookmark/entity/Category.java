@@ -2,7 +2,7 @@ package devkor.com.teamcback.domain.bookmark.entity;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
 import devkor.com.teamcback.domain.bookmark.dto.request.ModifyCategoryReq;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

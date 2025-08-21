@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.user.entity;
 
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

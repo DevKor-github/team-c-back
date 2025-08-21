@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.bookmark.entity;
 
 import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.common.LocationType;
 import jakarta.persistence.*;
 import java.util.ArrayList;

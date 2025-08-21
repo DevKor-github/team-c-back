@@ -157,16 +157,21 @@ public class SearchService {
                 .toList();
         }
 
-        return new SearchBuildingListRes(
-            buildingList.stream()
-            .map(building -> {
-                List<PlaceType> containPlaceTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
-                    .map(Place::getType)
-                    .distinct()
-                    .toList();
-                return new SearchBuildingRes(building, containPlaceTypes);
-            })
-            .toList());
+        List<SearchBuildingRes> resList = new ArrayList<>();
+        for(Building building : buildingList) {
+            // 편의시설 종류
+            List<PlaceType> containPlaceTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream().map(Place::getType).distinct().toList();
+
+            // 건물 대표 사진
+            String imageUrl = null;
+            if(building.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+            }
+
+            resList.add(new SearchBuildingRes(building, imageUrl, containPlaceTypes));
+        }
+
+        return new SearchBuildingListRes(resList);
     }
 
     /**
@@ -323,7 +328,13 @@ public class SearchService {
                 bookmarked = true;
             }
         }
-        return new SearchBuildingDetailRes(res, containPlaceTypes, building, bookmarked);
+
+        // 건물 대표 이미지 확인
+        String imageUrl = null;
+        if(building.getFileUuid() != null) {
+            imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+        }
+        return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
     }
 
     @Transactional(readOnly = true)

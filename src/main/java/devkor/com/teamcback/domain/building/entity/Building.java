@@ -29,6 +29,7 @@ public class Building extends BaseEntity {
 
     private String imageUrl; // 추후 삭제
 
+    @Setter
     private String fileUuid;
 
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.place.service;
 
+import devkor.com.teamcback.domain.building.dto.response.SaveBuildingMainImageRes;
 import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
@@ -14,10 +15,13 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
+import devkor.com.teamcback.domain.suggestion.dto.response.SavePlaceImageRes;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.infra.s3.FilePath;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +83,21 @@ public class AdminPlaceService {
         placeRepository.delete(place);
 
         return new DeletePlaceRes();
+    }
+
+    // 장소 사진 저장
+    @Transactional
+    public SavePlaceImageRes savePlaceImage(Long placeId, List<MultipartFile> images) {
+
+        Place place = findPlace(placeId);
+
+        if(place.getFileUuid() == null) {
+            place.setFileUuid(fileUtil.createFileUuid());
+        }
+
+        fileUtil.upload(images, place.getFileUuid(), null, FilePath.PLACE);
+
+        return new SavePlaceImageRes();
     }
 
     private Building findBuilding(Long buildingId) {

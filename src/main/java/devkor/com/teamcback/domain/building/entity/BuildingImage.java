@@ -22,8 +22,11 @@ public class BuildingImage {
     @Column(nullable = false)
     private Double floor;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // 추후 삭제
     private String image;
+
+    @Column(nullable = false)
+    private String fileUuid;
 
     @ManyToOne
     @JoinColumn(name = "building_id")

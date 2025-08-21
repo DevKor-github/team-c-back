@@ -13,8 +13,7 @@ import devkor.com.teamcback.domain.building.entity.Building;
 import devkor.com.teamcback.domain.building.entity.BuildingImage;
 import devkor.com.teamcback.domain.building.repository.BuildingImageRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
-import devkor.com.teamcback.domain.common.repository.FileRepository;
-import devkor.com.teamcback.domain.common.service.FileService;
+import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.infra.s3.FilePath;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminBuildingImageService {
     private final BuildingRepository buildingRepository;
     private final BuildingImageRepository buildingImageRepository;
-    private final FileService fileService;
+    private final FileUtil fileUtil;
 
     // 건물 내부 사진 저장
     @Transactional
@@ -40,8 +39,8 @@ public class AdminBuildingImageService {
         }
         checkExistedImage(building, floor); // 해당 건물, 층에 해당하는 사진이 있는지 확인
 
-        String fileUuid = fileService.createFileUuid();
-        fileService.upload(image, fileUuid, FilePath.BUILDING_IMAGE, 1L);
+        String fileUuid = fileUtil.createFileUuid();
+        fileUtil.upload(image, fileUuid, FilePath.BUILDING_IMAGE, 1L);
         BuildingImage buildingImage = buildingImageRepository.save(new BuildingImage(floor, building, fileUuid));
 
         return new SaveBuildingImageRes(buildingImage);
@@ -54,14 +53,14 @@ public class AdminBuildingImageService {
 
         // fileUuid 확인
         if(buildingImage.getFileUuid() == null) {
-            buildingImage.setFileUuid(fileService.createFileUuid());
+            buildingImage.setFileUuid(fileUtil.createFileUuid());
         }
 
         // 기존 파일 삭제
-        fileService.deleteFile(buildingImage.getFileUuid());
+        fileUtil.deleteFile(buildingImage.getFileUuid());
 
         // 새 파일 업로드
-        fileService.upload(image, buildingImage.getFileUuid(), FilePath.BUILDING_IMAGE, 1L);
+        fileUtil.upload(image, buildingImage.getFileUuid(), FilePath.BUILDING_IMAGE, 1L);
 
         return new ModifyBuildingImageRes(buildingImage);
     }
@@ -72,7 +71,7 @@ public class AdminBuildingImageService {
         BuildingImage buildingImage = findBuildingImage(buildingImageId);
 
         // 기존 파일 삭제
-        fileService.deleteFile(buildingImage.getFileUuid());
+        fileUtil.deleteFile(buildingImage.getFileUuid());
 
         // 내부 사진 삭제
         buildingImageRepository.delete(buildingImage);
@@ -86,7 +85,7 @@ public class AdminBuildingImageService {
         Building building = findBuilding(buildingId);
         BuildingImage buildingImage = findBuildingImage(building, floor);
 
-        String fileName = fileService.getOriginalFile(buildingImage.getFileUuid(), 1L);
+        String fileName = fileUtil.getOriginalFile(buildingImage.getFileUuid(), 1L);
         if(fileName == null){    // TODO: 추후 삭제
             return new SearchBuildingImageRes(buildingImage);
         }

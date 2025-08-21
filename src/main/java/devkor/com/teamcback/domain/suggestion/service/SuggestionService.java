@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.suggestion.service;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SUGGESTION;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 
-import devkor.com.teamcback.domain.common.service.EmailService;
+import devkor.com.teamcback.domain.common.util.EmailUtil;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
@@ -40,7 +40,7 @@ public class SuggestionService {
     private final SuggestionRepository suggestionRepository;
     private final UserRepository userRepository;
     private final S3Util s3Util;
-    private final EmailService emailService;
+    private final EmailUtil emailUtil;
 
     /**
      * 건의 생성
@@ -67,7 +67,7 @@ public class SuggestionService {
         // 이메일 전송
         try {
             // 이메일 전송
-            emailService.sendNotificationMessage(savedSuggestion.getTitle(),
+            emailUtil.sendNotificationMessage(savedSuggestion.getTitle(),
                     user == null ? "익명" : user.getUsername(),
                     savedSuggestion.getSuggestionType().getType(),
                     savedSuggestion.getContent(),

@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.common.service;
+package devkor.com.teamcback.domain.common.util;
 
 import devkor.com.teamcback.domain.common.entity.File;
 import devkor.com.teamcback.domain.common.repository.FileRepository;
@@ -22,7 +22,7 @@ import static devkor.com.teamcback.global.response.ResultCode.SYSTEM_ERROR;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FileService {
+public class FileUtil {
     private final S3Util s3Util;
     private final FileRepository fileRepository;
 

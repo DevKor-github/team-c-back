@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.common.service;
+package devkor.com.teamcback.domain.common.util;
 
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionImage;
 import jakarta.mail.MessagingException;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class EmailService {
+public class EmailUtil {
 
     private static final String SUGGESTION_TITLE = "[고대로] 건의사항 추가됨 - 제목: ";
     private static final String SENDER = "고대로팀 <leeyejin113@gmail.com>";
@@ -28,7 +28,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    public EmailService(JavaMailSender mailSender) {
+    public EmailUtil(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 

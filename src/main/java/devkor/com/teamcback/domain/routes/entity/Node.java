@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.routes.entity;
 
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.routes.dto.request.CreateNodeReq;
 import devkor.com.teamcback.domain.routes.dto.request.ModifyNodeReq;
 import jakarta.persistence.Column;

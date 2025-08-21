@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.suggestion.entity;
 
-import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;

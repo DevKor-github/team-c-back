@@ -117,6 +117,9 @@ dependencies {
 
     // Logging
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
+    // thumbnail
+    implementation 'net.coobird:thumbnailator:0.4.19'
 }
 
 dependencyManagement {

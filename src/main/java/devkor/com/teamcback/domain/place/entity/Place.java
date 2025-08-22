@@ -44,6 +44,8 @@ public class Place extends BaseEntity {
 
     private String imageUrl;
 
+    private String fileUuid;
+
     @Setter
     private String operatingTime;
 

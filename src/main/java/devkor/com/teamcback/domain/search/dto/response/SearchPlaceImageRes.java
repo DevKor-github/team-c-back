@@ -14,4 +14,9 @@ public class SearchPlaceImageRes {
         this.imageId = placeImage.getId();
         this.image = placeImage.getImage();
     }
+
+    public SearchPlaceImageRes(Long imageId, String image) {
+        this.imageId = imageId;
+        this.image = image;
+    }
 }

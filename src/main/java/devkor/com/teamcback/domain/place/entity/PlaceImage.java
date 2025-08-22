@@ -22,7 +22,7 @@ public class PlaceImage extends BaseEntity {
     private Long id;
 
     @Column(nullable = false)
-    private String image;
+    private String image;   // 추후 삭제
 
     @ManyToOne
     @JoinColumn(name = "place_id")

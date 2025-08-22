@@ -22,14 +22,14 @@ public class GetPlaceRes {
     private String description;
     private String starAverage;
 
-    public GetPlaceRes(Place place) {
+    public GetPlaceRes(Place place, String imageUrl) {
         this.placeId = place.getId();
         this.nodeId = place.getNode().getId();
         this.detail = place.getDetail();
         this.name = place.getName();
         this.type = place.getType();
         this.operatingTime = place.getOperatingTime();
-        this.imageUrl = place.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
         this.availability = place.isAvailability();
         this.plugAvailability = place.isPlugAvailability();
         this.isOperating = place.isOperating();

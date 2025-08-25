@@ -74,7 +74,12 @@ public enum ResultCode {
     OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다."),
 
     // 고연전 11000번대
-    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다.")
+    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다."),
+
+    // 투표 12000번대
+    NOT_FOUND_VOTE(HttpStatus.NOT_FOUND, 12000, "투표를 찾을 수 없습니다."),
+    NOT_FOUND_VOTE_OPTION(HttpStatus.NOT_FOUND, 12001, "투표 항목을 찾을 수 없습니다."),
+    CLOSED_VOTE(HttpStatus.BAD_REQUEST, 12002, "종료된 투표입니다.")
     ;
 
     private final HttpStatus status;

@@ -90,6 +90,7 @@ springdoc:
     path: /swagger-ui.html
     doc-expansion: none
     enabled: true
+    display-request-duration: true
   paths-to-match:
     - /api/**
 

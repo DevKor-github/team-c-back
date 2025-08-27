@@ -46,10 +46,15 @@ spring:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
+  elasticsearch:
+    uris: ${ELASTIC_URIS}
+    username: ${ELASTIC_USERNAME}
+    password: ${ELASTIC_PASSWORD}
 
 logging:
   level:
     org.hibernate.SQL: debug
+    org.elasticsearch.client: TRACE
 
 jwt:
   secret:

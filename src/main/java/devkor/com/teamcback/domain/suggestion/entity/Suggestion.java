@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.suggestion.entity;
 
-import devkor.com.teamcback.domain.bookmark.dto.request.CreateCategoryReq;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -42,16 +41,16 @@ public class Suggestion extends BaseEntity {
     @JoinColumn(name = "userId")
     private User user;
 
-    @Setter
-    @OneToMany(mappedBy = "suggestion", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SuggestionImage> images = new ArrayList<>();
+    @Column
+    private String fileUuid;
 
-    public Suggestion(CreateSuggestionReq req, User user) {
+    public Suggestion(CreateSuggestionReq req, User user, String fileUuid) {
         this.title = req.getTitle();
         this.suggestionType = req.getType();
         this.content = req.getContent();
         this.user = user;
         this.email = req.getEmail();
+        this.fileUuid = fileUuid;
     }
 
     public void updateIsSolved(boolean solved) {

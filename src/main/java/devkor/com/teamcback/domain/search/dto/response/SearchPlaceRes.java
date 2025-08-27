@@ -56,12 +56,12 @@ public class SearchPlaceRes {
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
     private String starAverage;
 
-    public SearchPlaceRes(Place place) {
+    public SearchPlaceRes(Place place, String imageUrl) {
         this.id = place.getId();
         this.buildingId = place.getBuilding().getId();
         this.buildingName = place.getBuilding().getName();
         this.name = place.getName();
-        this.imageUrl = place.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
         this.detail = place.getDetail();
         this.weekdayOperatingTime = place.getWeekdayOperatingTime();
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();

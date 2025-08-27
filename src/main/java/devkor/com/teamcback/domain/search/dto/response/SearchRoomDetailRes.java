@@ -34,14 +34,14 @@ public class SearchRoomDetailRes {
     private String starAverage;
     private String nextPlaceTime;
 
-    public SearchRoomDetailRes(Place place) {
+    public SearchRoomDetailRes(Place place, String imageUrl) {
         this.id = place.getId();
         this.placeType = place.getType();
         this.name = place.getName();
         this.detail = place.getDetail();
         this.availability = place.isAvailability();
         this.plugAvailability = place.isPlugAvailability();
-        this.imageUrl = place.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
         this.weekdayOperatingTime = place.getWeekdayOperatingTime();
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();
         this.sundayOperatingTime = place.getSundayOperatingTime();

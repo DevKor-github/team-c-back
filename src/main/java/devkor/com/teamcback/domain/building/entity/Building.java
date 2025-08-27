@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.building.entity;
 
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,7 +27,10 @@ public class Building extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    private String imageUrl;
+    private String imageUrl; // 추후 삭제
+
+    @Setter
+    private String fileUuid;
 
     @Column(nullable = false)
     private String detail;

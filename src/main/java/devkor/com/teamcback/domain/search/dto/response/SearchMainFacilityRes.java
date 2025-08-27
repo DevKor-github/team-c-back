@@ -18,7 +18,7 @@ public class SearchMainFacilityRes {
     @Schema(description = "이미지 URL")
     private String imageUrl;
 
-    public SearchMainFacilityRes(Place place) {
+    public SearchMainFacilityRes(Place place, String imageUrl) {
         if(place.getFloor() > 0) {
             int floor = (int) Math.floor(place.getFloor());
             this.name = floor + "층 " + place.getName();
@@ -29,6 +29,6 @@ public class SearchMainFacilityRes {
         this.type = place.getType();
         this.typeName = place.getType().getName();
         this.placeId = place.getId();
-        this.imageUrl = place.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
     }
 }

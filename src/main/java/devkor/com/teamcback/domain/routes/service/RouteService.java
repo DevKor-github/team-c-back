@@ -14,7 +14,7 @@ import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import devkor.com.teamcback.global.logging.service.LogUtil;
+import devkor.com.teamcback.global.logging.LogUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

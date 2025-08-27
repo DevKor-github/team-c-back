@@ -120,6 +120,9 @@ dependencies {
 
     // thumbnail
     implementation 'net.coobird:thumbnailator:0.4.19'
+
+    // elasticsearch
+//    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 }
 
 dependencyManagement {

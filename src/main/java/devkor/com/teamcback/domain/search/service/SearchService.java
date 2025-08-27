@@ -23,6 +23,7 @@ import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.logging.service.LogUtil;
 import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final LogUtil logUtil;
     private final FileUtil fileUtil;
 
     // 점수 계산을 위한 상수
@@ -73,10 +75,11 @@ public class SearchService {
 
     // 통합 검색 결과에 표시하지 않을 편의시설 종류
     //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
+    // TODO: 리필로드 구현 완료되면 REUSABLE_CUP_RETURN 제거하기
     private static final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
-        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
+        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName(), PlaceType.REUSABLE_CUP_RETURN.getName());
 
     // 통합 검색 결과에서 "건물명 + 기본편의시설명"의 형태로 제공되어야 하는 편의시설 종류
     private static final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
@@ -134,6 +137,8 @@ public class SearchService {
                 scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
             }
         }
+
+        logUtil.logSearch(word);
         return new GlobalSearchListRes(orderSequence(scores));
     }
 
@@ -155,6 +160,7 @@ public class SearchService {
                 .map(Place::getBuilding)
                 .distinct()
                 .toList();
+            logUtil.logClick(null, null, null, type.toString());
         }
 
         List<SearchBuildingRes> resList = new ArrayList<>();
@@ -197,6 +203,7 @@ public class SearchService {
 
         res.setFacilities(map);
 
+        logUtil.logClick(building.getName(), null, null, placeType.toString());
         return res;
     }
 
@@ -266,7 +273,7 @@ public class SearchService {
 
             placeResList.add(new SearchPlaceRes(place, imageUrl));
         }
-
+        logUtil.logClick(null, null, null, placeType.toString());
         return new SearchFacilityListRes(placeResList);
     }
 
@@ -280,6 +287,7 @@ public class SearchService {
         if(place == null) {
             throw new GlobalException(NOT_FOUND_PLACE);
         }
+        logUtil.logClick(building.getName(), place.getName(), place.getFloor(), place.getType().toString());
         return new SearchPlaceByMaskIndexRes(place);
     }
 
@@ -334,9 +342,13 @@ public class SearchService {
         if(building.getFileUuid() != null) {
             imageUrl = fileUtil.getThumbnail(building.getFileUuid());
         }
+        logUtil.logClick(building.getName(), null, null, null);
         return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
     }
 
+    /**
+     * 건물 대표 편의시설 목록 조회
+     */
     @Transactional(readOnly = true)
     public CursorPageRes<SearchMainFacilityRes> searchBuildingMainFacilityList(Long buildingId, Long lastPlaceId, int size) {
         Place lastPlace = (lastPlaceId == null) ? null : findPlace(lastPlaceId);
@@ -393,7 +405,7 @@ public class SearchService {
         if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {
             bookmarked = true;
         }
-
+        logUtil.logClick(place.getBuilding().getName(), place.getName(), place.getFloor(), place.getType().toString());
         return new SearchPlaceDetailRes(place, imageUrl, bookmarked, placeImageList);
     }
 

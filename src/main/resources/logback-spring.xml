@@ -25,19 +25,12 @@
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
                 <timestamp/>
-                <pattern>
-                    <pattern>
-                        {
-                        "level": "%level",
-                        "traceId": "%X{traceId}",
-                        "endpoint": "%X{endpoint}",
-                        "status": "%X{status}",
-                        "latencyMs": "%X{latencyMs}",
-                        "message": "%msg",
-                        "userId": "%X{userId}"
-                        }
-                    </pattern>
-                </pattern>
+                <logLevel/>
+                <loggerName/>
+                <threadName/>
+                <mdc/>
+                <message/>
+                <arguments/>
             </providers>
         </encoder>
     </appender>

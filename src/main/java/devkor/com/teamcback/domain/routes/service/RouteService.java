@@ -14,8 +14,7 @@ import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import devkor.com.teamcback.global.logging.document.RouteLogDocument;
-import devkor.com.teamcback.global.logging.repository.RouteLogDocumentRepository;
+import devkor.com.teamcback.global.logging.service.LogUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,8 @@ public class RouteService {
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
     private final ConnectedBuildingRepository connectedBuildingRepository;
-    private final RouteLogDocumentRepository routeLogDocumentRepository;
+    private final LogUtil logUtil;
+
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
     private static final Long INF = Long.MAX_VALUE;
@@ -90,7 +90,7 @@ public class RouteService {
             if (endType == LocationType.BUILDING) endBuilding = findBuilding(endId);
             else if (endType == LocationType.PLACE) endPlace = findPlace(endId);
 
-            routeLogDocumentRepository.save(new RouteLogDocument(startBuilding, startPlace, endBuilding, endPlace, conditions));
+            logUtil.logRoute(startBuilding, startPlace, endBuilding, endPlace, conditions);
         }
         return routeRes;
     }

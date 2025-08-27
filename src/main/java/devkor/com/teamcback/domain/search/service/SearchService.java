@@ -23,10 +23,7 @@ import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import devkor.com.teamcback.global.logging.document.ClickLogDocument;
-import devkor.com.teamcback.global.logging.document.SearchLogDocument;
-import devkor.com.teamcback.global.logging.repository.ClickLogDocumentRepository;
-import devkor.com.teamcback.global.logging.repository.SearchLogDocumentRepository;
+import devkor.com.teamcback.global.logging.service.LogUtil;
 import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +56,7 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
-    private final SearchLogDocumentRepository searchLogDocumentRepository;
-    private final ClickLogDocumentRepository clickLogDocumentRepository;
+    private final LogUtil logUtil;
     private final FileUtil fileUtil;
 
     // 점수 계산을 위한 상수
@@ -141,7 +137,8 @@ public class SearchService {
                 scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
             }
         }
-        searchLogDocumentRepository.save(new SearchLogDocument(word));
+
+        logUtil.logSearch(word);
         return new GlobalSearchListRes(orderSequence(scores));
     }
 
@@ -163,7 +160,7 @@ public class SearchService {
                 .map(Place::getBuilding)
                 .distinct()
                 .toList();
-            clickLogDocumentRepository.save(new ClickLogDocument(null, null, null, type.toString()));
+            logUtil.logClick(null, null, null, type.toString());
         }
 
         List<SearchBuildingRes> resList = new ArrayList<>();
@@ -206,7 +203,7 @@ public class SearchService {
 
         res.setFacilities(map);
 
-        clickLogDocumentRepository.save(new ClickLogDocument(building.getName(), null, null, placeType.toString()));
+        logUtil.logClick(building.getName(), null, null, placeType.toString());
         return res;
     }
 
@@ -276,7 +273,7 @@ public class SearchService {
 
             placeResList.add(new SearchPlaceRes(place, imageUrl));
         }
-        clickLogDocumentRepository.save(new ClickLogDocument(null, null, null, placeType.toString()));
+        logUtil.logClick(null, null, null, placeType.toString());
         return new SearchFacilityListRes(placeResList);
     }
 
@@ -290,7 +287,7 @@ public class SearchService {
         if(place == null) {
             throw new GlobalException(NOT_FOUND_PLACE);
         }
-        clickLogDocumentRepository.save(new ClickLogDocument(building.getName(), place.getName(), place.getFloor(), place.getType().toString()));
+        logUtil.logClick(building.getName(), place.getName(), place.getFloor(), place.getType().toString());
         return new SearchPlaceByMaskIndexRes(place);
     }
 
@@ -345,7 +342,7 @@ public class SearchService {
         if(building.getFileUuid() != null) {
             imageUrl = fileUtil.getThumbnail(building.getFileUuid());
         }
-        clickLogDocumentRepository.save(new ClickLogDocument(building.getName(), null, null, null));
+        logUtil.logClick(building.getName(), null, null, null);
         return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
     }
 
@@ -408,7 +405,7 @@ public class SearchService {
         if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {
             bookmarked = true;
         }
-        clickLogDocumentRepository.save(new ClickLogDocument(place.getBuilding().getName(), place.getName(), place.getFloor(), place.getType().toString()));
+        logUtil.logClick(place.getBuilding().getName(), place.getName(), place.getFloor(), place.getType().toString());
         return new SearchPlaceDetailRes(place, imageUrl, bookmarked, placeImageList);
     }
 

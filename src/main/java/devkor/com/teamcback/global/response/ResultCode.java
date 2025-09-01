@@ -74,7 +74,14 @@ public enum ResultCode {
     OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다."),
 
     // 고연전 11000번대
-    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다.")
+    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다."),
+
+
+    //ble 12000번대
+    NOT_FOUND_DEVICE(HttpStatus.NOT_FOUND, 12000, "해당 placeId에 해당하는 device가 없습니다."),
+    NOT_FOUND_DEVICE_NAME(HttpStatus.NOT_FOUND, 12001, "해당 device 이름이 없습니다."),
+    EXISTING_DEVICE_NAME(HttpStatus.CONFLICT, 12002, "중복되는 device 이름입니다."),
+
     ;
 
     private final HttpStatus status;

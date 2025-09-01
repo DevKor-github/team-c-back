@@ -1,22 +1,22 @@
 package devkor.com.teamcback.domain.ble.entity;
 
 
-import devkor.com.teamcback.domain.ble.dto.request.CreateBLEReq;
-import devkor.com.teamcback.domain.ble.dto.request.ModifyBLEReq;
+import devkor.com.teamcback.domain.ble.dto.request.UpdateBLEReq;
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.place.entity.Place;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name="tb_ble_device")
 @Getter
 @Setter
 @NoArgsConstructor
-public class BLEdevice extends BaseEntity {
+public class BLEDevice extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,8 +24,9 @@ public class BLEdevice extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String deviceName;
 
-    @Column
-    private Long placeId;
+    @OneToOne
+    @JoinColumn(name = "placeId")
+    private Place place;
 
     @Column
     private int capacity;
@@ -37,18 +38,22 @@ public class BLEdevice extends BaseEntity {
     private BLEstatus lastStatus;
 
     @Column
-    private LocalTime lastTime;
+    private LocalDateTime lastTime;
 
-    public BLEdevice(CreateBLEReq req){
-        this.deviceName = req.getDeviceName();
-        this.placeId = req.getPlaceId();
-        this.capacity = req.getCapacity();
+    public BLEDevice(String deviceName, Place place, int capacity) {
+        this.deviceName = deviceName;
+        this.place = place;
+        this.capacity = capacity;
     }
 
-    public void update(ModifyBLEReq req){
+    public void update(UpdateBLEReq req, BLEstatus status) {
         this.lastCount = req.getLastCount();
-        this.lastStatus = req.getLastStatus();
+        this.lastStatus = status;
         this.lastTime = req.getLastTime();
+    }
+
+    public void update(BLEstatus status){
+        this.lastStatus = status;
     }
 
 }

@@ -75,7 +75,6 @@ public class SearchService {
 
     // 통합 검색 결과에 표시하지 않을 편의시설 종류
     //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
-    // TODO: 리필로드 구현 완료되면 REUSABLE_CUP_RETURN 제거하기
     private static final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
         PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
@@ -137,7 +136,7 @@ public class SearchService {
             }
         }
 
-//        logUtil.logSearch(word);
+        logUtil.logSearch(word);
         return new GlobalSearchListRes(orderSequence(scores));
     }
 

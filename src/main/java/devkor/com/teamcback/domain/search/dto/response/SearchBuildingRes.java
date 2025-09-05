@@ -33,7 +33,7 @@ public class SearchBuildingRes {
 
     public SearchBuildingRes(Building building, String imageUrl, List<PlaceType> placeTypes) {
         this.buildingId = building.getId();
-        this.name = "고려대학교 서울캠퍼스 " + building.getName();
+        this.name = "고려대학교 " + building.getName();
         this.imageUrl = imageUrl != null ? imageUrl : building.getImageUrl();
         this.detail = building.getDetail();
         this.address = building.getAddress();

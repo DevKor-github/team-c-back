@@ -78,13 +78,12 @@ public class SearchService {
     // TODO: 리필로드 구현 완료되면 REUSABLE_CUP_RETURN 제거하기
     private static final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
-        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
-        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName(), PlaceType.REUSABLE_CUP_RETURN.getName());
+        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
 
     // 통합 검색 결과에서 "건물명 + 기본편의시설명"의 형태로 제공되어야 하는 편의시설 종류
     private static final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
-        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER,
-        PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK,
+        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER, PlaceType.REUSABLE_CUP_RETURN,
+        PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK, PlaceType.TRASH_CAN,
         PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.HEALTH_OFFICE, PlaceType.DISABLED_PARKING);
 
     // 건물 상세 조회 : 대표 편의시설 종류
@@ -138,7 +137,7 @@ public class SearchService {
             }
         }
 
-        logUtil.logSearch(word);
+//        logUtil.logSearch(word);
         return new GlobalSearchListRes(orderSequence(scores));
     }
 

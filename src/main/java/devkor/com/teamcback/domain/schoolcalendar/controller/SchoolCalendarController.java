@@ -33,4 +33,18 @@ public class SchoolCalendarController {
         return CommonResponse.success(schoolCalendarService.isVacation());
     }
 
+    /***
+     * 고연전 여부 반환
+     */
+    @GetMapping("/koyeon")
+    @Operation(summary = "고연전 여부를 t/f로 반환", description = "고연전 여부를 t/f로 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GetSchoolCalendarRes> isKoyeon() {
+        return CommonResponse.success(schoolCalendarService.isKoyeon());
+    }
+
 }

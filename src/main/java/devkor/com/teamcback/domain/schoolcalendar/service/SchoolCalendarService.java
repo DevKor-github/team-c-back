@@ -20,8 +20,14 @@ public class SchoolCalendarService {
      * 방학 여부 반환
      */
     public GetSchoolCalendarRes isVacation() {
-        SchoolCalendar schoolCalendar = findSchoolCalendar(1L);
-        return new GetSchoolCalendarRes(schoolCalendar);
+        return new GetSchoolCalendarRes(findSchoolCalendar(1L));
+    }
+
+    /**
+     * 고연전 여부 반환
+     */
+    public GetSchoolCalendarRes isKoyeon() {
+        return new GetSchoolCalendarRes(findSchoolCalendar(2L));
     }
 
     /**

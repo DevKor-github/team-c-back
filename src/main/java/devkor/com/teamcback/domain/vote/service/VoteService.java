@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static devkor.com.teamcback.domain.vote.entity.VoteStatus.CLOSED;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
@@ -36,7 +35,6 @@ public class VoteService {
      * 장소별 투표 조회
      * @param voteTopicId 투표 주제 ID
      * @param placeId 장소 ID
-     * @return
      */
     @Transactional(readOnly = true)
     public GetVoteRes getVoteByPlace(Long voteTopicId, Long placeId) {

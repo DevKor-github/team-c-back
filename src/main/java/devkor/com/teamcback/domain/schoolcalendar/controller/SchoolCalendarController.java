@@ -1,7 +1,7 @@
-package devkor.com.teamcback.domain.SchoolCalendar.controller;
+package devkor.com.teamcback.domain.schoolcalendar.controller;
 
-import devkor.com.teamcback.domain.SchoolCalendar.dto.response.GetVacationRes;
-import devkor.com.teamcback.domain.SchoolCalendar.service.SchoolCalendarService;
+import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetVacationRes;
+import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

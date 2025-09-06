@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.scheduler;
 
-import devkor.com.teamcback.domain.SchoolCalendar.service.SchoolCalendarService;
+import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;

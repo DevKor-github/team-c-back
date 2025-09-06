@@ -1,8 +1,8 @@
-package devkor.com.teamcback.domain.SchoolCalendar.service;
+package devkor.com.teamcback.domain.schoolcalendar.service;
 
-import devkor.com.teamcback.domain.SchoolCalendar.dto.response.GetVacationRes;
-import devkor.com.teamcback.domain.SchoolCalendar.entity.SchoolCalendar;
-import devkor.com.teamcback.domain.SchoolCalendar.repository.SchoolCalendarRepository;
+import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetVacationRes;
+import devkor.com.teamcback.domain.schoolcalendar.entity.SchoolCalendar;
+import devkor.com.teamcback.domain.schoolcalendar.repository.SchoolCalendarRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

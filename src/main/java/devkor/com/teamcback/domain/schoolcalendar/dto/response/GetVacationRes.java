@@ -1,6 +1,6 @@
-package devkor.com.teamcback.domain.SchoolCalendar.dto.response;
+package devkor.com.teamcback.domain.schoolcalendar.dto.response;
 
-import devkor.com.teamcback.domain.SchoolCalendar.entity.SchoolCalendar;
+import devkor.com.teamcback.domain.schoolcalendar.entity.SchoolCalendar;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 

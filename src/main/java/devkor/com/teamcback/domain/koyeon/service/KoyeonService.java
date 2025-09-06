@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.koyeon.service;
 
-import devkor.com.teamcback.domain.SchoolCalendar.entity.SchoolCalendar;
-import devkor.com.teamcback.domain.SchoolCalendar.repository.SchoolCalendarRepository;
+import devkor.com.teamcback.domain.schoolcalendar.entity.SchoolCalendar;
+import devkor.com.teamcback.domain.schoolcalendar.repository.SchoolCalendarRepository;
 import devkor.com.teamcback.domain.koyeon.dto.response.*;
 import devkor.com.teamcback.domain.koyeon.entity.*;
 import devkor.com.teamcback.domain.koyeon.repository.*;

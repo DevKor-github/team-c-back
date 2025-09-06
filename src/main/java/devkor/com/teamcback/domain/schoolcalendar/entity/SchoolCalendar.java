@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.SchoolCalendar.entity;
+package devkor.com.teamcback.domain.schoolcalendar.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import jakarta.persistence.*;

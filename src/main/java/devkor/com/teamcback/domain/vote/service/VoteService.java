@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.vote.service;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.vote.dto.request.SaveVoteRecordReq;
+import devkor.com.teamcback.domain.vote.dto.response.ChangeVoteStatusRes;
 import devkor.com.teamcback.domain.vote.dto.response.GetVoteOptionRes;
 import devkor.com.teamcback.domain.vote.dto.response.GetVoteRes;
 import devkor.com.teamcback.domain.vote.dto.response.SaveVoteRecordRes;
@@ -37,6 +38,7 @@ public class VoteService {
      * @param placeId 장소 ID
      * @return
      */
+    @Transactional(readOnly = true)
     public GetVoteRes getVoteByPlace(Long voteTopicId, Long placeId) {
 
         // 투표 주제
@@ -58,7 +60,7 @@ public class VoteService {
     /**
      * 투표 저장
      */
-    @UpdateScore(addScore = 5)
+    @UpdateScore(addScore = 2)
     @Transactional
     public SaveVoteRecordRes saveVoteRecord(Long userId, SaveVoteRecordReq req) {
         if(userId == null) throw new GlobalException(FORBIDDEN);
@@ -73,7 +75,7 @@ public class VoteService {
         if(!Objects.equals(vote.getVoteTopicId(), voteOption.getVoteTopicId())) throw new GlobalException(INVALID_INPUT);
 
         // 투표 상태 확인
-        if(vote.getStatus() == CLOSED) throw new GlobalException(CLOSED_VOTE);
+        vote.checkStatus();
 
         // 투표 이력 확인
         VoteRecord voteRecord = voteRecordRepository.findByUserIdAndVoteId(userId, vote.getId());
@@ -87,25 +89,20 @@ public class VoteService {
             voteRecord.setVoteOptionId(null); // 기존 투표 옵션을 null로 설정 (기록 남기기)
         }
 
-        // 투표 항목, 현황
-        List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionsByPlaceByVoteTopicIdAndPlaceId(voteOption.getId(), vote.getPlaceId())
-                .stream().sorted(Comparator.comparing(GetVoteOptionRes::getVoteCount)).toList();
-
-        // 투표 종료 판단
-        if(!voteOptionList.isEmpty()) {
-            int maxCount = voteOptionList.get(voteOptionList.size() - 1).getVoteCount();
-            int minCount = voteOptionList.get(0).getVoteCount();
-            if(minCount >= 5 && maxCount >= minCount * 2) {
-                vote.setStatus(CLOSED);
-                // TODO: 투표 결과 반영 로직 검토(확정된 정보와 투표로 정해진 정보를 구별 불가능함...)
-                if(vote.getVoteTopicId() == 1L) { // 콘센트 투표인 경우
-                    Place place = findPlace(vote.getPlaceId());
-                    place.setPlugAvailability(voteOptionList.get(voteOptionList.size() - 1).getVoteOptionId() == 1);
-                }
-            }
-        }
-
         return new SaveVoteRecordRes();
+    }
+
+    /**
+     * 투표 상태 변경(토글)
+     */
+    public ChangeVoteStatusRes changeVoteStatus(Long voteId) {
+        // 투표
+        Vote vote = findVote(voteId);
+
+        // 상태 변경
+        vote.changeStatus();
+
+        return new ChangeVoteStatusRes();
     }
 
     private Vote findVote(Long voteTopicId, Long placeId) {

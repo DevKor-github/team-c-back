@@ -32,7 +32,7 @@ public class VoteController {
             @ApiResponse(responseCode = "404", description = "Not Found",
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    @GetMapping("/{voteTopicId}/places/{placeId}")
+    @GetMapping("/topics/{voteTopicId}/places/{placeId}")
     public CommonResponse<GetVoteRes> getVoteByPlace(
             @Parameter(description = "투표 주제 ID", example = "1")
             @PathVariable(name = "voteTopicId") Long voteTopicId,

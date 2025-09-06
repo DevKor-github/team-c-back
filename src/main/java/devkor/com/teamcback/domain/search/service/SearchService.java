@@ -8,6 +8,7 @@ import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.building.repository.BuildingRepository;
 import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
@@ -22,6 +23,7 @@ import devkor.com.teamcback.domain.search.entity.SearchLog;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.logging.LogUtil;
 import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +56,8 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final LogUtil logUtil;
+    private final FileUtil fileUtil;
 
     // 점수 계산을 위한 상수
     static final int BASE_SCORE_BUILDING_DEFAULT = 1000;
@@ -73,13 +77,12 @@ public class SearchService {
     //TODO: 자전거보관소, 벤치 디자인 요청 후 List에서 제거
     private static final List<String> excludedTypes = Arrays.asList(PlaceType.CLASSROOM.getName(), PlaceType.TOILET.getName(),
         PlaceType.MEN_TOILET.getName(), PlaceType.WOMEN_TOILET.getName(), PlaceType.MEN_HANDICAPPED_TOILET.getName(),
-        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.TRASH_CAN.getName(),
-        PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
+        PlaceType.WOMEN_HANDICAPPED_TOILET.getName(), PlaceType.LOCKER.getName(), PlaceType.BICYCLE_RACK.getName(), PlaceType.BENCH.getName());
 
     // 통합 검색 결과에서 "건물명 + 기본편의시설명"의 형태로 제공되어야 하는 편의시설 종류
     private static final List<PlaceType> outerTagTypes = Arrays.asList(PlaceType.CAFE, PlaceType.CAFETERIA, PlaceType.CONVENIENCE_STORE,
-        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER,
-        PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK,
+        PlaceType.READING_ROOM, PlaceType.STUDY_ROOM, PlaceType.BOOK_RETURN_MACHINE, PlaceType.LOUNGE, PlaceType.WATER_PURIFIER, PlaceType.REUSABLE_CUP_RETURN,
+        PlaceType.VENDING_MACHINE, PlaceType.PRINTER, PlaceType.TUMBLER_WASHER, PlaceType.ONESTOP_AUTO_MACHINE, PlaceType.BANK, PlaceType.TRASH_CAN,
         PlaceType.SMOKING_BOOTH, PlaceType.SHOWER_ROOM, PlaceType.GYM, PlaceType.SLEEPING_ROOM, PlaceType.HEALTH_OFFICE, PlaceType.DISABLED_PARKING);
 
     // 건물 상세 조회 : 대표 편의시설 종류
@@ -132,6 +135,8 @@ public class SearchService {
                 scores.putAll(getScores(word, buildings, lastPlaceWord, lastBuildingWord, user));
             }
         }
+
+        logUtil.logSearch(word);
         return new GlobalSearchListRes(orderSequence(scores));
     }
 
@@ -153,18 +158,24 @@ public class SearchService {
                 .map(Place::getBuilding)
                 .distinct()
                 .toList();
+            logUtil.logClick(null, null, null, type.toString());
         }
 
-        return new SearchBuildingListRes(
-            buildingList.stream()
-            .map(building -> {
-                List<PlaceType> containPlaceTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
-                    .map(Place::getType)
-                    .distinct()
-                    .toList();
-                return new SearchBuildingRes(building, containPlaceTypes);
-            })
-            .toList());
+        List<SearchBuildingRes> resList = new ArrayList<>();
+        for(Building building : buildingList) {
+            // 편의시설 종류
+            List<PlaceType> containPlaceTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream().map(Place::getType).distinct().toList();
+
+            // 건물 대표 사진
+            String imageUrl = null;
+            if(building.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+            }
+
+            resList.add(new SearchBuildingRes(building, imageUrl, containPlaceTypes));
+        }
+
+        return new SearchBuildingListRes(resList);
     }
 
     /**
@@ -180,11 +191,17 @@ public class SearchService {
         Map<Double, List<SearchFacilityRes>> map = new HashMap<>();
         for(Place place : facilities) {
             if(!map.containsKey(place.getFloor())) map.put(place.getFloor(), new ArrayList<>());
-            map.get(place.getFloor()).add(new SearchFacilityRes(place));
+
+            String imageUrl = null;
+            if(place.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+            }
+            map.get(place.getFloor()).add(new SearchFacilityRes(place, imageUrl));
         }
 
         res.setFacilities(map);
 
+        logUtil.logClick(building.getName(), null, null, placeType.toString());
         return res;
     }
 
@@ -211,9 +228,16 @@ public class SearchService {
     public SearchFloorInfoRes searchPlaceByBuildingFloor(Long buildingId, int floor) {
          Building building = findBuilding(buildingId);
          List<Place> placeList = placeRepository.findAllByBuildingAndFloor(building, floor);
+         List<SearchRoomDetailRes> placeResList = new ArrayList<>();
 
-         List<SearchRoomDetailRes> roomDetailRes = new ArrayList<>(
-             placeList.stream().map(SearchRoomDetailRes::new).toList());
+         for(Place place : placeList) {
+             String imageUrl = null;
+             if(place.getFileUuid() != null) {
+                 imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+             }
+
+             placeResList.add(new SearchRoomDetailRes(place, imageUrl));
+         }
 
         List<SearchNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloorAndTypeIn(building, floor, List.of(ENTRANCE, STAIR, ELEVATOR))
             .stream().map(SearchNodeRes::new).toList();
@@ -227,7 +251,7 @@ public class SearchService {
 //             })
 //             .map(SearchNodeRes::new).toList();
 
-         return new SearchFloorInfoRes(roomDetailRes, nodeList);
+         return new SearchFloorInfoRes(placeResList, nodeList);
     }
 
     /**
@@ -236,9 +260,19 @@ public class SearchService {
     @Transactional(readOnly = true)
     public SearchFacilityListRes searchFacilitiesWithType(PlaceType placeType) {
         // TODO: 위경도 값이 null인 facility 예외 처리
-        List<SearchPlaceRes> placeList = placeRepository.findAllByType(placeType).stream().map(SearchPlaceRes::new).toList();
+        List<Place> placeList = placeRepository.findAllByType(placeType);
+        List<SearchPlaceRes> placeResList = new ArrayList<>();
 
-        return new SearchFacilityListRes(placeList);
+        for(Place place : placeList) {
+            String imageUrl = null;
+            if(place.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+            }
+
+            placeResList.add(new SearchPlaceRes(place, imageUrl));
+        }
+        logUtil.logClick(null, null, null, placeType.toString());
+        return new SearchFacilityListRes(placeResList);
     }
 
     /**
@@ -251,6 +285,7 @@ public class SearchService {
         if(place == null) {
             throw new GlobalException(NOT_FOUND_PLACE);
         }
+        logUtil.logClick(building.getName(), place.getName(), place.getFloor(), place.getType().toString());
         return new SearchPlaceByMaskIndexRes(place);
     }
 
@@ -274,10 +309,14 @@ public class SearchService {
         List<SearchMainFacilityRes> res = new ArrayList<>();
 
         for (Place place : mainFacilities) {
+            String imageUrl = null;
+            if(place.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+            }
             if(place.getImageUrl() == null) {
                 place.setImageUrl(DefaultPlace.getUrlByPlaceType(place.getType()));
             }
-            res.add(new SearchMainFacilityRes(place));
+            res.add(new SearchMainFacilityRes(place, imageUrl));
         }
 
         List<PlaceType> containPlaceTypes = getFacilitiesByBuildingAndTypes(building, iconTypes).stream()
@@ -295,15 +334,33 @@ public class SearchService {
                 bookmarked = true;
             }
         }
-        return new SearchBuildingDetailRes(res, containPlaceTypes, building, bookmarked);
+
+        // 건물 대표 이미지 확인
+        String imageUrl = null;
+        if(building.getFileUuid() != null) {
+            imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+        }
+        logUtil.logClick(building.getName(), null, null, null);
+        return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
     }
 
+    /**
+     * 건물 대표 편의시설 목록 조회
+     */
     @Transactional(readOnly = true)
     public CursorPageRes<SearchMainFacilityRes> searchBuildingMainFacilityList(Long buildingId, Long lastPlaceId, int size) {
         Place lastPlace = (lastPlaceId == null) ? null : findPlace(lastPlaceId);
 
-        List<SearchMainFacilityRes> mainFacilities = placeRepository.getFacilitiesByBuildingAndTypesWithPage(buildingId, mainFacilityTypes, lastPlace, size + 1)
-            .stream().map(SearchMainFacilityRes::new).collect(Collectors.toList());
+        List<Place> placeList = placeRepository.getFacilitiesByBuildingAndTypesWithPage(buildingId, mainFacilityTypes, lastPlace, size + 1);
+        List<SearchMainFacilityRes> mainFacilities = new ArrayList<>();
+
+        for (Place place : placeList) {
+            String imageUrl = null;
+            if(place.getFileUuid() != null) {
+                imageUrl = fileUtil.getThumbnail(place.getFileUuid());
+            }
+            mainFacilities.add(new SearchMainFacilityRes(place, imageUrl));
+        }
 
         boolean hasNext = mainFacilities.size() > size;
         if (hasNext) mainFacilities.remove(size);
@@ -327,11 +384,27 @@ public class SearchService {
             categories = categoryRepository.findAllByUser(user);
         }
 
+        // 장소
         Place place = findPlace(placeId);
+
+        // 장소 사진
+        // TODO: 나중에 수정
+        String imageUrl = null;
+        List<SearchPlaceImageRes> placeImageList;
+        if(place.getFileUuid() != null) {
+            placeImageList = fileUtil.getThumbnailFiles(place.getFileUuid()).stream().map(image -> new SearchPlaceImageRes(0L, image)).toList();
+            imageUrl = placeImageList.isEmpty() ? null : placeImageList.get(0).getImage();
+        }
+        else {
+            placeImageList = new ArrayList<>();placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList();
+        }
+
+        // 즐겨찾기
         if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {
             bookmarked = true;
         }
-        return new SearchPlaceDetailRes(place, bookmarked, placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList());
+        logUtil.logClick(place.getBuilding().getName(), place.getName(), place.getFloor(), place.getType().toString());
+        return new SearchPlaceDetailRes(place, imageUrl, bookmarked, placeImageList);
     }
 
     /**

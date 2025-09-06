@@ -1,7 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.entity;
 
-import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.place.entity.Place;
 import jakarta.persistence.*;
 import lombok.Getter;

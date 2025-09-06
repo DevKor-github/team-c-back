@@ -24,6 +24,11 @@ spring:
         mode: always
         encoding: UTF-8
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
+
   data:
     redis:
       host: ${REDIS_HOST}
@@ -41,10 +46,15 @@ spring:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
+#  elasticsearch:
+#    uris: ${ELASTIC_URIS}
+#    username: ${ELASTIC_USERNAME}
+#    password: ${ELASTIC_PASSWORD}
 
 logging:
   level:
     org.hibernate.SQL: debug
+#    org.elasticsearch.client: TRACE
 
 jwt:
   secret:
@@ -85,6 +95,7 @@ springdoc:
     path: /swagger-ui.html
     doc-expansion: none
     enabled: true
+    display-request-duration: true
   paths-to-match:
     - /api/**
 
@@ -128,4 +139,4 @@ management:
       application: kodaero
 
 staff:
-  emails: leeyejin113@gmail.com
+  emails: leeyejin113@gmail.com,pingdoll3110@naver.com

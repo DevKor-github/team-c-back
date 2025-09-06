@@ -14,6 +14,7 @@ import devkor.com.teamcback.domain.routes.repository.CheckpointRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.logging.LogUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,8 @@ public class RouteService {
     private final PlaceRepository placeRepository;
     private final CheckpointRepository checkpointRepository;
     private final ConnectedBuildingRepository connectedBuildingRepository;
+    private final LogUtil logUtil;
+
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
     private static final Long INF = Long.MAX_VALUE;
@@ -76,7 +79,24 @@ public class RouteService {
 //        if(route.getPath().isEmpty() && route2.getPath.isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
 //        routeRes.add(buildRouteResponse(route2, isStartBuilding, isEndBuilding));
 
+        // 로그 저장
+        Building startBuilding = null, endBuilding = null;
+        Place startPlace= null, endPlace = null;
+
+        if(checkType(startType, endType)) {
+            if (startType == LocationType.BUILDING) startBuilding = findBuilding(startId);
+            else if (startType == LocationType.PLACE) startPlace = findPlace(startId);
+
+            if (endType == LocationType.BUILDING) endBuilding = findBuilding(endId);
+            else if (endType == LocationType.PLACE) endPlace = findPlace(endId);
+
+            logUtil.logRoute(startBuilding, startPlace, endBuilding, endPlace, conditions);
+        }
         return routeRes;
+    }
+
+    private boolean checkType(LocationType startType, LocationType endType) {
+        return (startType == LocationType.BUILDING || startType == LocationType.PLACE) && (endType == LocationType.BUILDING || endType == LocationType.PLACE);
     }
 
     /**

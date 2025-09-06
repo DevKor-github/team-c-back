@@ -44,13 +44,13 @@ public class SearchBuildingDetailRes {
     @Schema(description = "주요 시설 리스트")
     private List<SearchMainFacilityRes> mainFacilityList;
 
-    public SearchBuildingDetailRes(List<SearchMainFacilityRes> facilities, List<PlaceType> types, Building building, boolean bookmarked) {
+    public SearchBuildingDetailRes(List<SearchMainFacilityRes> facilities, List<PlaceType> types, Building building, String imageUrl, boolean bookmarked) {
         this.buildingId = building.getId();
-        this.name = "고려대학교 서울캠퍼스 " + building.getName();
+        this.name = "고려대학교 " + building.getName();
         this.address = building.getAddress();
         this.latitude = building.getNode().getLatitude();
         this.longitude = building.getNode().getLongitude();
-        this.imageUrl = building.getImageUrl();
+        this.imageUrl = imageUrl != null ? imageUrl : building.getImageUrl();
         this.weekdayOperatingTime = building.getWeekdayOperatingTime();
         this.saturdayOperatingTime = building.getSaturdayOperatingTime();
         this.sundayOperatingTime = building.getSundayOperatingTime();

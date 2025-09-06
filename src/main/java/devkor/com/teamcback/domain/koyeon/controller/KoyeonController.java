@@ -23,6 +23,7 @@ public class KoyeonController {
 
     /***
      * 고연전 여부 반환
+     * TODO: 프론트 api 변경 후 삭제 필요
      */
     @GetMapping("")
     @Operation(summary = "고연전 시즌 여부를 t/f로 반환", description = "고연전 시즌 여부를 t/f로 반환")

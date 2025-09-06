@@ -3,7 +3,7 @@ package devkor.com.teamcback.domain.place.entity;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -43,6 +43,8 @@ public class Place extends BaseEntity {
     private boolean plugAvailability;
 
     private String imageUrl;
+
+    private String fileUuid;
 
     @Setter
     private String operatingTime;

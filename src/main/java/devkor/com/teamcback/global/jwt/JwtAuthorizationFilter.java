@@ -32,6 +32,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     private static final List<RequestMatcher> whiteList =
         List.of(
             new AntPathRequestMatcher("/api/migration"),
+            new AntPathRequestMatcher("/api/school-calendar/**"),
             new AntPathRequestMatcher("/api/koyeon/**"),
             new AntPathRequestMatcher("/api/routes/**"),
             new AntPathRequestMatcher("/api/search", HttpMethod.GET.name()),

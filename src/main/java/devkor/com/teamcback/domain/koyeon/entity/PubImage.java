@@ -14,7 +14,10 @@ public class PubImage {
     private Long id;
 
     @Column(nullable = false)
-    private String imageUrl;
+    private String imageUrl; // 추후 삭제
+
+    @Column(nullable = false)
+    private String fileUuid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "freePub_id")

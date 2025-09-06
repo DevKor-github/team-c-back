@@ -20,4 +20,12 @@ public class SearchBuildingImageRes {
         this.floor = buildingImage.getFloor();
         this.image = buildingImage.getImage();
     }
+
+    public SearchBuildingImageRes(BuildingImage buildingImage, String image) {
+        this.buildingImageId = buildingImage.getId();
+        this.buildingId = buildingImage.getBuilding().getId();
+        this.buildingName = buildingImage.getBuilding().getName();
+        this.floor = buildingImage.getFloor();
+        this.image = image;
+    }
 }

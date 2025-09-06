@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Schema(description = "방학 여부 응답 dto")
 @Getter
-public class GetVacationRes {
+public class GetSchoolCalendarRes {
 
     @Schema(description = "학교 일정 ID", example = "1")
     private Long id;
@@ -15,7 +15,7 @@ public class GetVacationRes {
     @Schema(description = "일정 여부", example = "true")
     private boolean isActive;
 
-    public GetVacationRes(SchoolCalendar schoolCalendar) {
+    public GetSchoolCalendarRes(SchoolCalendar schoolCalendar) {
         this.id = schoolCalendar.getId();
         this.name = schoolCalendar.getName();
         this.isActive = schoolCalendar.isActive();

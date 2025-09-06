@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.schoolcalendar.controller;
 
-import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetVacationRes;
+import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetSchoolCalendarRes;
 import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +29,7 @@ public class SchoolCalendarController {
             @ApiResponse(responseCode = "404", description = "Not Found",
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    public CommonResponse<GetVacationRes> isKoyeon() {
+    public CommonResponse<GetSchoolCalendarRes> isVacation() {
         return CommonResponse.success(schoolCalendarService.isVacation());
     }
 

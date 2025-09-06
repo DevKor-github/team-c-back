@@ -73,8 +73,9 @@ public enum ResultCode {
     // 운영 시간 10000번대
     OPER_CONDITION_HAS_NO_OPER_TIME(HttpStatus.NOT_FOUND, 10000, "운영 조건이 운영 시간을 가지고 있지 않습니다."),
 
-    // 고연전 11000번대
-    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다.")
+    // 행사 11000번대
+    NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다."),
+    NOT_FOUND_SCHOOL_CALENDAR(HttpStatus.NOT_FOUND, 11001, "관련 일정을 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

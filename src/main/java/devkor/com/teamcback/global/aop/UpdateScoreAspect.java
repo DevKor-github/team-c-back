@@ -5,6 +5,8 @@ import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository
 import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.domain.vote.dto.request.SaveVoteRecordReq;
+import devkor.com.teamcback.domain.vote.repository.VoteRecordRepository;
 import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class UpdateScoreAspect {
 
     private final UserRepository userRepository;
     private final UserBookmarkLogRepository userBookmarkLogRepository;
+    private final VoteRecordRepository voteRecordRepository;
 
     @Around("@annotation(updateScore)")
     public Object updateScore(ProceedingJoinPoint joinPoint, UpdateScore updateScore) throws Throwable {
@@ -85,6 +88,12 @@ public class UpdateScoreAspect {
             // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
             if (arg instanceof CreateBookmarkReq req) {
                 if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+                    return false;
+                }
+            }
+
+            if (arg instanceof SaveVoteRecordReq req) {
+                if (voteRecordRepository.existsByUserIdAndPlaceIdAndVoteTopicId(user.getUserId(), req.getPlaceId(), req.getVoteTopicId())) {
                     return false;
                 }
             }

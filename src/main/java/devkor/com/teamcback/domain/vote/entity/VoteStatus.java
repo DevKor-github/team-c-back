@@ -6,5 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum VoteStatus {
-    OPEN, CLOSED;
+    OPEN("진행 중"),
+    CLOSED("종료");
+
+    private final String name;
 }

@@ -25,7 +25,7 @@ public class VoteRecord extends BaseEntity {
     @Column(nullable = false)
     private Long voteTopicId;
 
-    @Column(nullable = false)
+    @Column
     private Long voteOptionId;
 
     public VoteRecord(Long userId, Long placeId, Long voteTopicId, Long voteOptionId) {

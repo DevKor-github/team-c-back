@@ -23,6 +23,4 @@ public class VoteOption extends BaseEntity {
     @Column(nullable = false)
     private String optionText;
 
-    @Column(nullable = false)
-    private int voteCount = 0;
 }

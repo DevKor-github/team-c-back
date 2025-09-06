@@ -80,7 +80,7 @@ public class VoteService {
         if(voteRecord == null) { // 다른 거 선택한 경우 새로 저장
             voteRecordRepository.save(new VoteRecord(userId, vote.getId(), req.getVoteOptionId()));
         }
-        else if(!voteRecord.getVoteOptionId().equals(voteOption.getId())){ // 다른 걸 투표한 경우
+        else if(!Objects.equals(voteRecord.getVoteOptionId(), voteOption.getId())){ // 다른 걸 투표한 경우
             voteRecord.setVoteOptionId(req.getVoteOptionId());
         }
         else { // 같은 걸 투표한 경우 -> 토글로 취소됨
@@ -91,12 +91,17 @@ public class VoteService {
         List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionsByPlaceByVoteTopicIdAndPlaceId(voteOption.getId(), vote.getPlaceId())
                 .stream().sorted(Comparator.comparing(GetVoteOptionRes::getVoteCount)).toList();
 
+        // 투표 종료 판단
         if(!voteOptionList.isEmpty()) {
             int maxCount = voteOptionList.get(voteOptionList.size() - 1).getVoteCount();
             int minCount = voteOptionList.get(0).getVoteCount();
             if(minCount >= 5 && maxCount >= minCount * 2) {
                 vote.setStatus(CLOSED);
-                // TODO: 투표 결과 반영
+                // TODO: 투표 결과 반영 로직 검토(확정된 정보와 투표로 정해진 정보를 구별 불가능함...)
+                if(vote.getVoteTopicId() == 1L) { // 콘센트 투표인 경우
+                    Place place = findPlace(vote.getPlaceId());
+                    place.setPlugAvailability(voteOptionList.get(voteOptionList.size() - 1).getVoteOptionId() == 1);
+                }
             }
         }
 

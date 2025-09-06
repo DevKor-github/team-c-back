@@ -93,7 +93,7 @@ public class UpdateScoreAspect {
             }
 
             if (arg instanceof SaveVoteRecordReq req) {
-                if (voteRecordRepository.existsByUserIdAndPlaceIdAndVoteTopicId(user.getUserId(), req.getPlaceId(), req.getVoteTopicId())) {
+                if (voteRecordRepository.existsByUserIdAndVoteId(user.getUserId(), req.getVoteId())) {
                     return false;
                 }
             }

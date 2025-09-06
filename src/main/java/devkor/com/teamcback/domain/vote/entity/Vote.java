@@ -9,25 +9,26 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_vote_record")
+@Table(name = "tb_vote")
 @NoArgsConstructor
-public class VoteRecord extends BaseEntity {
+public class Vote extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private Long userId;
-
-    @Column(nullable = false)
-    private Long voteId;
+    private Long voteTopicId;
 
     @Column
-    private Long voteOptionId;
+    private Long placeId;
 
-    public VoteRecord(Long userId, Long voteId, Long voteOptionId) {
-        this.userId = userId;
-        this.voteId = voteId;
-        this.voteOptionId = voteOptionId;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private VoteStatus status;
+
+    public Vote(Long voteTopicId, Long placeId, VoteStatus status) {
+        this.voteTopicId = voteTopicId;
+        this.placeId = placeId;
+        this.status = status;
     }
 }

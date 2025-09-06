@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.vote.dto.response;
 
+import com.querydsl.core.annotations.QueryProjection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -16,6 +17,7 @@ public class GetVoteOptionRes {
     @Schema(description = "투표수", example = "5")
     private int voteCount;
 
+    @QueryProjection
     public GetVoteOptionRes(Long voteOptionId, String optionText, int voteCount) {
         this.voteOptionId = voteOptionId;
         this.optionText = optionText;

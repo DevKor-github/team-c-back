@@ -1,12 +1,10 @@
 package devkor.com.teamcback.domain.vote.entity;
 
-import devkor.com.teamcback.domain.common.BaseEntity;
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -20,11 +18,4 @@ public class VoteTopic extends BaseEntity {
 
     @Column(nullable = false)
     private String topic;
-
-    @Column
-    private LocalDateTime expiredAt;
-
-    @Column
-    @Enumerated(EnumType.STRING)
-    private VoteStatus status;
 }

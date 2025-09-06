@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.scheduler;
 
+import devkor.com.teamcback.domain.SchoolCalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.domain.operatingtime.entity.DayOfWeek;
 import devkor.com.teamcback.domain.operatingtime.service.HolidayService;
 import devkor.com.teamcback.domain.operatingtime.service.OperatingService;
@@ -21,16 +22,7 @@ public class OperatingScheduler {
     private final OperatingService operatingService;
     private final HolidayService holidayService;
     private final RedisLockUtil redisLockUtil;
-
-    private static final int SUMMER_VACATION_START_MONTH = 6;
-    private static final int SUMMER_VACATION_START_DAY = 22;
-    private static final int SUMMER_VACATION_END_MONTH = 9;
-    private static final int SUMMER_VACATION_END_DAY = 1;
-
-    private static final int WINTER_VACATION_START_MONTH = 12;
-    private static final int WINTER_VACATION_START_DAY = 21;
-    private static final int WINTER_VACATION_END_MONTH = 3;
-    private static final int WINTER_VACATION_END_DAY = 3;
+    private final SchoolCalendarService schoolCalendarService;
 
     private static DayOfWeek dayOfWeek = null;
     private static Boolean isHoliday = null;
@@ -86,7 +78,7 @@ public class OperatingScheduler {
         log.info("dayOfWeek: {}", dayOfWeek.toString());
         isHoliday = isHoliday(now); // 공휴일 여부
         log.info("isHoliday: {}", isHoliday);
-        isVacation = isVacation(now); // 방학 여부
+        isVacation = isVacation(); // 방학 여부
         log.info("isVacation: {}", isVacation);
         isEvenWeek = false; // 토요일 짝수 주 여부
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일이면 몇째주 토요일인지 계산
@@ -113,25 +105,8 @@ public class OperatingScheduler {
         return holidayService.isHoliday(date);
     }
 
-    private boolean isVacation(LocalDate date) {
-        int month = date.getMonthValue();
-        int day = date.getDayOfMonth();
-
-        // 여름방학 기간
-        if((month == SUMMER_VACATION_START_MONTH && day >= SUMMER_VACATION_START_DAY) ||
-            (month == SUMMER_VACATION_END_MONTH && day <= SUMMER_VACATION_END_DAY) ||
-            (month > SUMMER_VACATION_START_MONTH && month < SUMMER_VACATION_END_MONTH)) {
-            return true;
-        }
-
-        // 겨울방학 기간
-        if((month == WINTER_VACATION_START_MONTH && day >= WINTER_VACATION_START_DAY) ||
-            (month == WINTER_VACATION_END_MONTH && day <= WINTER_VACATION_END_DAY) ||
-            (month < WINTER_VACATION_END_MONTH)) {
-            return true;
-        }
-
-        return false;
+    private boolean isVacation() {
+        return schoolCalendarService.isVacationTf();
     }
 
     private boolean isEvenWeek(LocalDate now) {

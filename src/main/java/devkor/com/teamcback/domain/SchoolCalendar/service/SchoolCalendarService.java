@@ -14,16 +14,24 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_SCHOOL_C
 public class SchoolCalendarService {
     private final SchoolCalendarRepository schoolCalendarRepository;
 
+    /**
+     * 방학 여부 반환
+     */
     public GetVacationRes isVacation() {
         SchoolCalendar schoolCalendar = findSchoolCalendar(1L);
         return new GetVacationRes(schoolCalendar);
     }
 
+    private SchoolCalendar findSchoolCalendar(Long id) {
+        return schoolCalendarRepository.findById(id).orElseThrow(() -> new GlobalException(NOT_FOUND_SCHOOL_CALENDAR));
+    }
+
     /**
      * 방학 여부 반환
      */
-    private SchoolCalendar findSchoolCalendar(Long id) {
-        return schoolCalendarRepository.findById(id).orElseThrow(() -> new GlobalException(NOT_FOUND_SCHOOL_CALENDAR));
+    public boolean isVacationTf() {
+        SchoolCalendar schoolCalendar = schoolCalendarRepository.findById(1L).orElseThrow(() -> new GlobalException(NOT_FOUND_SCHOOL_CALENDAR));
+        return schoolCalendar.isActive();
     }
 
 }

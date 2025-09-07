@@ -75,7 +75,13 @@ public enum ResultCode {
 
     // 행사 11000번대
     NOT_FOUND_TAG(HttpStatus.NOT_FOUND, 11000, "음식 태그를 찾을 수 없습니다."),
-    NOT_FOUND_SCHOOL_CALENDAR(HttpStatus.NOT_FOUND, 11001, "관련 일정을 찾을 수 없습니다.")
+    NOT_FOUND_SCHOOL_CALENDAR(HttpStatus.NOT_FOUND, 11001, "관련 일정을 찾을 수 없습니다."),
+
+    // 투표 12000번대
+    NOT_FOUND_VOTE(HttpStatus.NOT_FOUND, 12000, "투표를 찾을 수 없습니다."),
+    NOT_FOUND_VOTE_TOPIC(HttpStatus.NOT_FOUND, 12001, "투표 주제를 찾을 수 없습니다."),
+    NOT_FOUND_VOTE_OPTION(HttpStatus.NOT_FOUND, 12002, "투표 항목을 찾을 수 없습니다."),
+    CLOSED_VOTE(HttpStatus.BAD_REQUEST, 12003, "종료된 투표입니다.")
     ;
 
     private final HttpStatus status;

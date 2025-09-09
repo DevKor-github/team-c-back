@@ -91,14 +91,39 @@ public class VoteService {
     }
 
     /**
-     * 투표 상태 변경(토글)
+     * 투표 리스트 조회
      */
-    public ChangeVoteStatusRes changeVoteStatus(Long voteId) {
+    @Transactional(readOnly = true)
+    public List<GetVoteRes> getVoteList(VoteStatus status, Long lastVoteId, int size) {
+        List<GetVoteRes> resList = new ArrayList<>();
+
+        List<Vote> voteList = voteOptionRepository.getVoteByStatusWithPage(status, lastVoteId, size);
+
+        for(Vote vote : voteList) {
+            // 투표 주제
+            VoteTopic voteTopic = findVoteTopic(vote.getVoteTopicId());
+
+            // 투표 장소
+            Place place = findPlace(vote.getPlaceId());
+
+            // 투표 항목, 현황
+            List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionByVoteId(vote.getId());
+
+            resList.add(new GetVoteRes(vote.getId(), vote.getStatus().toString(), voteTopic.getId(), voteTopic.getTopic(), place.getId(), place.getName(), voteOptionList));
+        }
+
+        return resList;
+    }
+
+    /**
+     * 투표 상태 변경
+     */
+    public ChangeVoteStatusRes changeVoteStatus(Long voteId, VoteStatus status) {
         // 투표
         Vote vote = findVote(voteId);
 
         // 상태 변경
-        vote.changeStatus();
+        vote.changeStatus(status);
 
         return new ChangeVoteStatusRes();
     }

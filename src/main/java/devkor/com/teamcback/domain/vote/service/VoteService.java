@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static devkor.com.teamcback.domain.vote.entity.VoteStatus.CLOSED;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
@@ -58,7 +59,7 @@ public class VoteService {
     /**
      * 투표 저장
      */
-    @UpdateScore(addScore = 2)
+    @UpdateScore(addScore = 3)
     @Transactional
     public SaveVoteRecordRes saveVoteRecord(Long userId, SaveVoteRecordReq req) {
         if(userId == null) throw new GlobalException(FORBIDDEN);
@@ -86,6 +87,12 @@ public class VoteService {
         else { // 같은 걸 투표한 경우 -> 토글로 취소됨
             voteRecord.setVoteOptionId(null); // 기존 투표 옵션을 null로 설정 (기록 남기기)
         }
+
+        // 투표 상태 변경
+        List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionByVoteIdOrderByCount(vote.getId()); // 투표 항목, 현황
+        int min = voteOptionList.get(0).getVoteCount();
+        int max = voteOptionList.get(voteOptionList.size() - 1).getVoteCount();
+        if(max - min >= 30) vote.changeStatus(CLOSED);
 
         return new SaveVoteRecordRes();
     }

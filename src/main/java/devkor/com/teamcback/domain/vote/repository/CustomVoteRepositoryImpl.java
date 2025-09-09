@@ -100,6 +100,32 @@ public class CustomVoteRepositoryImpl implements CustomVoteRepository{
                 .fetch();
     }
 
+    @Override
+    public List<GetVoteOptionRes> getVoteOptionByVoteIdOrderByCount(Long voteId) {
+        return jpaQueryFactory
+                .select(
+                        new QGetVoteOptionRes(
+                                voteOption.id,
+                                voteOption.optionText,
+                                voteRecord.id.count().intValue()
+                        )
+                )
+                .from(vote)
+                .join(voteOption)
+                .on(vote.voteTopicId.eq(voteOption.voteTopicId))
+                .leftJoin(voteRecord)
+                .on(voteRecord.voteId.eq(vote.id)
+                        .and(voteRecord.voteOptionId.eq(voteOption.id)))
+                .where(
+                        vote.id.eq(voteId)
+                )
+                .groupBy(voteOption.id, voteOption.optionText)
+                .orderBy(
+                        voteRecord.id.count().intValue().asc()
+                )
+                .fetch();
+    }
+
     private BooleanExpression gtVoteCursor(Long lastVoteId) {
         if (lastVoteId== null) return null;
         return vote.id.gt(lastVoteId);

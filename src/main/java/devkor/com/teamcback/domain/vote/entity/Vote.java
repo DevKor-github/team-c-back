@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import static devkor.com.teamcback.domain.vote.entity.VoteStatus.CLOSED;
-import static devkor.com.teamcback.domain.vote.entity.VoteStatus.OPEN;
 import static devkor.com.teamcback.global.response.ResultCode.CLOSED_VOTE;
 
 @Entity
@@ -35,8 +34,7 @@ public class Vote extends BaseEntity {
         if(this.status == CLOSED) throw new GlobalException(CLOSED_VOTE);
     }
 
-    public void changeStatus() {
-        if(this.status == CLOSED) this.status = OPEN;
-        else this.status = CLOSED;
+    public void changeStatus(VoteStatus status) {
+        this.status = status;
     }
 }

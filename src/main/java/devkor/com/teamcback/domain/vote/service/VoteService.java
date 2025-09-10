@@ -14,12 +14,14 @@ import devkor.com.teamcback.domain.vote.repository.VoteRepository;
 import devkor.com.teamcback.domain.vote.repository.VoteTopicRepository;
 import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+import static devkor.com.teamcback.domain.vote.entity.VoteStatus.CLOSED;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
@@ -58,7 +60,7 @@ public class VoteService {
     /**
      * 투표 저장
      */
-    @UpdateScore(addScore = 2)
+    @UpdateScore(addScore = 3)
     @Transactional
     public SaveVoteRecordRes saveVoteRecord(Long userId, SaveVoteRecordReq req) {
         if(userId == null) throw new GlobalException(FORBIDDEN);
@@ -87,18 +89,57 @@ public class VoteService {
             voteRecord.setVoteOptionId(null); // 기존 투표 옵션을 null로 설정 (기록 남기기)
         }
 
+        // 투표 상태 변경
+        List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionByVoteIdOrderByCount(vote.getId()); // 투표 항목, 현황
+        int min = voteOptionList.get(0).getVoteCount();
+        int max = voteOptionList.get(voteOptionList.size() - 1).getVoteCount();
+        if(max - min >= 30) vote.changeStatus(CLOSED);
+
         return new SaveVoteRecordRes();
     }
 
     /**
-     * 투표 상태 변경(토글)
+     * 투표 리스트 조회
      */
-    public ChangeVoteStatusRes changeVoteStatus(Long voteId) {
+    @Transactional(readOnly = true)
+    public CursorPageRes<GetVoteRes> getVoteList(VoteStatus status, Long lastVoteId, int size) {
+
+        List<GetVoteRes> resList = new ArrayList<>();
+
+        List<Vote> voteList = voteOptionRepository.getVoteByStatusWithPage(status, lastVoteId, size + 1);
+
+        for(Vote vote : voteList) {
+            // 투표 주제
+            VoteTopic voteTopic = findVoteTopic(vote.getVoteTopicId());
+
+            // 투표 장소
+            Place place = findPlace(vote.getPlaceId());
+
+            // 투표 항목, 현황
+            List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionByVoteId(vote.getId());
+
+            resList.add(new GetVoteRes(vote.getId(), vote.getStatus().toString(), voteTopic.getId(), voteTopic.getTopic(), place.getId(), place.getName(), voteOptionList));
+        }
+
+        // CursorPageRes 응답
+        boolean hasNext = voteList.size() > size;
+        if(hasNext) {
+            resList.remove(size);
+        }
+        Long lastCursorId = voteList.isEmpty() ? null : voteList.get(voteList.size() - 1).getId();
+
+        return new CursorPageRes<>(resList, hasNext, lastCursorId);
+    }
+
+    /**
+     * 투표 상태 변경
+     */
+    public ChangeVoteStatusRes changeVoteStatus(Long voteId, VoteStatus status) {
         // 투표
         Vote vote = findVote(voteId);
 
         // 상태 변경
-        vote.changeStatus();
+        vote.changeStatus(status);
 
         return new ChangeVoteStatusRes();
     }

@@ -14,6 +14,7 @@ import devkor.com.teamcback.domain.vote.repository.VoteRepository;
 import devkor.com.teamcback.domain.vote.repository.VoteTopicRepository;
 import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.CursorPageRes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,10 +102,11 @@ public class VoteService {
      * 투표 리스트 조회
      */
     @Transactional(readOnly = true)
-    public List<GetVoteRes> getVoteList(VoteStatus status, Long lastVoteId, int size) {
+    public CursorPageRes<GetVoteRes> getVoteList(VoteStatus status, Long lastVoteId, int size) {
+
         List<GetVoteRes> resList = new ArrayList<>();
 
-        List<Vote> voteList = voteOptionRepository.getVoteByStatusWithPage(status, lastVoteId, size);
+        List<Vote> voteList = voteOptionRepository.getVoteByStatusWithPage(status, lastVoteId, size + 1);
 
         for(Vote vote : voteList) {
             // 투표 주제
@@ -119,7 +121,14 @@ public class VoteService {
             resList.add(new GetVoteRes(vote.getId(), vote.getStatus().toString(), voteTopic.getId(), voteTopic.getTopic(), place.getId(), place.getName(), voteOptionList));
         }
 
-        return resList;
+        // CursorPageRes 응답
+        boolean hasNext = voteList.size() > size;
+        if(hasNext) {
+            resList.remove(size);
+        }
+        Long lastCursorId = voteList.isEmpty() ? null : voteList.get(voteList.size() - 1).getId();
+
+        return new CursorPageRes<>(resList, hasNext, lastCursorId);
     }
 
     /**

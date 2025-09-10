@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.vote.dto.response.GetVoteRes;
 import devkor.com.teamcback.domain.vote.entity.VoteStatus;
 import devkor.com.teamcback.domain.vote.service.VoteService;
 import devkor.com.teamcback.global.response.CommonResponse;
+import devkor.com.teamcback.global.response.CursorPageRes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,8 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -50,7 +49,7 @@ public class AdminVoteController {
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
     @GetMapping()
-    public CommonResponse<List<GetVoteRes>> getVoteList(
+    public CommonResponse<CursorPageRes<GetVoteRes>> getVoteList(
             @Parameter(description = "투표 상태", example = "REFLECTED")
             @RequestParam(name = "status", required = false) VoteStatus status,
             @Parameter(description = "마지막 조회 투표 ID", example = "0")

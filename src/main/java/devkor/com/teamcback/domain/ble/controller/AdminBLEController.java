@@ -29,7 +29,7 @@ public class AdminBLEController {
             description = "BLE장비 생성")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-            @ApiResponse(responseCode = "404", description = "건물을 찾을 수 없습니다.",
+            @ApiResponse(responseCode = "404", description = "장비를 찾을 수 없습니다.",
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),
             @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),

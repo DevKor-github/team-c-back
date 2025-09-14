@@ -87,6 +87,7 @@ public enum ResultCode {
     NOT_FOUND_DEVICE(HttpStatus.NOT_FOUND, 13000, "해당 placeId에 해당하는 device가 없습니다."),
     NOT_FOUND_DEVICE_NAME(HttpStatus.NOT_FOUND, 13001, "해당 device 이름이 없습니다."),
     EXISTING_DEVICE_NAME(HttpStatus.CONFLICT, 13002, "중복되는 device 이름입니다."),
+    NO_DATA_FOR_DEVICE(HttpStatus.NOT_FOUND, 13003, "device에 해당하는 정보가 없습니다.")
     ;
 
     private final HttpStatus status;

@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
+
 @Service
 @RequiredArgsConstructor
 public class AdminBLEService {
@@ -20,7 +22,7 @@ public class AdminBLEService {
 
     @Transactional
     public CreateBLERes CreateBLEDevice(CreateBLEReq createBLEReq) {
-        Place place = placeRepository.findById(createBLEReq.getPlaceId()).orElse(null);
+        Place place = placeRepository.findById(createBLEReq.getPlaceId()).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
         if (bleDeviceRepository.existsByDeviceName(createBLEReq.getDeviceName())) throw new GlobalException(ResultCode.EXISTING_DEVICE_NAME);
         BLEDevice bleDevice = bleDeviceRepository.save(new BLEDevice(createBLEReq.getDeviceName(), place, createBLEReq.getCapacity()));
         return new CreateBLERes(bleDevice);

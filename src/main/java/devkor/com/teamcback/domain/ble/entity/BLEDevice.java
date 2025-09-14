@@ -31,29 +31,10 @@ public class BLEDevice extends BaseEntity {
     @Column
     private int capacity;
 
-    @Column
-    private int lastCount;
-
-    @Column
-    private BLEstatus lastStatus;
-
-    @Column
-    private LocalDateTime lastTime;
-
     public BLEDevice(String deviceName, Place place, int capacity) {
         this.deviceName = deviceName;
         this.place = place;
         this.capacity = capacity;
-    }
-
-    public void update(UpdateBLEReq req, BLEstatus status) {
-        this.lastCount = req.getLastCount();
-        this.lastStatus = status;
-        this.lastTime = req.getLastTime();
-    }
-
-    public void update(BLEstatus status){
-        this.lastStatus = status;
     }
 
 }

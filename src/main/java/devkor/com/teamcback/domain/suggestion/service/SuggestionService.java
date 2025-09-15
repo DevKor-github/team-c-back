@@ -10,7 +10,6 @@ import devkor.com.teamcback.domain.suggestion.dto.response.CreateSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.GetSuggestionRes;
 import devkor.com.teamcback.domain.suggestion.dto.response.ModifySuggestionRes;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
-import devkor.com.teamcback.domain.suggestion.entity.SuggestionImage;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.entity.User;

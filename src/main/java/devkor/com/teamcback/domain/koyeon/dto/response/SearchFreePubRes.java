@@ -2,10 +2,9 @@ package devkor.com.teamcback.domain.koyeon.dto.response;
 
 import devkor.com.teamcback.domain.koyeon.entity.FreePub;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Schema(description = "주점 정보")
 @Getter
@@ -24,18 +23,10 @@ public class SearchFreePubRes {
     private Double latitude;
     @Schema(description = "노드 ID", example = "1")
     private Long nodeId = null;
+    @Schema(description = "주점 주소", example = "서울특별시 성북구 5가")
+    private String address;
     @Schema(description = "태그에 해당하는 음식 리스트", example = "[\"떡볶이\"]")
-    private List<String> filteredMenus = new ArrayList<>();
-
-    public SearchFreePubRes(FreePub pub) {
-        this.id = pub.getId();
-        this.name = pub.getName();
-        this.sponsor = pub.getSponsor();
-        this.operatingTime = pub.getOperatingTime();
-        this.latitude = pub.getLatitude();
-        this.longitude = pub.getLongitude();
-        if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
-    }
+    private List<String> filteredMenus;
 
     public SearchFreePubRes(FreePub pub, List<String> filteredMenus) {
         this.id = pub.getId();
@@ -45,6 +36,7 @@ public class SearchFreePubRes {
         this.latitude = pub.getLatitude();
         this.longitude = pub.getLongitude();
         if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
+        this.address = pub.getAddress();
         this.filteredMenus = filteredMenus;
     }
 }

@@ -26,9 +26,9 @@ public class SearchFreePubRes {
     @Schema(description = "주점 주소", example = "서울특별시 성북구 5가")
     private String address;
     @Schema(description = "태그에 해당하는 음식 리스트", example = "[\"떡볶이\"]")
-    private List<String> menus;
+    private List<String> filteredMenus;
 
-    public SearchFreePubRes(FreePub pub, List<String> menus) {
+    public SearchFreePubRes(FreePub pub, List<String> filteredMenus) {
         this.id = pub.getId();
         this.name = pub.getName();
         this.sponsor = pub.getSponsor();
@@ -37,6 +37,6 @@ public class SearchFreePubRes {
         this.longitude = pub.getLongitude();
         if(pub.getNode() != null) this.nodeId = pub.getNode().getId();
         this.address = pub.getAddress();
-        this.menus = menus;
+        this.filteredMenus = filteredMenus;
     }
 }

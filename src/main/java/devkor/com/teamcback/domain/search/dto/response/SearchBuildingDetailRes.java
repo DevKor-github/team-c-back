@@ -46,7 +46,7 @@ public class SearchBuildingDetailRes {
 
     public SearchBuildingDetailRes(List<SearchMainFacilityRes> facilities, List<PlaceType> types, Building building, String imageUrl, boolean bookmarked) {
         this.buildingId = building.getId();
-        this.name = "고려대학교 서울캠퍼스 " + building.getName();
+        this.name = "고려대학교 " + building.getName();
         this.address = building.getAddress();
         this.latitude = building.getNode().getLatitude();
         this.longitude = building.getNode().getLongitude();

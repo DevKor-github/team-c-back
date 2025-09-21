@@ -3,6 +3,8 @@ package devkor.com.teamcback.domain.koyeon.service;
 import devkor.com.teamcback.domain.koyeon.dto.response.*;
 import devkor.com.teamcback.domain.koyeon.entity.*;
 import devkor.com.teamcback.domain.koyeon.repository.*;
+import devkor.com.teamcback.domain.schoolcalendar.entity.SchoolCalendar;
+import devkor.com.teamcback.domain.schoolcalendar.repository.SchoolCalendarRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +26,15 @@ public class KoyeonService {
     private final MenuRepository menuRepository;
     private final TagMenuRepository tagMenuRepository;
     private final FreePubNicknameRepository freePubNicknameRepository;
+    private final SchoolCalendarRepository schoolCalendarRepository;
 
     /**
      * 고연전 여부 확인
      */
     @Transactional(readOnly = true)
     public Koyeon isKoyeon() {
-        return koyeonRepository.findById(1L).orElseThrow(() -> new GlobalException(NOT_FOUND_KOYEON));
+        SchoolCalendar schoolCalendar = findSchoolCalendar();
+        return new Koyeon(schoolCalendar.getId(), schoolCalendar.getName(), schoolCalendar.isActive());
     }
 
     /**
@@ -68,10 +72,12 @@ public class KoyeonService {
             return new SearchFreePubListRes(pubResList);
         }
 
-        return new SearchFreePubListRes(freePubRepository.findAll()
-            .stream()
-            .map(SearchFreePubRes::new)
-            .toList());
+        List<FreePub> pubList = freePubRepository.findAll();
+        List<SearchFreePubRes> pubResList = new ArrayList<>();
+        for (FreePub pub : pubList) {
+            pubResList.add(new SearchFreePubRes(pub, menuRepository.findByFreePub(pub).stream().map(Menu::getName).toList()));
+        }
+        return new SearchFreePubListRes(pubResList);
     }
 
     /**
@@ -125,5 +131,9 @@ public class KoyeonService {
 
     private FreePub findFreePub(Long pubId) {
         return freePubRepository.findById(pubId).orElseThrow(() -> new GlobalException(NOT_FOUND_PUB));
+    }
+
+    private SchoolCalendar findSchoolCalendar() {
+        return schoolCalendarRepository.findById(2L).orElseThrow(() -> new GlobalException(NOT_FOUND_SCHOOL_CALENDAR));
     }
 }

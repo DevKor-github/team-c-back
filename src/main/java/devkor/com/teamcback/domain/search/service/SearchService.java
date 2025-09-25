@@ -261,6 +261,13 @@ public class SearchService {
     public SearchFacilityListRes searchFacilitiesWithType(PlaceType placeType) {
         // TODO: 위경도 값이 null인 facility 예외 처리
         List<Place> placeList = placeRepository.findAllByType(placeType);
+
+        //임시코드: 갯수제한 및 셔플
+        if(placeType == PlaceType.CAFT_TEMP) {
+            Collections.shuffle(placeList);
+            placeList = placeList.subList(0, 100);
+        }
+
         List<SearchPlaceRes> placeResList = new ArrayList<>();
 
         for(Place place : placeList) {

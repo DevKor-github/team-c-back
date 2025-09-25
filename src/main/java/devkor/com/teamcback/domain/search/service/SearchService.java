@@ -265,7 +265,7 @@ public class SearchService {
         //임시코드: 갯수제한 및 셔플
         if(placeType == PlaceType.CAFT_TEMP) {
             Collections.shuffle(placeList);
-            placeList = placeList.subList(0, 100);
+            placeList = placeList.subList(0, 50);
         }
 
         List<SearchPlaceRes> placeResList = new ArrayList<>();

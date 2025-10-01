@@ -33,15 +33,9 @@ public class BLEService {
     private final PlaceRepository placeRepository;
 
     @Transactional
-    public UpdateBLERes updateBLEDevice(UpdateBLEReq updateBLEReq) {
-        List<BLEDevice> deviceList = bledeviceRepository.findByDeviceName(updateBLEReq.getDeviceName());
-        if (deviceList.isEmpty()) throw new GlobalException(ResultCode.NOT_FOUND_DEVICE_NAME);
-        BLEDevice bleDevice = deviceList.get(0);
-        double ratio = (double) updateBLEReq.getLastCount() /bleDevice.getCapacity();
-        BLEstatus status;
-        if (ratio < 0.3) status = BLEstatus.VACANT;
-        else if (ratio < 0.7) status = BLEstatus.AVAILABLE;
-        else status = BLEstatus.CROWDED;
+    public UpdateBLERes updateBLE(UpdateBLEReq updateBLEReq) {
+        BLEDevice bleDevice = bledeviceRepository.findByDeviceName(updateBLEReq.getDeviceName());
+        BLEstatus status = getBlEstatus(updateBLEReq, bleDevice);
 
         BLEData bleData = new BLEData();
         bleData.setDevice(bleDevice);
@@ -53,13 +47,28 @@ public class BLEService {
         return new UpdateBLERes(bleData);
     }
 
+    private BLEstatus getBlEstatus(UpdateBLEReq updateBLEReq, BLEDevice bleDevice) {
+        if (bleDevice == null) throw new GlobalException(ResultCode.NOT_FOUND_DEVICE_NAME);
+        int capacity = bleDevice.getCapacity();
+        int count = updateBLEReq.getLastCount();
+        int ratio = bleDevice.getRatio();
+        int defaultCount = bleDevice.getDefaultCount();
+
+        double people_count = (double) (count - defaultCount) / ratio;
+        double final_ratio = people_count / capacity;
+
+        BLEstatus status;
+        if (final_ratio < 0.3) status = BLEstatus.VACANT;
+        else if (final_ratio < 0.7) status = BLEstatus.AVAILABLE;
+        else status = BLEstatus.CROWDED;
+        return status;
+    }
+
     @Transactional(readOnly = true)
     public GetBLERes getBLE(Long placeId) {
-        LocalDateTime now = LocalDateTime.now();
         Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
-        List<BLEDevice> devices = bledeviceRepository.findByPlace(place);
-        if (devices.isEmpty()) throw new GlobalException(ResultCode.NOT_FOUND_DEVICE);
-        BLEDevice device = devices.get(0);
+        BLEDevice device = bledeviceRepository.findByPlace(place);
+        if (device == null) throw new GlobalException(ResultCode.NOT_FOUND_DEVICE);
         BLEData latest = bleDataRepository.findTopByDeviceOrderByLastTimeDesc(device).orElseThrow(() -> new GlobalException(ResultCode.NO_DATA_FOR_DEVICE));
         BLEstatus status;
         if (latest.getLastTime() == null ||

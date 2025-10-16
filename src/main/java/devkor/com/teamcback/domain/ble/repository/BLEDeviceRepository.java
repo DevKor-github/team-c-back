@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface BLEDeviceRepository extends JpaRepository<BLEDevice, Long> {
-    List<BLEDevice> findByDeviceName(String deviceName);
-    List<BLEDevice> findByPlace(Place place);
+    BLEDevice findByDeviceName(String deviceName);
+    BLEDevice findByPlace(Place place);
     boolean existsByDeviceName(String deviceName);
+    boolean existsByPlace(Place place);
 }

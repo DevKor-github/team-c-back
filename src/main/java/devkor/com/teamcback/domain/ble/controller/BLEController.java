@@ -43,6 +43,6 @@ public class BLEController {
     @PutMapping
     public CommonResponse<UpdateBLERes> updateBLE(
             @Valid @RequestBody UpdateBLEReq updateBLEReq){
-        return CommonResponse.success(bleService.updateBLEDevice(updateBLEReq));
+        return CommonResponse.success(bleService.updateBLE(updateBLEReq));
     }
 }

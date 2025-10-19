@@ -24,6 +24,7 @@ public class CafeteriaMenu extends BaseEntity {
     @Column(nullable = false) // 식단 구분 - 조식/중식/석식
     private String kind;
 
+    @Getter
     @Column(nullable = false, length = 500) // 식단 내용
     private String menu;
 

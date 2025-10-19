@@ -41,8 +41,10 @@ public class CafeteriaMenuService {
      */
     @Transactional
     public void scrapeMenu(int page, Long placeId) {
-        // 식당
+        // 식당 설명 초기화
         Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+        place.setDescription("");
+
         // 식당 설명(메뉴) 수정 여부
         boolean updated = false;
 
@@ -147,8 +149,10 @@ public class CafeteriaMenuService {
                                 else content = content.substring(content.lastIndexOf("[교직원식당]") + "[교직원식당]".length()).trim();
                             }
 
+                            CafeteriaMenu savedMenu = cafeteriaMenuRepository.findByDateAndKindAndPlaceId(date, kind, placeId);
+
                             // 메뉴가 존재하고 변경된 경우
-                            if(!content.equals(NO_MENU_INFO) && !cafeteriaMenuRepository.existsByDateAndKindAndPlaceId(date, kind, placeId)) {
+                            if(!content.equals(NO_MENU_INFO) && (savedMenu == null || !savedMenu.getMenu().equals(content))) {
                                 // 학식 메뉴 저장
                                 cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
 
@@ -167,6 +171,11 @@ public class CafeteriaMenuService {
                     // 해당 날짜의 모든 메뉴를 추출했으므로 날짜를 초기화
                     currentDate = null;
                 }
+            }
+
+            // 식당 설명 없으면 메뉴 정보 없다고 표시
+            if(place.getDescription().isEmpty()) {
+                place.setDescription(NO_MENU_INFO);
             }
 
         } catch (IOException e) {

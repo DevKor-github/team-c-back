@@ -123,6 +123,9 @@ dependencies {
 
     // elasticsearch
 //    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // 크롤링
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 dependencyManagement {

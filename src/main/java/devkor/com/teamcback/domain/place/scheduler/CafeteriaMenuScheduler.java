@@ -1,20 +1,13 @@
 package devkor.com.teamcback.domain.place.scheduler;
 
 import devkor.com.teamcback.domain.place.service.CafeteriaMenuService;
-import devkor.com.teamcback.domain.place.entity.CafeteriaMenu;
 import devkor.com.teamcback.global.redis.RedisLockUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
-@Slf4j(topic = "Holiday Scheduler")
+@Slf4j(topic = "Cafeteria Menu Scheduler")
 @Component
 @RequiredArgsConstructor
 public class CafeteriaMenuScheduler {

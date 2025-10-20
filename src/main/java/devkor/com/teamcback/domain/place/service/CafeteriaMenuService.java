@@ -151,10 +151,14 @@ public class CafeteriaMenuService {
 
                             CafeteriaMenu savedMenu = cafeteriaMenuRepository.findByDateAndKindAndPlaceId(date, kind, placeId);
 
-                            // 메뉴가 존재하고 변경된 경우
-                            if(!content.equals(NO_MENU_INFO) && (savedMenu == null || !savedMenu.getMenu().equals(content))) {
-                                // 학식 메뉴 저장
-                                cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
+                            // 메뉴가 존재하는 경우
+                            if(!content.equals(NO_MENU_INFO)) {
+
+                                // 메뉴가 변경된 경우
+                                if (savedMenu == null || !savedMenu.getMenu().equals(content)) {
+                                    // 학식 메뉴 저장
+                                    cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
+                                }
 
                                 // 당일에 해당하는 경우 식당 설명 수정
                                 if(date.equals(LocalDate.now())) {

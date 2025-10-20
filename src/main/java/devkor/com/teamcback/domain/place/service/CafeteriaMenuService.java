@@ -1,0 +1,190 @@
+package devkor.com.teamcback.domain.place.service;
+
+import devkor.com.teamcback.domain.place.entity.CafeteriaMenu;
+import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.place.repository.CafeteriaMenuRepository;
+import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.ResultCode;
+import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service
+@RequiredArgsConstructor
+public class CafeteriaMenuService {
+
+    // 자연계 학생식당 메뉴 URL
+    private static final String URL1 = "https://www.korea.ac.kr/ko/";
+    private static final String URL2 = "/subview.do";
+    // HTML 테이블을 선택하는 CSS 선택자
+    private static final String TABLE_SELECTOR = ".table_1 table";
+    // 식단 메뉴가 없을 때 문구
+    private static final String NO_MENU_INFO = "등록된 식단내용이(가) 없습니다.";
+
+    private final CafeteriaMenuRepository cafeteriaMenuRepository;
+    private final PlaceRepository placeRepository;
+
+    /**
+     * 웹 페이지에서 식단 정보를 스크래핑하고 리스트로 반환합니다.
+     */
+    @Transactional
+    public void scrapeMenu(int page, Long placeId) {
+        // 식당 설명 초기화
+        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+        place.setDescription("");
+
+        // 식당 설명(메뉴) 수정 여부
+        boolean updated = false;
+
+        // 문자열 형식에 맞는 포맷터(날짜 문자열 -> Date)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
+        Document doc;
+
+        try {
+            // 1. Jsoup을 사용하여 HTML 문서 가져오기 (requests + BeautifulSoup 역할)
+            doc = Jsoup.connect(URL1 + page + URL2)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)") // User-Agent 설정
+                    .timeout(5000) // 5초 타임아웃
+                    .get();
+
+            // 2. 지정된 선택자를 이용해 테이블 찾기
+            Element mealTable = doc.selectFirst(TABLE_SELECTOR);
+
+            if (mealTable == null) {
+                System.err.println("오류: 지정된 선택자 '" + TABLE_SELECTOR + "'로 테이블을 찾을 수 없습니다.");
+                return;
+            }
+
+            // 3. 테이블의 순수한 텍스트 내용 추출
+            // Jsoup의 text()는 태그를 제거하고 공백을 정리합니다.
+            String mealTableText = mealTable.text();
+
+            // 4. 공백 정규화 및 정리
+            String cleanedHtmlContent = mealTableText.replaceAll("[ \t]+", " ");
+            cleanedHtmlContent = cleanedHtmlContent.trim();
+
+            // 5. 데이터를 날짜-요일 패턴을 기준으로 분리하여 블록화
+            // 패턴: (YYYY.MM.DD (요일))
+            Pattern dateDayPattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2})\\s*\\(\\s*[월화수목금토일]\\s*\\)\\s*");
+            Matcher dateDayMatcher = dateDayPattern.matcher(cleanedHtmlContent);
+
+            List<String> blocks = new ArrayList<>();
+            int lastEnd = 0;
+
+            // 날짜(요일) 블록을 기준으로 텍스트를 나눕니다.
+            while (dateDayMatcher.find()) {
+                // 이전 블록 내용을 추가합니다.
+                if (dateDayMatcher.start() > lastEnd) {
+                    blocks.add(cleanedHtmlContent.substring(lastEnd, dateDayMatcher.start()).trim());
+                }
+                // 현재 날짜(요일) 블록을 추가합니다.
+                blocks.add(dateDayMatcher.group().trim());
+                lastEnd = dateDayMatcher.end();
+            }
+            // 마지막 블록의 나머지 내용을 추가합니다.
+            if (lastEnd < cleanedHtmlContent.length()) {
+                blocks.add(cleanedHtmlContent.substring(lastEnd).trim());
+            }
+
+            String currentDate = null;
+
+            // 6. 분리된 블록을 순회하며 식단 데이터 추출
+            // 패턴: (조식|중식|석식) (.+?) - 내용물은 하이픈(-) 기준으로 분리됩니다.
+            Pattern menuItemsPattern = Pattern.compile(
+                    "(조식|중식|석식|식사|요리|파스타/스테이크코스|천원의밥상)\\s*(.*?)(?=\\s*(조식|중식|석식|식사|요리|파스타/스테이크코스|천원의밥상)\\s*|$)",
+                    Pattern.DOTALL
+            );
+
+            for (String block : blocks) {
+                if (block.isEmpty()) {
+                    continue;
+                }
+
+                // 현재 블록이 날짜 패턴을 포함하는 경우
+                Matcher dateMatch = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2})").matcher(block);
+                if (dateMatch.find()) {
+                    currentDate = dateMatch.group(1);
+                    continue; // 메뉴가 포함된 다음 블록을 위해 건너뜁니다.
+                }
+
+                // 현재 블록이 메뉴 내용이면
+                if (currentDate != null) {
+                    LocalDate date = LocalDate.parse(currentDate, formatter);
+
+                    Matcher menuMatcher = menuItemsPattern.matcher(block);
+
+                    while (menuMatcher.find()) {
+                        String kind = menuMatcher.group(1).trim();
+                        String content = menuMatcher.group(2);
+
+                        // &amp; 와 잔여 텍스트 정리
+                        content = content.replace("&amp;", "&");
+                        content = content.replaceAll("요일 식단구분 식단제목 식단내용 기타정보", ""); // 불필요한 헤더 제거
+                        content = content.replaceAll("[-]+$", "").trim(); // 끝의 '-'와 공백 제거
+                        content = content.replaceAll("\\s+", " ").trim(); // 여러 공백을 단일 공백으로 정리
+
+                        if (!content.isEmpty()) {
+
+                            // 애기능 - 학생식당
+                            if(placeId == 3103) {
+                                if(!content.contains("[학생식당]")) content = NO_MENU_INFO;
+                                else content = content.substring(content.lastIndexOf("[학생식당]") + "[학생식당]".length(), content.contains("[교직원식당]") && content.lastIndexOf("[교직원식당]") > content.lastIndexOf("[학생식당]")? content.lastIndexOf("[교직원식당]") : content.length()).trim();
+                            }
+                            // 애기능 - 교직원식당
+                            else if(placeId == 2490) {
+                                if(!content.contains("[교직원식당]")) content = NO_MENU_INFO;
+                                else content = content.substring(content.lastIndexOf("[교직원식당]") + "[교직원식당]".length()).trim();
+                            }
+
+                            CafeteriaMenu savedMenu = cafeteriaMenuRepository.findByDateAndKindAndPlaceId(date, kind, placeId);
+
+                            // 메뉴가 존재하고 변경된 경우
+                            if(!content.equals(NO_MENU_INFO) && (savedMenu == null || !savedMenu.getMenu().equals(content))) {
+                                // 학식 메뉴 저장
+                                cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
+
+                                // 당일에 해당하는 경우 식당 설명 수정
+                                if(date.equals(LocalDate.now())) {
+                                    if(!updated) {
+                                        place.setDescription(kind + " - " + content);
+                                        updated = true;
+                                    }
+                                    else place.setDescription(place.getDescription() + "\n" + kind + " - " + content);
+                                }
+
+                            }
+                        }
+                    }
+                    // 해당 날짜의 모든 메뉴를 추출했으므로 날짜를 초기화
+                    currentDate = null;
+                }
+            }
+
+            // 식당 설명 없으면 메뉴 정보 없다고 표시
+            if(place.getDescription().isEmpty()) {
+                place.setDescription(NO_MENU_INFO);
+            }
+
+        } catch (IOException e) {
+            // 웹 접속 관련 오류 처리 (404, 네트워크 문제 등)
+            System.err.println("웹 페이지 접속 오류 (IOException): " + e.getMessage());
+        } catch (Exception e) {
+            // 그 외 예상치 못한 오류 처리
+            System.err.println("스크래핑 중 예상치 못한 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}

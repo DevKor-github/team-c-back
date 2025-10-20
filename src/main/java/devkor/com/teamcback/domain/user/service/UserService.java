@@ -87,24 +87,6 @@ public class UserService {
     }
 
     /**
-     * 로그인 (안드로이드 배포 수정 후 삭제)
-     */
-    @Transactional
-    public TempLoginRes login(LoginUserReq loginUserReq) {
-        User user = userRepository.findByEmailAndProvider(loginUserReq.getEmail(), loginUserReq.getProvider()); // 이메일이 같더라도 소셜이 다르면 다른 사용자 취급
-        if(user == null) { // 회원이 없으면 회원가입
-            String username = makeRandomName();
-            user = userRepository.save(new User(username, loginUserReq.getEmail(), Role.USER, loginUserReq.getProvider()));
-
-            // 기본 카테고리 저장
-            Category category = new Category(DEFAULT_CATEGORY, DEFAULT_COLOR, user);
-            categoryRepository.save(category);
-        }
-
-        return new TempLoginRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()));
-    }
-
-    /**
      * 로그인
      */
     @Transactional

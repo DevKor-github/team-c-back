@@ -67,7 +67,7 @@ public class CafeteriaMenuService {
                     menuMap.put(date, menuByKind);
                 });
 
-        GetCafeteriaMenuListRes res = new GetCafeteriaMenuListRes(placeId, place.getName(), address, place.getDescription(), place.getContact(), menuMap);
+        GetCafeteriaMenuListRes res = new GetCafeteriaMenuListRes(placeId, place.getName(), address, place.getDetail(), place.getContact(), menuMap);
 
         return res;
     }

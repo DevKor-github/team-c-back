@@ -1,5 +1,8 @@
 package devkor.com.teamcback.domain.place.service;
 
+import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.building.repository.BuildingRepository;
+import devkor.com.teamcback.domain.place.dto.response.GetCafeteriaMenuListRes;
 import devkor.com.teamcback.domain.place.entity.CafeteriaMenu;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.CafeteriaMenuRepository;
@@ -17,7 +20,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,6 +40,37 @@ public class CafeteriaMenuService {
 
     private final CafeteriaMenuRepository cafeteriaMenuRepository;
     private final PlaceRepository placeRepository;
+
+    /**
+     * 학생식당 메뉴 조회
+     */
+    @Transactional(readOnly = true)
+    public GetCafeteriaMenuListRes getCafeteriaMenu(Long placeId, LocalDate startDate, LocalDate endDate) {
+        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+
+        String address = place.getBuilding() == null ? "" : place.getBuilding().getName() + " ";
+        address += place.getFloor() < 0 ? "B" : "";
+        address += (int)Math.abs(place.getFloor()) + "층";
+
+        Map<LocalDate, Map<String, String>> menuMap = new HashMap<>();
+
+        startDate
+                .datesUntil(endDate)
+                .forEach(date -> {
+                    List<CafeteriaMenu> cafeteriaMenuList = cafeteriaMenuRepository.findByDateAndPlaceId(date, placeId);
+
+                    Map<String, String> menuByKind = new HashMap<>();
+                    for (CafeteriaMenu cafeteriaMenu : cafeteriaMenuList) {
+                        menuByKind.put(cafeteriaMenu.getKind(), cafeteriaMenu.getMenu());
+                    }
+
+                    menuMap.put(date, menuByKind);
+                });
+
+        GetCafeteriaMenuListRes res = new GetCafeteriaMenuListRes(placeId, place.getName(), address, place.getDescription(), place.getContact(), menuMap);
+
+        return res;
+    }
 
     /**
      * 웹 페이지에서 식단 정보를 스크래핑하고 리스트로 반환합니다.
@@ -78,7 +114,7 @@ public class CafeteriaMenuService {
 
             // 5. 데이터를 날짜-요일 패턴을 기준으로 분리하여 블록화
             // 패턴: (YYYY.MM.DD (요일))
-            Pattern dateDayPattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2})\\s*\\(\\s*[월화수목금토일]\\s*\\)\\s*");
+            Pattern dateDayPattern = Pattern.compile("(\\d{4}\\.\\d{2}\\.\\d{2})\\s*");
             Matcher dateDayMatcher = dateDayPattern.matcher(cleanedHtmlContent);
 
             List<String> blocks = new ArrayList<>();

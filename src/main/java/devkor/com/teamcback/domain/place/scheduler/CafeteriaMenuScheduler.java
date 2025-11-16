@@ -17,7 +17,7 @@ public class CafeteriaMenuScheduler {
     private final CafeteriaMenuService cafeteriaMenuService;
     private final RedisLockUtil redisLockUtil;
 
-    @EventListener(ApplicationReadyEvent.class)
+    // @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "0 10 0 * * *") // 매일 자정 10분마다
     public void updateMenus() {
         redisLockUtil.executeWithLock("menu_lock", 1, 300, () -> {

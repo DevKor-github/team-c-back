@@ -146,6 +146,7 @@ public class OperatingService {
 
         // 장소의 운영 시간이 시간 형식이 아니면 건물의 운영 시간을 따라감
         if(!isTimeRangePattern(operatingTime)) {
+            if(place.getBuilding() == null) return DEFAULT_OPERATING_TIME;
             operatingTime = place.getBuilding().getOperatingTime();
         }
 
@@ -327,10 +328,10 @@ public class OperatingService {
         for(Place place : places) {
             if(!placesWithCondition.contains(place)) {
                 // 조건이 없는 장소는 건물의 운영 여부 및 운영 시간과 동일하도록 세팅
-                place.setSundayOperatingTime(place.getBuilding().getSundayOperatingTime());
-                place.setSaturdayOperatingTime(place.getBuilding().getSaturdayOperatingTime());
-                place.setWeekdayOperatingTime(place.getBuilding().getWeekdayOperatingTime());
-                place.setOperating(place.getBuilding().isOperating());
+                place.setSundayOperatingTime(place.getBuilding() == null ? DEFAULT_OPERATING_TIME : place.getBuilding().getSundayOperatingTime());
+                place.setSaturdayOperatingTime(place.getBuilding() == null ? DEFAULT_OPERATING_TIME : place.getBuilding().getSaturdayOperatingTime());
+                place.setWeekdayOperatingTime(place.getBuilding() == null ? DEFAULT_OPERATING_TIME : place.getBuilding().getWeekdayOperatingTime());
+                place.setOperating(place.getBuilding() == null ? true : place.getBuilding().isOperating());
             }
         }
     }

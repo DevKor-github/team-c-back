@@ -30,7 +30,7 @@ public class OperatingScheduler {
     private static Boolean isEvenWeek = null;
 
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
-    @EventListener(ApplicationReadyEvent.class)
+    // @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
         setState();
         log.info("운영 시간 업데이트");

@@ -126,6 +126,10 @@ dependencies {
 
     // 크롤링
     implementation 'org.jsoup:jsoup:1.17.2'
+
+    // Apple App Store Server Library
+    implementation 'com.apple.itunes.storekit:app-store-server-library:3.6.0'
+
 }
 
 dependencyManagement {

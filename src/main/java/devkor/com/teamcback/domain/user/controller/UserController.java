@@ -45,21 +45,6 @@ public class UserController {
     }
 
     /**
-     * 로그인
-     */
-    @Operation(summary = "로그인", description = "FE에서 소셜로그인 진행 후 보내주는 사용자 정보로 토큰 반환")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-    })
-    @PostMapping("/login")
-    public CommonResponse<TempLoginRes> login(
-        @Parameter(description = "사용자정보", required = true)
-        @RequestBody LoginUserReq loginUserReq
-    ) {
-        return CommonResponse.success(userService.login(loginUserReq));
-    }
-
-    /**
      * 소셜 토큰 확인 로그인
      */
     @Operation(summary = "배포 버전 로그인", description = "FE에서 소셜로그인 진행 후 보내주는 사용자 정보로 토큰 반환")

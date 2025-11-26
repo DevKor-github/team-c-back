@@ -17,12 +17,12 @@ public class GetBLERes {
     private int lastStatus;
     private LocalDateTime lastTime;
 
-    public GetBLERes(BLEDevice device, BLEData data, BLEstatus status) {
+    public GetBLERes(BLEDevice device, BLEData data, BLEstatus status, int people) {
         this.id = device.getId();
         this.deviceName = device.getDeviceName();
         this.placeId = device.getPlace().getId();
         this.capacity = device.getCapacity();
-        this.lastCount = data.getLastCount();
+        this.lastCount = people;
         this.lastStatus = status.getCode();
         this.lastTime = data.getLastTime();
     }

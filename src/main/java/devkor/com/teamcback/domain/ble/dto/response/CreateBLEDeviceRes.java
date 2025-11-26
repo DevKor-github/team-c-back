@@ -6,10 +6,10 @@ import lombok.Getter;
 
 @Schema(description = "BLEdevice 생성 정보")
 @Getter
-public class CreateBLERes {
+public class CreateBLEDeviceRes {
     private Long id;
 
-    public CreateBLERes(BLEDevice bleDevice) {
+    public CreateBLEDeviceRes(BLEDevice bleDevice) {
         this.id = bleDevice.getId();
     }
 }

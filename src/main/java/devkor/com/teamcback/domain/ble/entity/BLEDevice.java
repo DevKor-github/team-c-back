@@ -31,10 +31,10 @@ public class BLEDevice extends BaseEntity {
     private int capacity;
 
     @Column(name="default_count")
-    private int defaultCount;
+    private double defaultCount;
 
     @Column
-    private int ratio;
+    private double ratio;
 
     public BLEDevice(CreateBLEDeviceReq req, Place place) {
         this.deviceName = req.getDeviceName();

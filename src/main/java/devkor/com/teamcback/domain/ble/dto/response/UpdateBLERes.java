@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class UpdateBLERes {
     @Schema(description = "라운지 설치된 기기명", example = "woodang_1f_lounge")
     private Long deviceId;
-    @Schema(description = "최근 감지 인원", example = "10")
+    @Schema(description = "최근 감지 인원(10의 자리 반올림)", example = "10")
     private int lastCount;
     @Schema(description = "최근 Status", example = "AVAILABLE")
     private BLEstatus lastStatus;

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.ble.controller;
 
 import devkor.com.teamcback.domain.ble.dto.request.UpdateBLEReq;
+import devkor.com.teamcback.domain.ble.dto.response.BLETimePatternRes;
 import devkor.com.teamcback.domain.ble.dto.response.GetBLERes;
 import devkor.com.teamcback.domain.ble.dto.response.UpdateBLERes;
 import devkor.com.teamcback.domain.ble.service.BLEService;
@@ -41,8 +42,25 @@ public class BLEController {
     }
 
     @PutMapping
+    @Operation(summary = "ble 기기에서 전송하는 데이터 통한 데이터 축적",
+            description = "ble 기기에서 전송하는 데이터 통한 데이터 축적")
     public CommonResponse<UpdateBLERes> updateBLE(
             @Valid @RequestBody UpdateBLEReq updateBLEReq){
         return CommonResponse.success(bleService.updateBLE(updateBLEReq));
     }
+
+    @GetMapping("/pattern")
+    @Operation(summary = "BLE 요일/시간대별 평균 인원 조회",
+            description = "최근 1달 동안 특정 placeId에 대해 요일별 7/10/13/16/19/22시 기준 평균 인원 수를 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "404", description = "장소 또는 장비를 찾을 수 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<BLETimePatternRes> getBLETimePattern(
+            @Parameter(name="placeId", description = "BLE 정보를 얻고자 하는 placeId")
+            @RequestParam Long placeId) {
+        return CommonResponse.success(bleService.getBLETimePattern(placeId));
+    }
+
 }

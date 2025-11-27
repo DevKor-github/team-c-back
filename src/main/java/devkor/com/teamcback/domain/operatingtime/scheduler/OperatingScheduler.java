@@ -30,45 +30,62 @@ public class OperatingScheduler {
     private static Boolean isEvenWeek = null;
 
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
-    // @EventListener(ApplicationReadyEvent.class)
+    @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
-        setState();
-        log.info("운영 시간 업데이트");
 
-        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
-            operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
-            return null;
-        });
+        try{
+            setState();
+            log.info("운영 시간 업데이트");
+
+            redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+                operatingService.updateOperatingTime(dayOfWeek, isHoliday, isVacation, isEvenWeek);
+                return null;
+            });
+        } catch (Exception e) {
+            log.info("updateOperatingTime() 작업 실패: {}", e.getMessage(), e);
+        }
     }
 
 
-//    @Scheduled(cron = "30 35 * * * *") // 테스트용
+    // @EventListener(ApplicationReadyEvent.class) // 테스트용
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
-        log.info("운영 여부 업데이트");
-        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
-            operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
-            return null;
-        });
+        try{
+            log.info("운영 여부 업데이트");
+            redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+                operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
+                return null;
+            });
+        } catch (Exception e) {
+            log.info("updateOperatingDuringPeakHour() 작업 실패: {}", e.getMessage(), e);
+        }
     }
 
     @Scheduled(cron = "0 0,30 0-8,19-23 * * *") // 30분마다
     public void updateOperating() {
-        log.info("운영 여부 업데이트");
-        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
-            operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
-            return null;
-        });
+        try{
+            log.info("운영 여부 업데이트");
+            redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+                operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
+                return null;
+            });
+        } catch (Exception e) {
+            log.info("updateOperating() 작업 실패: {}", e.getMessage(), e);
+        }
     }
 
     // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
     @EventListener(ApplicationReadyEvent.class)
     public void updatePlaceOperatingTime() {
-        log.info("장소 운영 시간 업데이트");
-        redisLockUtil.executeWithLock("lock", 1, 300, () -> {
-            operatingService.updatePlaceOperatingTime();
-            return null;
-        });
+        try{
+            log.info("장소 운영 시간 업데이트");
+            redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+                operatingService.updatePlaceOperatingTime();
+                return null;
+            });
+        } catch (Exception e) {
+            log.info("updatePlaceOperatingTime() 작업 실패: {}", e.getMessage(), e);
+        }
     }
 
     private void setState() {

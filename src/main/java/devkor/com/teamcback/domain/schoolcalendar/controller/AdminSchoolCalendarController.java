@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.schoolcalendar.controller;
 
+import devkor.com.teamcback.domain.schoolcalendar.dto.request.UpdateSchoolCalendarTermReq;
 import devkor.com.teamcback.domain.schoolcalendar.dto.response.UpdateSchoolCalendarRes;
 import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -45,6 +46,20 @@ public class AdminSchoolCalendarController {
     })
     public CommonResponse<UpdateSchoolCalendarRes> updateKoyeonActive() {
         return CommonResponse.success(schoolCalendarService.updateKoyeonActive());
+    }
+
+    /***
+     * 학기 수정
+     */
+    @PutMapping("/term")
+    @Operation(summary = "학기", description = "학기")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<UpdateSchoolCalendarRes> updateTerm(UpdateSchoolCalendarTermReq req) {
+        return CommonResponse.success(schoolCalendarService.updateTerm(req));
     }
 
 }

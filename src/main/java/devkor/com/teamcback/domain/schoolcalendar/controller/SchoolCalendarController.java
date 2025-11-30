@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.schoolcalendar.controller;
 
 import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetSchoolCalendarRes;
+import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetSchoolCalendarTermRes;
 import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +46,20 @@ public class SchoolCalendarController {
     })
     public CommonResponse<GetSchoolCalendarRes> isKoyeon() {
         return CommonResponse.success(schoolCalendarService.isKoyeon());
+    }
+
+    /***
+     * 학기 반환
+     */
+    @GetMapping("/term")
+    @Operation(summary = "현재 학기 반환", description = "1학기/여름계절/2학기/겨울계절")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "404", description = "Not Found",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    public CommonResponse<GetSchoolCalendarTermRes> getTerm() {
+        return CommonResponse.success(schoolCalendarService.getTerm());
     }
 
 }

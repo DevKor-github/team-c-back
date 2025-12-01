@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.schoolcalendar.service;
 
+import devkor.com.teamcback.domain.schoolcalendar.dto.request.UpdateSchoolCalendarTermReq;
 import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetSchoolCalendarRes;
+import devkor.com.teamcback.domain.schoolcalendar.dto.response.GetSchoolCalendarTermRes;
 import devkor.com.teamcback.domain.schoolcalendar.dto.response.UpdateSchoolCalendarRes;
 import devkor.com.teamcback.domain.schoolcalendar.entity.SchoolCalendar;
 import devkor.com.teamcback.domain.schoolcalendar.repository.SchoolCalendarRepository;
@@ -31,6 +33,13 @@ public class SchoolCalendarService {
     }
 
     /**
+     * 학기 반환
+     */
+    public GetSchoolCalendarTermRes getTerm() {
+        return new GetSchoolCalendarTermRes(findSchoolCalendar(3L).getTerm().toString());
+    }
+
+    /**
      * 방학 여부 수정(토글)
      */
     @Transactional
@@ -45,6 +54,16 @@ public class SchoolCalendarService {
     @Transactional
     public UpdateSchoolCalendarRes updateKoyeonActive() {
         updateSchoolCalendarActive(2L);
+        return new UpdateSchoolCalendarRes();
+    }
+
+    /**
+     * 학기 수정
+     */
+    @Transactional
+    public UpdateSchoolCalendarRes updateTerm(UpdateSchoolCalendarTermReq req) {
+        SchoolCalendar schoolCalendar = findSchoolCalendar(3L);
+        schoolCalendar.updateTerm(req.getTerm());
         return new UpdateSchoolCalendarRes();
     }
 

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.ble.controller;
 
 import devkor.com.teamcback.domain.ble.dto.request.UpdateBLEReq;
+import devkor.com.teamcback.domain.ble.dto.response.BLEDeviceListRes;
 import devkor.com.teamcback.domain.ble.dto.response.BLETimePatternRes;
 import devkor.com.teamcback.domain.ble.dto.response.GetBLERes;
 import devkor.com.teamcback.domain.ble.dto.response.UpdateBLERes;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -61,6 +64,16 @@ public class BLEController {
             @Parameter(name="placeId", description = "BLE 정보를 얻고자 하는 placeId")
             @RequestParam Long placeId) {
         return CommonResponse.success(bleService.getBLETimePattern(placeId));
+    }
+
+    @GetMapping("/list")
+    @Operation(summary = "BLE 가능 place 목록 조회",
+            description = "ble_device 테이블에 등록된 BLE 장비 목록(id, deviceName, placeId, capacity)을 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다.")
+    })
+    public CommonResponse<List<BLEDeviceListRes>> getBLEDeviceList() {
+        return CommonResponse.success(bleService.getBLEDeviceList());
     }
 
 }

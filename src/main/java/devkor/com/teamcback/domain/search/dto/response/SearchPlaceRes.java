@@ -58,8 +58,8 @@ public class SearchPlaceRes {
 
     public SearchPlaceRes(Place place, String imageUrl) {
         this.id = place.getId();
-        this.buildingId = place.getBuilding().getId();
-        this.buildingName = place.getBuilding().getName();
+        this.buildingId = place.getBuilding() != null ? place.getBuilding().getId() : null;
+        this.buildingName = place.getBuilding() != null ? place.getBuilding().getName() : "";
         this.name = place.getName();
         this.imageUrl = imageUrl != null ? imageUrl : place.getImageUrl();
         this.detail = place.getDetail();
@@ -67,14 +67,14 @@ public class SearchPlaceRes {
         this.saturdayOperatingTime = place.getSaturdayOperatingTime();
         this.sundayOperatingTime = place.getSundayOperatingTime();
         this.isOperating = place.isOperating();
-        this.needStudentCard = place.getBuilding().isNeedStudentCard();
+        this.needStudentCard = place.getBuilding() != null ? place.getBuilding().isNeedStudentCard() : false;
         this.floor = place.getFloor();
-        this.address = place.getBuilding().getAddress();
+        this.address = place.getBuilding() != null ? place.getBuilding().getAddress() : "";
         this.plugAvailability = place.isPlugAvailability();
-        this.longitude = place.getNode().getLongitude();
-        this.latitude = place.getNode().getLatitude();
-        this.xCoord = place.getNode().getXCoord();
-        this.yCoord = place.getNode().getYCoord();
+        this.longitude = place.getNode() != null ? place.getNode().getLongitude() : null;
+        this.latitude = place.getNode() != null ? place.getNode().getLatitude() : null;
+        this.xCoord = place.getNode() != null ? place.getNode().getXCoord() : null;
+        this.yCoord = place.getNode() != null ? place.getNode().getYCoord() : null;
         this.locationType = LocationType.PLACE;
         this.placeType = place.getType();
         this.description = place.getDescription();

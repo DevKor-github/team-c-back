@@ -25,6 +25,7 @@ public class CafeteriaMenu extends BaseEntity {
     private String kind;
 
     @Getter
+    @Setter
     @Column(nullable = false, length = 500) // 식단 내용
     private String menu;
 

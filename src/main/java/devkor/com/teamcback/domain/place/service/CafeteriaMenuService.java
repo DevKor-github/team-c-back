@@ -190,10 +190,15 @@ public class CafeteriaMenuService {
                             // 메뉴가 존재하는 경우
                             if(!content.equals(NO_MENU_INFO)) {
 
-                                // 메뉴가 변경된 경우
-                                if (savedMenu == null || !savedMenu.getMenu().equals(content)) {
+                                // 메뉴가 추가된 경우
+                                if (savedMenu == null) {
                                     // 학식 메뉴 저장
                                     cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
+                                }
+
+                                // 메뉴가 변경된 경우
+                                else if(!savedMenu.getMenu().equals(content)) {
+                                    savedMenu.setMenu(content);
                                 }
 
                                 // 당일에 해당하는 경우 식당 설명 수정

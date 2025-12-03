@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.schoolcalendar.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.course.entity.Term;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,14 @@ public class SchoolCalendar extends BaseEntity {
     private String name;
 
     @Setter
-    @Column(nullable = false)
+    @Column
     private boolean isActive;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Term term;
+
+    public void updateTerm(Term term) {
+        this.term = term;
+    }
 }

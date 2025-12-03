@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.ble.service;
 
 
 import devkor.com.teamcback.domain.ble.dto.request.UpdateBLEReq;
+import devkor.com.teamcback.domain.ble.dto.response.BLEDeviceListRes;
 import devkor.com.teamcback.domain.ble.dto.response.BLETimePatternRes;
 import devkor.com.teamcback.domain.ble.dto.response.GetBLERes;
 import devkor.com.teamcback.domain.ble.dto.response.UpdateBLERes;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
@@ -37,6 +39,9 @@ public class BLEService {
     private static final int[] TIME_SLOTS = {7, 10, 13, 16, 19, 22};
     //요일 라벨 (1=월요일, 7=일요일)
     private static final int[] DAY_OF_WEEKS = {1, 2, 3, 4, 5, 6, 7};
+    private static final String[] DAY_OF_WEEK_LABELS = {
+            "mon", "tue", "wed", "thu", "fri", "sat", "sun"
+    };
 
     @Transactional
     public UpdateBLERes updateBLE(UpdateBLEReq updateBLEReq) {
@@ -83,9 +88,10 @@ public class BLEService {
             status = BLEstatus.FAILURE;
         }
         else status = latest.getLastStatus();
-        // 사람 수를 예측 후 10의 배수로 리턴
+
         int people = getBlEPeople(latest.getLastCount(), device);
-        people = (int) Math.round(people / 10.0) * 10;
+        // 사람 수를 예측 후 10의 배수로 리턴: 이젠 필요 없음
+        //people = (int) Math.round(people / 10.0) * 10;
         return new GetBLERes(device, latest, status, people);
     }
 
@@ -157,9 +163,27 @@ public class BLEService {
         return new BLETimePatternRes(
                 placeId,
                 TIME_SLOTS,
-                DAY_OF_WEEKS,
+                DAY_OF_WEEK_LABELS,
                 averages
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<BLEDeviceListRes> getBLEDeviceList() {
+        List<BLEDevice> devices = bledeviceRepository.findAll();
+        List<BLEDeviceListRes> result = new ArrayList<>();
+
+        for (BLEDevice device : devices) {
+            Long placeId = null;
+            if (device.getPlace() != null) {
+                placeId = device.getPlace().getId();
+            }
+
+            BLEDeviceListRes dto = new BLEDeviceListRes(device.getId(), device.getDeviceName(), placeId, device.getCapacity());
+
+            result.add(dto);
+        }
+        return result;
     }
 
 }

@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,12 +14,19 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class HolidayScheduler {
+
+    @Value("${metrics.environment}")
+    private String env;
+
     private final HolidayService holidayService;
     private final RedisLockUtil redisLockUtil;
 
 //    @Scheduled(cron = "0 * * * * *") // 테스트용
     @Scheduled(cron = "0 0 0 1 * ?") // 매달 1일 자정마다
     public void updateHoliday() {
+        // 배포 서버에서만 실행
+        if(!env.equals("prod")) return;
+
         redisLockUtil.executeWithLock("lock", 1, 300, () -> {
             LocalDateTime nowTime = LocalDateTime.now();
             try {

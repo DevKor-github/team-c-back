@@ -10,6 +10,7 @@ import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +20,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OperatingScheduler {
+
+    @Value("${metrics.environment}")
+    private String env;
+
     private final OperatingService operatingService;
     private final HolidayService holidayService;
     private final RedisLockUtil redisLockUtil;
@@ -32,6 +37,9 @@ public class OperatingScheduler {
     @Scheduled(cron = "0 0 0 * * *") // 매일 자정마다
     @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
+
+        // 배포 서버에서만 실행
+        if(!env.equals("prod")) return;
 
         try{
             setState();
@@ -50,6 +58,10 @@ public class OperatingScheduler {
     // @EventListener(ApplicationReadyEvent.class) // 테스트용
     @Scheduled(cron = "0 */10 9-18 * * *") // 10분마다
     public void updateOperatingDuringPeakHour() {
+
+        // 배포 서버에서만 실행
+        if(!env.equals("prod")) return;
+
         try{
             log.info("운영 여부 업데이트");
             redisLockUtil.executeWithLock("lock", 1, 300, () -> {
@@ -63,6 +75,10 @@ public class OperatingScheduler {
 
     @Scheduled(cron = "0 0,30 0-8,19-23 * * *") // 30분마다
     public void updateOperating() {
+
+        // 배포 서버에서만 실행
+        if(!env.equals("prod")) return;
+
         try{
             log.info("운영 여부 업데이트");
             redisLockUtil.executeWithLock("lock", 1, 300, () -> {
@@ -77,6 +93,10 @@ public class OperatingScheduler {
     // 장소 운영 시간 저장 - 건물의 운영 시간에 변동이 있을 경우 1회 작동
     @EventListener(ApplicationReadyEvent.class)
     public void updatePlaceOperatingTime() {
+
+        // 배포 서버에서만 실행
+        if(!env.equals("prod")) return;
+
         try{
             log.info("장소 운영 시간 업데이트");
             redisLockUtil.executeWithLock("lock", 1, 300, () -> {

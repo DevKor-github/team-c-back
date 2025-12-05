@@ -19,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +34,8 @@ public class CafeteriaMenuService {
     private static final String TABLE_SELECTOR = ".table_1 table";
     // 식단 메뉴가 없을 때 문구
     private static final String NO_MENU_INFO = "등록된 식단내용이(가) 없습니다.";
+    // 학생식당 식단 종류 순서 지정
+    private static final List<String> customOrder = Arrays.asList("천원의아침", "천원의아침(테이크아웃)", "중식(한식반상)", "중식(일품반상)");
 
     private final CafeteriaMenuRepository cafeteriaMenuRepository;
     private final PlaceRepository placeRepository;
@@ -64,7 +63,35 @@ public class CafeteriaMenuService {
                         menuByKind.put(cafeteriaMenu.getKind(), cafeteriaMenu.getMenu());
                     }
 
-                    menuMap.put(date, menuByKind);
+                    if(placeId == 9757) {
+                        // 식단 종류에 따라 정렬하기
+                        Comparator<String> customComparator = (key1, key2) -> {
+                            int index1 = customOrder.indexOf(key1);
+                            int index2 = customOrder.indexOf(key2);
+
+                            // 맵에 정의되지 않은 키는 맨 뒤로 보냅니다 (큰 값 부여)
+                            if (index1 == -1) index1 = customOrder.size();
+                            if (index2 == -1) index2 = customOrder.size();
+
+                            // 순서 비교: index1이 작으면 먼저 옵니다.
+                            int comparison = Integer.compare(index1, index2);
+
+                            // customOrder에 없는 키끼리의 순서는 원래 문자열 비교(알파벳순)를 따릅니다.
+                            if (comparison == 0 && index1 >= customOrder.size()) {
+                                return key1.compareTo(key2);
+                            }
+                            return comparison;
+                        };
+
+                        // 정렬된 맵 생성
+                        Map<String, String> sortedMap = new TreeMap<>(customComparator);
+                        sortedMap.putAll(menuByKind);
+
+                        menuMap.put(date, sortedMap);
+                    }
+                    else {
+                        menuMap.put(date, menuByKind);
+                    }
                 });
 
         GetCafeteriaMenuListRes res = new GetCafeteriaMenuListRes(placeId, place.getName(), address, place.getDetail(), place.getContact(), menuMap);
@@ -140,7 +167,7 @@ public class CafeteriaMenuService {
             // 6. 분리된 블록을 순회하며 식단 데이터 추출
             // 패턴: (조식|중식|석식) (.+?) - 내용물은 하이픈(-) 기준으로 분리됩니다.
             Pattern menuItemsPattern = Pattern.compile(
-                    "(조식|중식|석식|식사|요리|파스타/스테이크코스|천원의밥상)\\s*(.*?)(?=\\s*(조식|중식|석식|식사|요리|파스타/스테이크코스|천원의밥상)\\s*|$)",
+                    "(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*(.*?)(?=\\s*(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*|$)",
                     Pattern.DOTALL
             );
 
@@ -174,6 +201,27 @@ public class CafeteriaMenuService {
 
                         if (!content.isEmpty()) {
 
+                            // 애기능 메뉴 정리
+                            if(placeId == 3103 || placeId == 2490) {
+                                content = content.replaceAll("\\s*/\\s*", "/");
+                                content = content.replaceAll("(\\s+)의(\\s+)", "의");
+                                content = content.replaceAll("사이드메뉴: ", "사이드메뉴:");
+                            }
+
+                            // 안암학사 메뉴 정리
+                            if(placeId == 3654) {
+                                if(content.contains("또는")) {
+                                    content = content.replaceAll(" ", "");
+                                    content = content.replaceAll("또는", "/");
+                                }
+                                content = content.replaceAll("/", " ").trim();
+                            }
+
+                            // 학생회관 메뉴 정리
+                            if(placeId == 9757) {
+                                content = content.split("-제공되는 메뉴")[0].trim();
+                            }
+
                             // 애기능 - 학생식당
                             if(placeId == 3103) {
                                 if(!content.contains("[학생식당]")) content = NO_MENU_INFO;
@@ -182,7 +230,7 @@ public class CafeteriaMenuService {
                             // 애기능 - 교직원식당
                             else if(placeId == 2490) {
                                 if(!content.contains("[교직원식당]")) content = NO_MENU_INFO;
-                                else content = content.substring(content.lastIndexOf("[교직원식당]") + "[교직원식당]".length()).trim();
+                                else content = content.substring(content.lastIndexOf("[교직원식당]") + "[교직원식당]".length(), content.contains("[학생식당]") && content.lastIndexOf("[학생식당]") > content.lastIndexOf("[교직원식당]")? content.lastIndexOf("[학생식당]") : content.length()).trim();
                             }
 
                             CafeteriaMenu savedMenu = cafeteriaMenuRepository.findByDateAndKindAndPlaceId(date, kind, placeId);
@@ -199,15 +247,6 @@ public class CafeteriaMenuService {
                                 // 메뉴가 변경된 경우
                                 else if(!savedMenu.getMenu().equals(content)) {
                                     savedMenu.setMenu(content);
-                                }
-
-                                // 당일에 해당하는 경우 식당 설명 수정
-                                if(date.equals(LocalDate.now())) {
-                                    if(!updated) {
-                                        place.setDescription(kind + " - " + content);
-                                        updated = true;
-                                    }
-                                    else place.setDescription(place.getDescription() + "\n" + kind + " - " + content);
                                 }
 
                             }

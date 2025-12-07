@@ -165,9 +165,12 @@ public class CafeteriaMenuService {
             String currentDate = null;
 
             // 6. 분리된 블록을 순회하며 식단 데이터 추출
-            // 패턴: (조식|중식|석식) (.+?) - 내용물은 하이픈(-) 기준으로 분리됩니다.
+            String regex = "(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*(.*?)(?=\\s*(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*|$)";
+            if(placeId == 9757) {
+                regex = "(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B)\\s*(.*?)(?=\\s*(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B)\\s*|$)";
+            }
             Pattern menuItemsPattern = Pattern.compile(
-                    "(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*(.*?)(?=\\s*(조식|석식|식사|요리|파스타/스테이크 코스|천원의밥상|천원의아침\\(테이크아웃\\)|천원의아침|중식\\(한식반상\\)|중식\\(일품반상\\)|중식 A|중식 B|중식)\\s*|$)",
+                    regex,
                     Pattern.DOTALL
             );
 
@@ -235,21 +238,17 @@ public class CafeteriaMenuService {
 
                             CafeteriaMenu savedMenu = cafeteriaMenuRepository.findByDateAndKindAndPlaceId(date, kind, placeId);
 
-                            // 메뉴가 존재하는 경우
-                            if(!content.equals(NO_MENU_INFO)) {
-
-                                // 메뉴가 추가된 경우
-                                if (savedMenu == null) {
-                                    // 학식 메뉴 저장
-                                    cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
-                                }
-
-                                // 메뉴가 변경된 경우
-                                else if(!savedMenu.getMenu().equals(content)) {
-                                    savedMenu.setMenu(content);
-                                }
-
+                            // 메뉴가 추가된 경우
+                            if (savedMenu == null) {
+                                // 학식 메뉴 저장
+                                cafeteriaMenuRepository.save(new CafeteriaMenu(date, kind, content, placeId));
                             }
+
+                            // 메뉴가 변경된 경우
+                            else if(!savedMenu.getMenu().equals(content)) {
+                                savedMenu.setMenu(content);
+                            }
+
                         }
                     }
                     // 해당 날짜의 모든 메뉴를 추출했으므로 날짜를 초기화

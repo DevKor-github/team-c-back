@@ -17,7 +17,7 @@ public class ModifyBLEDeviceReq {
     @Schema(description = "라운지별 최대정원", example = "20")
     private int capacity;
     @Schema(description = "위치별 기본 시간별 카운팅 횟수", example = "30")
-    private int defaultCount;
+    private double defaultCount;
     @Schema(description = "위치별 기본 시간별 평균 기기 신호 횟수", example = "100")
-    private int ratio;
+    private double ratio;
 }

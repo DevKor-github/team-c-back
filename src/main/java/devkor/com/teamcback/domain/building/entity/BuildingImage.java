@@ -36,8 +36,8 @@ public class BuildingImage {
 
     private Double leftTopLat;
     private Double leftTopLong;
-    private Double rightTopLat;
-    private Double rightTopLong;
+    private Double rightBottomLat;
+    private Double rightBottomLong;
 
     public BuildingImage(Double floor, String imageUrl, Building building) {
         this.floor = floor;

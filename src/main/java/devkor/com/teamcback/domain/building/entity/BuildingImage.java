@@ -34,6 +34,11 @@ public class BuildingImage {
     @JoinColumn(name = "building_id")
     private Building building;
 
+    private Double leftTopLat;
+    private Double leftTopLong;
+    private Double rightBottomLat;
+    private Double rightBottomLong;
+
     public BuildingImage(Double floor, String imageUrl, Building building) {
         this.floor = floor;
         this.image = imageUrl;

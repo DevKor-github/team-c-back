@@ -15,6 +15,12 @@ import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.place.repository.PlaceImageRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.domain.review.entity.PlaceReviewTagMap;
+import devkor.com.teamcback.domain.review.entity.ReviewTag;
+import devkor.com.teamcback.domain.review.entity.ReviewTagMap;
+import devkor.com.teamcback.domain.review.repository.PlaceReviewTagMapRepository;
+import devkor.com.teamcback.domain.review.repository.ReviewTagMapRepository;
+import devkor.com.teamcback.domain.review.repository.ReviewTagRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
@@ -56,6 +62,8 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
+    private final ReviewTagRepository reviewTagRepository;
     private final LogUtil logUtil;
     private final FileUtil fileUtil;
 
@@ -196,7 +204,15 @@ public class SearchService {
             if(place.getFileUuid() != null) {
                 imageUrl = fileUtil.getThumbnail(place.getFileUuid());
             }
-            map.get(place.getFloor()).add(new SearchFacilityRes(place, imageUrl));
+
+            SearchFacilityRes facilityRes = new SearchFacilityRes(place, imageUrl);
+
+            // 리뷰 내용 추가
+            if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                facilityRes.setTagList(findPlaceReviewTagList(place));
+            }
+
+            map.get(place.getFloor()).add(facilityRes);
         }
 
         res.setFacilities(map);
@@ -236,7 +252,14 @@ public class SearchService {
                  imageUrl = fileUtil.getThumbnail(place.getFileUuid());
              }
 
-             placeResList.add(new SearchRoomDetailRes(place, imageUrl));
+             SearchRoomDetailRes detailRes = new SearchRoomDetailRes(place, imageUrl);
+
+             // 리뷰 내용 추가
+             if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                 detailRes.setTagList(findPlaceReviewTagList(place));
+             }
+
+             placeResList.add(detailRes);
          }
 
         List<SearchNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloorAndTypeIn(building, floor, List.of(ENTRANCE, STAIR, ELEVATOR))
@@ -276,7 +299,14 @@ public class SearchService {
                 imageUrl = fileUtil.getThumbnail(place.getFileUuid());
             }
 
-            placeResList.add(new SearchPlaceRes(place, imageUrl));
+            SearchPlaceRes placeRes = new SearchPlaceRes(place, imageUrl);
+
+            // 리뷰 내용 추가
+            if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                placeRes.setTagList(findPlaceReviewTagList(place));
+            }
+
+            placeResList.add(placeRes);
         }
         logUtil.logClick(null, null, null, placeType.toString());
         return new SearchFacilityListRes(placeResList);
@@ -704,5 +734,16 @@ public class SearchService {
 
     private Place findPlace(Long placeId) {
         return placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
+    }
+
+    private List<SearchPlaceReviewTagRes> findPlaceReviewTagList(Place place) {
+        List<PlaceReviewTagMap> reviewTagMaps = placeReviewTagMapRepository.findByPlaceOrderByNumDesc(place);
+
+        List<SearchPlaceReviewTagRes> tagResList = new ArrayList<>();
+        for(PlaceReviewTagMap reviewTagMap : reviewTagMaps) {
+            tagResList.add(new SearchPlaceReviewTagRes(reviewTagMap.getReviewTag().getId(), reviewTagMap.getReviewTag().getTag(), reviewTagMap.getNum()));
+        }
+
+        return tagResList;
     }
 }

@@ -73,6 +73,10 @@ public class Place extends BaseEntity {
     @Column
     private String contact; // 연락처 등
 
+    @Column
+    @Enumerated(EnumType.STRING)
+    private FoodType foodType;
+
     @ManyToOne
     @JoinColumn(name = "building_id")
     private Building building;

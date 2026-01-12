@@ -4,6 +4,10 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Schema(description = "편의시설 정보")
 @Getter
@@ -44,6 +48,11 @@ public class SearchFacilityRes {
     private String description;
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
     private String starAverage;
+    @Schema(description = "식당인 경우 음식 카테고리", example = "한식")
+    private String foodTypeName;
+    @Setter
+    @Schema(description = "식당인 경우 리뷰 태그 목록")
+    private List<SearchPlaceReviewTagRes> tagList;
 
     public SearchFacilityRes(Place place, String imageUrl) {
         this.id = place.getId();
@@ -64,5 +73,6 @@ public class SearchFacilityRes {
         this.floor = place.getFloor().intValue();
         this.description = place.getDescription();
         this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
+        this.foodTypeName = place.getFoodType() == null ? "" : place.getFoodType().getType();
     }
 }

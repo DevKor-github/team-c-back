@@ -7,8 +7,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class SearchRoomDetailRes {
@@ -33,6 +36,9 @@ public class SearchRoomDetailRes {
     private String description;
     private String starAverage;
     private String nextPlaceTime;
+    private String foodTypeName;
+    @Setter
+    private List<SearchPlaceReviewTagRes> tagList;
 
     public SearchRoomDetailRes(Place place, String imageUrl) {
         this.id = place.getId();
@@ -62,5 +68,6 @@ public class SearchRoomDetailRes {
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = place.getOperatingTime().substring(0, 5);
         }
+        this.foodTypeName = place.getFoodType() == null ? "" : place.getFoodType().getType();
     }
 }

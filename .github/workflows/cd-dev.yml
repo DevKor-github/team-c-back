@@ -63,10 +63,10 @@ jobs:
         with:
           host: ${{ secrets.HOST_NAME }}
           username: ${{ secrets.USER_NAME }}
-          password: ${{ secrets.USER_PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           script: |
             docker pull ${{ secrets.DOCKER_USER }}/kodaero:latest
             chmod +x ./deploy.sh
-            sudo ./deploy.sh dev
+            ./deploy.sh dev
             docker image prune -f

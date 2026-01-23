@@ -50,12 +50,8 @@ public class S3Util {
         return metadata;
     }
 
-    // TODO: 추후 정리
-    public String uploadFile(MultipartFile file, FilePath filePath) {
-        return uploadFile(file, filePath, UUID.randomUUID().toString());
-    }
 
-    public String uploadFile(MultipartFile multipartFile, FilePath filePath, String fileUuid) {
+    public String uploadFile(MultipartFile multipartFile, FilePath filePath) {
         // 업로드할 파일이 존재하지 않거나 비어있으면 null 반환
         if (multipartFile == null || multipartFile.isEmpty()) {
             return null;
@@ -74,7 +70,7 @@ public class S3Util {
         }
 
         // 파일명을 UTF-8로 디코딩
-        String fileName = URLDecoder.decode(fileUuid, StandardCharsets.UTF_8);
+        String fileName = URLDecoder.decode(multipartFile.getName(), StandardCharsets.UTF_8);
         // 업로드할 파일의 메타데이터 생성
         ObjectMetadata metadata = setObjectMetadata(multipartFile);
 
@@ -91,9 +87,9 @@ public class S3Util {
         return getFileUrl(fileName, filePath);
     }
 
-    public String uploadFile(InputStream inputStream, String fileUuid, FilePath filePath, String contentType) {
+    public String uploadFile(InputStream inputStream, String originalFileName, FilePath filePath, String contentType) {
         // 파일명을 UTF-8로 디코딩
-        String fileName = URLDecoder.decode(fileUuid, StandardCharsets.UTF_8);
+        String fileName = URLDecoder.decode(originalFileName, StandardCharsets.UTF_8);
 
         try {
             // 업로드할 파일의 메타데이터 생성
@@ -139,7 +135,6 @@ public class S3Util {
         amazonS3Client.deleteObject(bucketName, filePath + fileName);
     }
 
-    // TODO: 추후 정리
     public boolean exists(String fileUrl, FilePath filePath) {
         // 주어진 파일 URL로부터 파일명을 추출
         String fileName = getFileNameFromFileUrl(fileUrl, filePath);
@@ -166,7 +161,6 @@ public class S3Util {
         return true;
     }
 
-    // TODO: 추후 정리
     private String getFileUrl(String fileName, FilePath filePath) {
         // AWS S3 클라이언트를 사용하여 주어진 버킷, 파일 경로 및 파일명에 해당하는 파일의 URL을 얻어옴
         return amazonS3Client.getUrl(bucketName, filePath.getPath() + fileName).toString();
@@ -177,7 +171,6 @@ public class S3Util {
         return amazonS3Client.getUrl(bucketName, filePath+ fileName).toString();
     }
 
-    // TODO: 추후 정리
     private String getFileNameFromFileUrl(String fileUrl, FilePath filePath) {
         // 파일 URL에서 파일 경로 다음의 문자열부터 파일명의 끝까지 추출하여 반환
         return fileUrl.substring(fileUrl.lastIndexOf(filePath.getPath()) + filePath.getPath().length());

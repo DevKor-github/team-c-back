@@ -26,7 +26,7 @@ spring:
 
   servlet:
     multipart:
-      location: /app/temp
+      location: /tmp
       max-file-size: 5MB
       max-request-size: 50MB
 

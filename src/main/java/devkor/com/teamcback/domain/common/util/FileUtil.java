@@ -137,7 +137,7 @@ public class FileUtil {
         InputStream inputStream = new ByteArrayInputStream(os.toByteArray());
 
         // 저장
-        String thumbSavedName = s3Util.uploadFile(inputStream, savedFile.getFileUuid(), filePath, file.getContentType());
+        String thumbSavedName = s3Util.uploadFile(inputStream, savedFile.getFileOriginalName(), filePath, file.getContentType());
         savedFile.setThumbSavedName(thumbSavedName);
     }
 
@@ -165,6 +165,10 @@ public class FileUtil {
         }
 
         fileRepository.deleteAll(savedFileList);
+    }
+
+    public List<File> getFiles(String fileUuid) {
+        return fileRepository.findAllByFileUuid(fileUuid);
     }
 
     public List<String> getOriginalFiles(String fileUuid) {

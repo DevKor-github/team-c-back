@@ -427,14 +427,14 @@ public class SearchService {
         // 장소 사진
         // TODO: 나중에 수정
         String imageUrl = null;
-        List<SearchPlaceImageRes> placeImageList;
+        List<SearchPlaceImageRes> placeImageList = new ArrayList<>();
         if(place.getFileUuid() != null) {
-            placeImageList = fileUtil.getThumbnailFiles(place.getFileUuid()).stream().map(image -> new SearchPlaceImageRes(0L, image)).toList();
+            placeImageList = fileUtil.getFiles(place.getFileUuid()).stream().map(file -> new SearchPlaceImageRes(file.getId(), file.getThumbSavedName())).toList();
             imageUrl = placeImageList.isEmpty() ? null : placeImageList.get(0).getImage();
         }
-        else {
-            placeImageList = new ArrayList<>();placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList();
-        }
+/*        else {
+            placeImageList = placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList();
+        }*/
 
         // 즐겨찾기
         if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {

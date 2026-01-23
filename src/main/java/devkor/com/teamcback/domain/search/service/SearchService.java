@@ -370,7 +370,7 @@ public class SearchService {
         // 건물 대표 이미지 확인
         String imageUrl = null;
         if(building.getFileUuid() != null) {
-            imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+            imageUrl = fileUtil.getOriginalFile(building.getFileUuid());
         }
         logUtil.logClick(building.getName(), null, null, null);
         return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
@@ -420,16 +420,12 @@ public class SearchService {
         Place place = findPlace(placeId);
 
         // 장소 사진
-        // TODO: 나중에 수정
         String imageUrl = null;
         List<SearchPlaceImageRes> placeImageList = new ArrayList<>();
         if(place.getFileUuid() != null) {
-            placeImageList = fileUtil.getFiles(place.getFileUuid()).stream().map(file -> new SearchPlaceImageRes(file.getId(), file.getThumbSavedName())).toList();
+            placeImageList = fileUtil.getFiles(place.getFileUuid()).stream().map(file -> new SearchPlaceImageRes(file.getId(), file.getFileSavedName())).toList();
             imageUrl = placeImageList.isEmpty() ? null : placeImageList.get(0).getImage();
         }
-/*        else {
-            placeImageList = placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList();
-        }*/
 
         // 즐겨찾기
         if(bookmarkRepository.existsByLocationIdAndLocationTypeAndCategoryBookmarkList_CategoryIn(place.getId(), LocationType.PLACE, categories)) {

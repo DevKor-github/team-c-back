@@ -65,10 +65,10 @@ public class Place extends BaseEntity {
     private Integer maskIndex;
 
     @Column(nullable = false)
-    private Integer starSum = 0;
+    private double starSum = 0;
 
     @Column(nullable = false)
-    private Integer starNum = 0;
+    private int starNum = 0;
 
     @Column
     private String contact; // 연락처 등

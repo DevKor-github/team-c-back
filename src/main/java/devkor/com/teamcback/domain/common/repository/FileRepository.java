@@ -8,5 +8,11 @@ import java.util.List;
 public interface FileRepository extends JpaRepository<File, Long> {
     List<File> findAllByFileUuid(String fileUuid);
 
+    List<File> findTop10AllByFileUuidOrderBySortNumAsc(String fileUuid);
+
+    List<File> findTop5AllByFileUuidOrderBySortNumAsc(String fileUuid);
+
+    List<File> findTop3AllByFileUuidOrderBySortNumAsc(String fileUuid);
+
     File findByFileUuidAndSortNum(String fileUuid, Long sortNum);
 }

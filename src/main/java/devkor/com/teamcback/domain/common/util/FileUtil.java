@@ -171,6 +171,18 @@ public class FileUtil {
         return fileRepository.findAllByFileUuid(fileUuid);
     }
 
+    public List<File> getTop10Files(String fileUuid) {
+        return fileRepository.findTop10AllByFileUuidOrderBySortNumAsc(fileUuid);
+    }
+
+    public List<File> getTop5Files(String fileUuid) {
+        return fileRepository.findTop5AllByFileUuidOrderBySortNumAsc(fileUuid);
+    }
+
+    public List<File> getTop3Files(String fileUuid) {
+        return fileRepository.findTop3AllByFileUuidOrderBySortNumAsc(fileUuid);
+    }
+
     public List<String> getOriginalFiles(String fileUuid) {
         List<String> fileList = fileRepository.findAllByFileUuid(fileUuid).stream().map(File::getFileSavedName).toList();
 

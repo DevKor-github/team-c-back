@@ -69,8 +69,13 @@ public class S3Util {
             throw new GlobalException(MAXIMUM_UPLOAD_FILE_SIZE);
         }
 
+        String originalName = multipartFile.getOriginalFilename();
+        if(originalName == null || originalName.isEmpty()) {
+            originalName = UUID.randomUUID().toString();
+        }
+
         // 파일명을 UTF-8로 디코딩
-        String fileName = URLDecoder.decode(multipartFile.getName(), StandardCharsets.UTF_8);
+        String fileName = URLDecoder.decode(originalName, StandardCharsets.UTF_8);
         // 업로드할 파일의 메타데이터 생성
         ObjectMetadata metadata = setObjectMetadata(multipartFile);
 

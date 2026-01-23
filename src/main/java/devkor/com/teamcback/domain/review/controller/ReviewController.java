@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.review.controller;
 
 import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
+import devkor.com.teamcback.domain.review.dto.response.SearchReviewImageRes;
 import devkor.com.teamcback.domain.review.service.ReviewService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,10 +11,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -32,8 +32,23 @@ public class ReviewController {
     })
     @GetMapping("/places/{placeId}")
     public CommonResponse<GetReviewPlaceDetailRes> getReviewPlaceDetail(
-            @Parameter(name = "placeId", description = "장소 ID") @RequestParam Long placeId) {
+            @Parameter(name = "placeId", description = "장소 ID") @PathVariable Long placeId) {
 
         return CommonResponse.success(reviewService.getReviewPlaceDetail(placeId));
+    }
+
+    @Operation(summary = "리뷰가 있는 장소 상세 검색 - 무한스크롤로 리뷰 사진 추가 조회",
+            description = "식당, 카페")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/places/{placeId}/images")
+    public CommonResponse<List<SearchReviewImageRes>> getReviewPlaceDetailImages(
+            @Parameter(name = "placeId", description = "장소 ID") @PathVariable Long placeId,
+            @Parameter(name = "lastFileId", description = "마지막 조회한 사진 id") @RequestParam Long lastFileId) {
+
+        return CommonResponse.success(reviewService.getReviewPlaceDetailImages(placeId, lastFileId));
     }
 }

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.review.service;
 
 import devkor.com.teamcback.domain.common.entity.File;
+import devkor.com.teamcback.domain.common.repository.FileRepository;
 import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
@@ -31,6 +32,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
     private final FileUtil fileUtil;
+    private final FileRepository fileRepository;
 
     /**
      * 리뷰 기능있는 장소 상세 조회
@@ -57,8 +59,6 @@ public class ReviewService {
         // 리뷰 최신순 조회
         List<Review> reviewList = reviewRepository.findAllByPlaceOrderByCreatedAtDesc(place);
 
-        // 리뷰 전체 이미지 조회(원본)
-        List<SearchReviewImageRes> totalReviewImageList = new ArrayList<>();
         // 리뷰별 이미지 조회(썸네일)
         List<SearchPlaceReviewRes> reviewImageList = new ArrayList<>();
 
@@ -70,18 +70,35 @@ public class ReviewService {
             // 썸네일 이미지 추출
             List<SearchReviewImageRes> imageResList = reviewFiles.stream().map(file -> new SearchReviewImageRes(file.getId(), file.getThumbSavedName())).toList();
             reviewImageList.add(new SearchPlaceReviewRes(review, imageResList));
-
-            // 리뷰 전체 이미지(원본으로 총 10장까지만)
-            int idx = 0;
-            while(totalReviewImageList.size() < 10 && idx < reviewFiles.size()) {
-                totalReviewImageList.add(new SearchReviewImageRes(reviewFiles.get(idx).getId(), reviewFiles.get(idx).getFileSavedName()));
-                idx++;
-            }
         }
+
+        // 리뷰 전체 이미지 조회(원본 - 10장까지)
+        List<SearchReviewImageRes> totalReviewImageList = fileRepository.getReviewFilesByPlaceWithPage(placeId, 0L, 10).stream().map(file -> new SearchReviewImageRes(file.getId(), file.getFileSavedName())).toList();
 
         return new GetReviewPlaceDetailRes(place, placeImageList, reviewTagList, reviewImageList, totalReviewImageList);
     }
 
+    /**
+     * 리뷰 기능있는 장소 상세 조회 - 리뷰 사진 추가 조회
+     */
+    @Transactional(readOnly = true)
+    public List<SearchReviewImageRes> getReviewPlaceDetailImages(Long placeId, Long lastFileId) {
+        // 장소 검색
+        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+
+        // 식당, 카페만 조회 가능하도록 제한
+        if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE) {
+            throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
+        }
+
+        // 리뷰 전체 이미지 조회(원본 - 10장까지)
+        return fileRepository.getReviewFilesByPlaceWithPage(placeId, lastFileId, 10).stream().map(file -> new SearchReviewImageRes(file.getId(), file.getFileSavedName())).toList();
+
+    }
+
+    /**
+     * 장소별 리뷰 태그 조회
+     */
     private List<SearchPlaceReviewTagRes> findPlaceReviewTagList(Place place) {
         List<PlaceReviewTagMap> reviewTagMaps = placeReviewTagMapRepository.findByPlaceOrderByNumDesc(place);
 

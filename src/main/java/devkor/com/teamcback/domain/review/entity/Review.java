@@ -2,13 +2,16 @@ package devkor.com.teamcback.domain.review.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.place.entity.Place;
+import devkor.com.teamcback.domain.review.dto.request.CreateReviewReq;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -39,6 +42,16 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "place_id")
     private Place place;            // 식당, 카페 등의 장소
 
+    @Setter
     @OneToMany(mappedBy = "review", cascade = CascadeType.ALL)
     private List<ReviewTagMap> reviewTagMaps = new ArrayList<>(); // 선택한 후기 태그
+
+    public Review(CreateReviewReq createReviewReq, User user, Place place) {
+        this.fileUuid = UUID.randomUUID().toString();
+        this.score = createReviewReq.getScore();
+        this.isRevisit = createReviewReq.isRevisit();
+        this.comment = createReviewReq.getComment();
+        this.user = user;
+        this.place = place;
+    }
 }

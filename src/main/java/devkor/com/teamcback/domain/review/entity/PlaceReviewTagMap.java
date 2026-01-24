@@ -4,6 +4,7 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -22,6 +23,13 @@ public class PlaceReviewTagMap {
     @JoinColumn(name = "review_tag_id")
     private ReviewTag reviewTag;
 
+    @Setter
     @Column(nullable = false)
     private int num = 0;
+
+    public PlaceReviewTagMap(Place place, ReviewTag tag) {
+        this.place = place;
+        this.reviewTag = tag;
+        this.num = 1;
+    }
 }

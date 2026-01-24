@@ -21,4 +21,9 @@ public class ReviewTagMap {
     @ManyToOne
     @JoinColumn(name = "review_tag_id")
     private ReviewTag reviewTag;
+
+    public ReviewTagMap(Review savedReview, ReviewTag tag) {
+        this.review = savedReview;
+        this.reviewTag = tag;
+    }
 }

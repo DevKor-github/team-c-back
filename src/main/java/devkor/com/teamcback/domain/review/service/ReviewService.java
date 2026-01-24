@@ -6,17 +6,26 @@ import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.domain.review.dto.request.CreateReviewReq;
+import devkor.com.teamcback.domain.review.dto.response.CreateReviewRes;
 import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchPlaceReviewRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchReviewImageRes;
 import devkor.com.teamcback.domain.review.entity.PlaceReviewTagMap;
 import devkor.com.teamcback.domain.review.entity.Review;
+import devkor.com.teamcback.domain.review.entity.ReviewTag;
+import devkor.com.teamcback.domain.review.entity.ReviewTagMap;
 import devkor.com.teamcback.domain.review.repository.PlaceReviewTagMapRepository;
 import devkor.com.teamcback.domain.review.repository.ReviewRepository;
+import devkor.com.teamcback.domain.review.repository.ReviewTagMapRepository;
+import devkor.com.teamcback.domain.review.repository.ReviewTagRepository;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceImageRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceReviewTagRes;
+import devkor.com.teamcback.domain.user.entity.User;
+import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.ResultCode;
+import devkor.com.teamcback.infra.s3.FilePath;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,9 +39,12 @@ public class ReviewService {
 
     private final PlaceRepository placeRepository;
     private final ReviewRepository reviewRepository;
+    private final ReviewTagRepository reviewTagRepository;
+    private final ReviewTagMapRepository reviewTagMapRepository;
     private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
     private final FileUtil fileUtil;
     private final FileRepository fileRepository;
+    private final UserRepository userRepository;
 
     /**
      * 리뷰 기능있는 장소 상세 조회
@@ -94,6 +106,58 @@ public class ReviewService {
         // 리뷰 전체 이미지 조회(원본 - 10장까지)
         return fileRepository.getReviewFilesByPlaceWithPage(placeId, lastFileId, 10).stream().map(file -> new SearchReviewImageRes(file.getId(), file.getFileSavedName())).toList();
 
+    }
+
+    /**
+     * 리뷰 작성
+     */
+    @Transactional
+    public CreateReviewRes createReview(Long userId, Long placeId, CreateReviewReq createReviewReq) {
+        // 사용자 검색
+        User user = userRepository.findById(userId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_USER));
+
+        // 장소 검색
+        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+
+        // 첨부파일 검사 (최대 3개)
+        if(createReviewReq.getImages().size() > 3) {
+            throw new GlobalException(ResultCode.EXCEEDED_MAXIMUM_FILE_COUNT);
+        }
+
+        // 리뷰 저장
+        Review savedReview = reviewRepository.save(new Review(createReviewReq, user, place));
+
+        // 사진 저장
+        fileUtil.upload(createReviewReq.getImages(), savedReview.getFileUuid(), null, FilePath.REVIEW);
+
+        // 리뷰 태그 저장
+        List<ReviewTagMap> reviewTagMaps = new ArrayList<>();
+        for(Long tagId : createReviewReq.getTagIds()) {
+            ReviewTag tag = reviewTagRepository.findById(tagId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW_TAG));
+
+            // 리뷰 태그 저장
+            ReviewTagMap reviewTagMap = reviewTagMapRepository.save(new ReviewTagMap(savedReview, tag));
+            reviewTagMaps.add(reviewTagMap);
+
+            // 장소 태그 저장
+            PlaceReviewTagMap placeReviewTagMap = placeReviewTagMapRepository.findByPlaceAndReviewTag(place, tag);
+
+            if(placeReviewTagMap != null) {
+                placeReviewTagMap.setNum(placeReviewTagMap.getNum() + 1);
+            }
+            else {
+                placeReviewTagMapRepository.save(new PlaceReviewTagMap(place, tag));
+            }
+        }
+
+        // 리뷰에 태그 목록 저장
+        savedReview.setReviewTagMaps(reviewTagMaps);
+
+        // 장소 별점 추가
+        place.setStarNum(place.getStarNum() + 1);
+        place.setStarSum(place.getStarSum() + createReviewReq.getScore());
+
+        return new CreateReviewRes(savedReview.getId());
     }
 
     /**

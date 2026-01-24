@@ -90,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
                 .requestMatchers("/api/categories/**").authenticated()
                 .requestMatchers("/api/bookmarks/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // 리뷰는 로그인 필요
                 .anyRequest().permitAll()
         ).exceptionHandling(ex -> ex
             .accessDeniedHandler(customAccessDeniedHandler()) // 인가 실패 시

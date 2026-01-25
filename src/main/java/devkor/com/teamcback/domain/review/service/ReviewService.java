@@ -41,9 +41,9 @@ public class ReviewService {
     private final ReviewTagRepository reviewTagRepository;
     private final ReviewTagMapRepository reviewTagMapRepository;
     private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
-    private final FileUtil fileUtil;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
+    private final FileUtil fileUtil;
 
     /**
      * 리뷰 기능있는 장소 상세 조회
@@ -51,7 +51,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public GetReviewPlaceDetailRes getReviewPlaceDetail(Long placeId) {
         // 장소 검색
-        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+        Place place = findPlaceById(placeId);
 
         // 식당, 카페만 조회 가능하도록 제한
         if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE) {
@@ -95,7 +95,7 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<SearchReviewImageRes> getReviewPlaceDetailImages(Long placeId, Long lastFileId) {
         // 장소 검색
-        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+        Place place = findPlaceById(placeId);
 
         // 식당, 카페만 조회 가능하도록 제한
         if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE) {
@@ -113,10 +113,10 @@ public class ReviewService {
     @Transactional
     public CreateReviewRes createReview(Long userId, Long placeId, CreateReviewReq createReviewReq) {
         // 사용자 검색
-        User user = userRepository.findById(userId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_USER));
+        User user = findUserById(userId);
 
         // 장소 검색
-        Place place = placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+        Place place = findPlaceById(placeId);
 
         // 리뷰 저장
         Review savedReview = reviewRepository.save(new Review(createReviewReq, user, place));
@@ -125,27 +125,7 @@ public class ReviewService {
         fileUtil.upload(createReviewReq.getImages(), savedReview.getFileUuid(), null, FilePath.REVIEW);
 
         // 리뷰 태그 저장
-        List<ReviewTagMap> reviewTagMaps = new ArrayList<>();
-        for(Long tagId : createReviewReq.getTagIds()) {
-            ReviewTag tag = reviewTagRepository.findById(tagId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW_TAG));
-
-            // 리뷰 태그 저장
-            ReviewTagMap reviewTagMap = reviewTagMapRepository.save(new ReviewTagMap(savedReview, tag));
-            reviewTagMaps.add(reviewTagMap);
-
-            // 장소 태그 저장
-            PlaceReviewTagMap placeReviewTagMap = placeReviewTagMapRepository.findByPlaceAndReviewTag(place, tag);
-
-            if(placeReviewTagMap != null) {
-                placeReviewTagMap.setNum(placeReviewTagMap.getNum() + 1);
-            }
-            else {
-                placeReviewTagMapRepository.save(new PlaceReviewTagMap(place, tag));
-            }
-        }
-
-        // 리뷰에 태그 목록 저장
-        savedReview.setReviewTagMaps(reviewTagMaps);
+        saveReviewTagMap(savedReview, createReviewReq.getTagIds());
 
         // 장소 별점 추가
         place.setStarNum(place.getStarNum() + 1);
@@ -160,15 +140,13 @@ public class ReviewService {
     @Transactional
     public ModifyReviewRes modifyReview(Long userId, Long reviewId, @Valid ModifyReviewReq modifyReviewReq) {
         // 사용자 검색
-        User user = userRepository.findById(userId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_USER));
+        User user = findUserById(userId);
 
         // 리뷰 검색
-        Review review = reviewRepository.findById(reviewId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW));
+        Review review = findReviewById(reviewId);
 
         // 권한 검사 (자신이 작성한 리뷰만 수정 가능)
-        if(!user.getUserId().equals(review.getUser().getUserId())) {
-            throw new GlobalException(ResultCode.UNAUTHORIZED);
-        }
+        validateUser(user, review);
 
         // 사진 삭제
         fileUtil.deleteFile(review.getFileUuid());
@@ -180,21 +158,100 @@ public class ReviewService {
         review.modify(modifyReviewReq);
 
         // 기존 태그 삭제
-        List<ReviewTagMap> reviewTagMaps = review.getReviewTagMaps();
-        review.setReviewTagMaps(null);
-
-        for(ReviewTagMap reviewTagMap : reviewTagMaps) {
-            // 장소 태그 수정
-            PlaceReviewTagMap placeReviewTagMap = placeReviewTagMapRepository.findByPlaceAndReviewTag(review.getPlace(), reviewTagMap.getReviewTag());
-            placeReviewTagMap.setNum(placeReviewTagMap.getNum() - 1);
-
-            // 리뷰 태그 삭제
-            reviewTagMapRepository.delete(reviewTagMap);
-        }
+        deleteReviewTagMap(review);
 
         // 태그 저장
-        reviewTagMaps = new ArrayList<>();
-        for(Long tagId : modifyReviewReq.getTagIds()) {
+        saveReviewTagMap(review, modifyReviewReq.getTagIds());
+
+        // 장소 평점 수정
+        review.getPlace().setStarSum(review.getPlace().getStarSum() - review.getScore() + modifyReviewReq.getScore());
+
+        return new ModifyReviewRes(review.getId());
+    }
+
+    /**
+     * 리뷰 삭제
+     */
+    @Transactional
+    public DeleteReviewRes deleteReview(Long userId, Long reviewId) {
+        // 사용자 검색
+        User user = findUserById(userId);
+
+        // 리뷰 검색
+        Review review = findReviewById(reviewId);
+
+        // 권한 검사 (자신이 작성한 리뷰만 삭제 가능)
+        validateUser(user, review);
+
+        // 리뷰 태그 삭제
+        deleteReviewTagMap(review);
+
+        // 사진 삭제
+        fileUtil.deleteFile(review.getFileUuid());
+
+        // 장소 평정 수정
+        review.getPlace().setStarNum(review.getPlace().getStarNum() - 1);
+        review.getPlace().setStarSum(review.getPlace().getStarSum() - review.getScore());
+
+        // 리뷰 삭제
+        reviewRepository.delete(review);
+
+        return new DeleteReviewRes();
+    }
+
+    /**
+     * 장소 검색
+     */
+    private Place findPlaceById(Long id) {
+        return placeRepository.findById(id).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_PLACE));
+    }
+
+    /**
+     * 사용자 검색
+     */
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_USER));
+    }
+
+    /**
+     * 리뷰 검색
+     */
+    private Review findReviewById(Long reviewId) {
+        return reviewRepository.findById(reviewId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW));
+    }
+
+    /**
+     * 장소별 리뷰 태그 조회
+     */
+    private List<SearchPlaceReviewTagRes> findPlaceReviewTagList(Place place) {
+        List<PlaceReviewTagMap> reviewTagMaps = placeReviewTagMapRepository.findByPlaceOrderByNumDesc(place);
+
+        List<SearchPlaceReviewTagRes> tagResList = new ArrayList<>();
+        for(PlaceReviewTagMap reviewTagMap : reviewTagMaps) {
+            tagResList.add(new SearchPlaceReviewTagRes(reviewTagMap.getReviewTag().getId(), reviewTagMap.getReviewTag().getTag(), reviewTagMap.getNum()));
+        }
+
+        return tagResList;
+    }
+
+    /**
+     * 리뷰 권한 검사
+     */
+    private void validateUser(User user, Review review) {
+        // 권한 검사 (자신이 작성한 리뷰만 수정 가능)
+        if(!user.getUserId().equals(review.getUser().getUserId())) {
+            throw new GlobalException(ResultCode.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * 리뷰 태그 저장
+     */
+    private void saveReviewTagMap(Review review, List<Long> reviewTagIds) {
+
+        // 태그 저장
+        List<ReviewTagMap> reviewTagMaps = new ArrayList<>();
+        for(Long tagId : reviewTagIds) {
             ReviewTag tag = reviewTagRepository.findById(tagId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW_TAG));
 
             // 리뷰 태그 저장
@@ -214,24 +271,26 @@ public class ReviewService {
 
         // 리뷰에 태그 목록 저장
         review.setReviewTagMaps(reviewTagMaps);
-
-        // 장소 평점 수정
-        review.getPlace().setStarSum(review.getPlace().getStarSum() - review.getScore() + modifyReviewReq.getScore());
-
-        return new ModifyReviewRes(review.getId());
     }
 
     /**
-     * 장소별 리뷰 태그 조회
+     * 기존 리뷰 태그 삭제
      */
-    private List<SearchPlaceReviewTagRes> findPlaceReviewTagList(Place place) {
-        List<PlaceReviewTagMap> reviewTagMaps = placeReviewTagMapRepository.findByPlaceOrderByNumDesc(place);
+    private void deleteReviewTagMap(Review review) {
+        // 기존 태그 삭제
+        List<ReviewTagMap> reviewTagMaps = review.getReviewTagMaps();
+        review.setReviewTagMaps(null);
 
-        List<SearchPlaceReviewTagRes> tagResList = new ArrayList<>();
-        for(PlaceReviewTagMap reviewTagMap : reviewTagMaps) {
-            tagResList.add(new SearchPlaceReviewTagRes(reviewTagMap.getReviewTag().getId(), reviewTagMap.getReviewTag().getTag(), reviewTagMap.getNum()));
+        for(ReviewTagMap reviewTagMap : reviewTagMaps) {
+            // 장소 태그 수정
+            PlaceReviewTagMap placeReviewTagMap = placeReviewTagMapRepository.findByPlaceAndReviewTag(review.getPlace(), reviewTagMap.getReviewTag());
+            placeReviewTagMap.setNum(placeReviewTagMap.getNum() - 1);
+            if(placeReviewTagMap.getNum() <= 0) {
+                placeReviewTagMapRepository.delete(placeReviewTagMap);
+            }
+
+            // 리뷰 태그 삭제
+            reviewTagMapRepository.delete(reviewTagMap);
         }
-
-        return tagResList;
     }
 }

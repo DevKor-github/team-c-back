@@ -9,10 +9,7 @@ import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.review.dto.request.CreateReviewReq;
 import devkor.com.teamcback.domain.review.dto.request.ModifyReviewReq;
 import devkor.com.teamcback.domain.review.dto.response.*;
-import devkor.com.teamcback.domain.review.entity.PlaceReviewTagMap;
-import devkor.com.teamcback.domain.review.entity.Review;
-import devkor.com.teamcback.domain.review.entity.ReviewTag;
-import devkor.com.teamcback.domain.review.entity.ReviewTagMap;
+import devkor.com.teamcback.domain.review.entity.*;
 import devkor.com.teamcback.domain.review.repository.PlaceReviewTagMapRepository;
 import devkor.com.teamcback.domain.review.repository.ReviewRepository;
 import devkor.com.teamcback.domain.review.repository.ReviewTagMapRepository;
@@ -30,7 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +43,26 @@ public class ReviewService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final FileUtil fileUtil;
+
+    /**
+     * 리뷰 태그 종류 검색
+     */
+    public GetReviewTagListRes getReviewTagList() {
+        Map<String, List<GetReviewTagRes>> reviewTagMap = new HashMap<>();
+
+        // 태그 종류
+        for(TagType tagType : TagType.values()) {
+            reviewTagMap.put(tagType.name(), new ArrayList<>());
+        }
+
+        // 태그 종류별 내용
+        List<ReviewTag> reviewTagList = reviewTagRepository.findAll();
+        for(ReviewTag reviewTag : reviewTagList) {
+            reviewTagMap.get(reviewTag.getType().name()).add(new GetReviewTagRes(reviewTag));
+        }
+
+        return new GetReviewTagListRes(reviewTagMap);
+    }
 
     /**
      * 리뷰 기능있는 장소 상세 조회

@@ -28,7 +28,18 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @Operation(summary = "리뷰가 있는 장소 상세 검색",
+    @Operation(summary = "리뷰 태그 종류 검색")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/tags")
+    public CommonResponse<GetReviewTagListRes> getReviewTagList() {
+        return CommonResponse.success(reviewService.getReviewTagList());
+    }
+
+    @Operation(summary = "리뷰가 있는 장소의 리뷰 목록 포함 상세 검색",
             description = "식당, 카페")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
@@ -42,7 +53,7 @@ public class ReviewController {
         return CommonResponse.success(reviewService.getReviewPlaceDetail(placeId));
     }
 
-    @Operation(summary = "리뷰가 있는 장소 상세 검색 - 무한스크롤로 리뷰 사진 추가 조회",
+    @Operation(summary = "리뷰가 있는 장소의 리뷰 목록 포함 상세 검색 - 무한스크롤로 리뷰 사진 추가 조회",
             description = "식당, 카페")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),

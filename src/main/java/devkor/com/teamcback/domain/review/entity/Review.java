@@ -3,8 +3,10 @@ package devkor.com.teamcback.domain.review.entity;
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.review.dto.request.CreateReviewReq;
+import devkor.com.teamcback.domain.review.dto.request.ModifyReviewReq;
 import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -53,5 +55,11 @@ public class Review extends BaseEntity {
         this.comment = createReviewReq.getComment();
         this.user = user;
         this.place = place;
+    }
+
+    public void modify(@Valid ModifyReviewReq modifyReviewReq) {
+        this.score = modifyReviewReq.getScore();
+        this.isRevisit = modifyReviewReq.isRevisit();
+        this.comment = modifyReviewReq.getComment();
     }
 }

@@ -95,7 +95,8 @@ public enum ResultCode {
     NOT_FOUND_COURSE(HttpStatus.NOT_FOUND, 14000, "강의를 찾을 수 없습니다."),
 
     // 리뷰 15000번대
-    NOT_FOUND_REVIEW_TAG(HttpStatus.NOT_FOUND, 15000, "리뷰 태그를 찾을 수 없습니다.")
+    NOT_FOUND_REVIEW_TAG(HttpStatus.NOT_FOUND, 15000, "리뷰 태그를 찾을 수 없습니다."),
+    NOT_FOUND_REVIEW(HttpStatus.NOT_FOUND, 15001, "리뷰를 찾을 수 없습니다.")
     ;
 
     private final HttpStatus status;

@@ -1,8 +1,10 @@
 package devkor.com.teamcback.domain.review.controller;
 
 import devkor.com.teamcback.domain.review.dto.request.CreateReviewReq;
+import devkor.com.teamcback.domain.review.dto.request.ModifyReviewReq;
 import devkor.com.teamcback.domain.review.dto.response.CreateReviewRes;
 import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
+import devkor.com.teamcback.domain.review.dto.response.ModifyReviewRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchReviewImageRes;
 import devkor.com.teamcback.domain.review.service.ReviewService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -58,6 +60,7 @@ public class ReviewController {
         return CommonResponse.success(reviewService.getReviewPlaceDetailImages(placeId, lastFileId));
     }
 
+    // TODO: 리뷰 작성 시 포인트 부여
     @Operation(summary = "리뷰 작성",
             description = "식당, 카페에 대한 리뷰를 작성")
     @ApiResponses(value = {
@@ -72,5 +75,21 @@ public class ReviewController {
             @Parameter(description = "리뷰 작성 내용", required = true) @Valid @ModelAttribute CreateReviewReq createReviewReq) {
 
         return CommonResponse.success(reviewService.createReview(userDetail.getUser().getUserId(), placeId, createReviewReq));
+    }
+
+    @Operation(summary = "리뷰 수정",
+            description = "식당, 카페에 대한 리뷰를 수정")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @PostMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CommonResponse<ModifyReviewRes> modifyReview(
+            @Parameter(description = "사용자정보", required = true) @AuthenticationPrincipal UserDetailsImpl userDetail,
+            @Parameter(name = "reviewId", description = "리뷰 ID") @PathVariable Long reviewId,
+            @Parameter(description = "리뷰 작성 내용", required = true) @Valid @ModelAttribute ModifyReviewReq modifyReviewReq) {
+
+        return CommonResponse.success(reviewService.modifyReview(userDetail.getUser().getUserId(), reviewId, modifyReviewReq));
     }
 }

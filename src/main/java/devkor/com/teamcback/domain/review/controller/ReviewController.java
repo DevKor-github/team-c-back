@@ -74,6 +74,19 @@ public class ReviewController {
         return CommonResponse.success(reviewService.createReview(userDetail.getUser().getUserId(), placeId, createReviewReq));
     }
 
+    @Operation(summary = "리뷰 조회",
+            description = "식당, 카페에 대한 리뷰 조회")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @GetMapping("/{reviewId}")
+    public CommonResponse<GetReviewRes> getReview(
+            @Parameter(name = "reviewId", description = "리뷰 ID") @PathVariable Long reviewId) {
+        return CommonResponse.success(reviewService.getReview(reviewId));
+    }
+
     @Operation(summary = "리뷰 수정",
             description = "식당, 카페에 대한 리뷰를 수정")
     @ApiResponses(value = {

@@ -135,6 +135,26 @@ public class ReviewService {
     }
 
     /**
+     * 리뷰 조회
+     */
+    @Transactional(readOnly = true)
+    public GetReviewRes getReview(Long reviewId) {
+        // 리뷰 검색
+        Review review = findReviewById(reviewId);
+
+        // 리뷰 태그 조회
+        List<GetReviewTagRes> tagResList = new ArrayList<>();
+        for(ReviewTagMap reviewTagMap : review.getReviewTagMaps()) {
+            tagResList.add(new GetReviewTagRes(reviewTagMap.getReviewTag()));
+        }
+
+        // 리뷰 이미지 조회
+        List<SearchReviewImageRes> imageResList = fileUtil.getFiles(review.getFileUuid()).stream().map(file -> new SearchReviewImageRes(file.getId(), file.getFileSavedName())).toList();
+
+        return new GetReviewRes(review, tagResList, imageResList);
+    }
+
+    /**
      * 리뷰 수정
      */
     @Transactional

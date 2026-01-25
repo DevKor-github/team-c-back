@@ -6,7 +6,6 @@ import devkor.com.teamcback.domain.search.dto.response.SearchPlaceImageRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceReviewTagRes;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 

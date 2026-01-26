@@ -36,7 +36,7 @@ public class SearchRoomDetailRes {
     private String description;
     private String starAverage;
     private String nextPlaceTime;
-    private String foodTypeName;
+    private String foodType;
     @Setter
     private List<SearchPlaceReviewTagRes> tagList;
 
@@ -68,6 +68,6 @@ public class SearchRoomDetailRes {
         else { // 운영 종료인 경우 여는 시간
             this.nextPlaceTime = place.getOperatingTime().substring(0, 5);
         }
-        this.foodTypeName = place.getFoodType() == null ? "" : place.getFoodType().getType();
+        this.foodType = place.getFoodType();
     }
 }

@@ -27,7 +27,7 @@ public class GetReviewPlaceDetailRes {
     @Schema(description = "별점 평균")
     private String starAverage;
     @Schema(description = "음식 카테고리", example = "한식")
-    private String foodTypeName;
+    private String foodType;
 
     @Schema(description = "장소 대표 사진 목록")
     private List<SearchPlaceImageRes> placeImages;
@@ -51,7 +51,7 @@ public class GetReviewPlaceDetailRes {
         this.isOperating = place.isOperating();
         this.description = place.getDescription();
         this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
-        this.foodTypeName = place.getFoodType() == null ? "" : place.getFoodType().getType();
+        this.foodType = place.getFoodType();
         this.placeImages = placeImageList;
         this.tagList = reviewTagList;
         this.reviewList = reviewList;

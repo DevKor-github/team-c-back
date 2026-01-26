@@ -49,7 +49,7 @@ public class SearchFacilityRes {
     @Schema(description = "편의시설 별점", example = "NaN 또는 3.6666666666666665")
     private String starAverage;
     @Schema(description = "식당인 경우 음식 카테고리", example = "한식")
-    private String foodTypeName;
+    private String foodType;
     @Setter
     @Schema(description = "식당인 경우 리뷰 태그 목록")
     private List<SearchPlaceReviewTagRes> tagList;
@@ -73,6 +73,6 @@ public class SearchFacilityRes {
         this.floor = place.getFloor().intValue();
         this.description = place.getDescription();
         this.starAverage = String.format("%.2f", ((double) place.getStarSum()) / place.getStarNum());
-        this.foodTypeName = place.getFoodType() == null ? "" : place.getFoodType().getType();
+        this.foodType = place.getFoodType();
     }
 }

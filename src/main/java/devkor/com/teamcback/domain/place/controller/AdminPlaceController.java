@@ -1,6 +1,5 @@
 package devkor.com.teamcback.domain.place.controller;
 
-import devkor.com.teamcback.domain.building.dto.response.SaveBuildingMainImageRes;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.place.dto.response.CreatePlaceRes;
@@ -18,7 +17,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -92,7 +90,7 @@ public class AdminPlaceController {
         return CommonResponse.success(adminPlaceService.deletePlace(placeId));
     }
 
-    @PostMapping(value = "/{placeId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @PostMapping(value = "/{placeId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "장소 사진 저장", description = "장소 사진 저장(첫 사진이 대표 사진)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),

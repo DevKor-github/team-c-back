@@ -141,3 +141,7 @@ management:
 
 staff:
   emails: leeyejin113@gmail.com,pingdoll3110@naver.com
+
+location:
+  key: ${LOCATION_SECRET_KEY}
+  iv: ${LOCATION_IV}

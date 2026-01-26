@@ -1,14 +1,7 @@
 package devkor.com.teamcback.domain.user.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -44,6 +37,9 @@ public class User extends BaseEntity {
     @Setter
     @Column(unique = true)
     private String code;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private UserLocation userLocation;
 
     public User(String username, String email, Role role, Provider provider) {
         this.username = username;

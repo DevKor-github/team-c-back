@@ -175,11 +175,13 @@ public class BLEService {
 
         for (BLEDevice device : devices) {
             Long placeId = null;
+            String imageUrl = null;
             if (device.getPlace() != null) {
                 placeId = device.getPlace().getId();
+                imageUrl = device.getPlace().getImageUrl();
             }
 
-            BLEDeviceListRes dto = new BLEDeviceListRes(device.getId(), device.getDeviceName(), placeId, device.getCapacity());
+            BLEDeviceListRes dto = new BLEDeviceListRes(device.getId(), device.getDeviceName(), placeId, device.getCapacity(), imageUrl);
 
             result.add(dto);
         }

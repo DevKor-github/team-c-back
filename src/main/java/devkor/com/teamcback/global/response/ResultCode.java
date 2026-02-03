@@ -46,6 +46,7 @@ public enum ResultCode {
     NOT_FOUND_PLACE(HttpStatus.NOT_FOUND, 4000, "장소를 찾을 수 없습니다."),
     NOT_FOUND_PLACE_NICKNAME(HttpStatus.NOT_FOUND, 4001, "장소 별명을 찾을 수 없습니다."),
     NOT_SUPPORTED_PLACE_TYPE(HttpStatus.BAD_REQUEST, 4002, "지원하지 않는 장소 타입입니다."),
+    DUPLICATED_PLACE_IMAGE(HttpStatus.CONFLICT, 4003, "해당 시설의 이미지가 이미 존재합니다."),
 
     // 길찾기 6000번대
     NOT_FOUND_NODE(HttpStatus.NOT_FOUND, 6000, "노드를 찾을 수 없습니다."),

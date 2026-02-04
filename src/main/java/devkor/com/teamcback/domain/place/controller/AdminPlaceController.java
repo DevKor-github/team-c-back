@@ -2,12 +2,8 @@ package devkor.com.teamcback.domain.place.controller;
 
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
-import devkor.com.teamcback.domain.place.dto.response.CreatePlaceRes;
-import devkor.com.teamcback.domain.place.dto.response.DeletePlaceRes;
-import devkor.com.teamcback.domain.place.dto.response.GetPlaceListRes;
-import devkor.com.teamcback.domain.place.dto.response.ModifyPlaceRes;
+import devkor.com.teamcback.domain.place.dto.response.*;
 import devkor.com.teamcback.domain.place.service.AdminPlaceService;
-import devkor.com.teamcback.domain.suggestion.dto.response.SavePlaceImageRes;
 import devkor.com.teamcback.global.response.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,9 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -88,26 +81,5 @@ public class AdminPlaceController {
     public CommonResponse<DeletePlaceRes> deletePlace(
         @Parameter(description = "삭제할 편의시설 ID") @PathVariable Long placeId) {
         return CommonResponse.success(adminPlaceService.deletePlace(placeId));
-    }
-
-//    @PostMapping(value = "/{placeId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "장소 사진 저장", description = "장소 사진 저장(첫 사진이 대표 사진)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
-            @ApiResponse(responseCode = "404", description = "장소를 찾을 수 없습니다.",
-                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
-                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-            @ApiResponse(responseCode = "403", description = "잘못된 입력입니다.",
-                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
-    })
-    public CommonResponse<SavePlaceImageRes> savePlaceImages(
-            @Parameter(name = "placeId", description = "장소 ID")
-            @PathVariable Long placeId,
-            @Parameter(description = "저장할 사진 파일")
-            @RequestPart("images") List<MultipartFile> images
-    ) {
-        return CommonResponse.success(
-                adminPlaceService.savePlaceImage(placeId, images));
     }
 }

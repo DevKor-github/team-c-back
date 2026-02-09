@@ -36,6 +36,9 @@ public class Review extends BaseEntity {
     @Column(nullable = false, length = 500)
     private String comment = "";     // 500자까지 작성 가능
 
+    @Column(nullable = false)
+    private boolean isReported = false;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

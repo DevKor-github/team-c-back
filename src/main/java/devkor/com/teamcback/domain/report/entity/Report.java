@@ -1,0 +1,44 @@
+package devkor.com.teamcback.domain.report.entity;
+
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.user.entity.User;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+@Entity
+@Getter
+@Table(name = "tb_report")
+@NoArgsConstructor
+public class Report extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private TargetType targetType;
+
+    @Column
+    private Long targetId;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ReasonCategory reasonCategory;
+
+    @Column
+    private String content;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ReportStatus status;
+
+    @Column
+    private LocalDate effective_at; // 신고 정지 시작일
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User reporter;
+}

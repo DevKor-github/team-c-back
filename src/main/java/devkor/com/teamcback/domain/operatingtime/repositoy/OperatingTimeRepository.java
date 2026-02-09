@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface OperatingTimeRepository extends JpaRepository<OperatingTime, Long> {
 
     List<OperatingTime> findAllByOperatingCondition(OperatingCondition operatingCondition);
+
+    void deleteAllByOperatingCondition(OperatingCondition operatingCondition);
 }

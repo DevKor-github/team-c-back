@@ -36,7 +36,7 @@ public class OperatingScheduler {
 
     // 매일 자정마다 요일 등 조건에 맞는 운영 시간 지정해 저장
     @Scheduled(cron = "0 0 0 * * *")
-    //@EventListener(ApplicationReadyEvent.class)
+    @EventListener(ApplicationReadyEvent.class)
     public void updateOperatingTime() {
 
         // 배포 서버에서만 실행
@@ -57,20 +57,19 @@ public class OperatingScheduler {
 
 
     // 10분마다 운영 여부 확인
-    @EventListener(ApplicationReadyEvent.class) // 테스트용
-    //@Scheduled(cron = "0 */10 9-18 * * *")
+    //@EventListener(ApplicationReadyEvent.class) // 테스트용
+    @Scheduled(cron = "0 */10 9-18 * * *")
     public void updateOperatingDuringPeakHour() {
 
         // 배포 서버에서만 실행
-        //if(!env.equals("prod")) return;
+        if(!env.equals("prod")) return;
 
         try{
             log.info("운영 여부 업데이트");
-            setState();
-            //redisLockUtil.executeWithLock("lock", 1, 300, () -> {
+            redisLockUtil.executeWithLock("lock", 1, 300, () -> {
                 operatingService.updateIsOperating(LocalTime.now(), dayOfWeek, isHoliday, isVacation, isEvenWeek);
-            //    return null;
-            //});
+                return null;
+            });
         } catch (Exception e) {
             log.info("updateOperatingDuringPeakHour() 작업 실패: {}", e.getMessage(), e);
         }

@@ -53,6 +53,21 @@ public class Place extends BaseEntity {
     private String weekdayOperatingTime;
 
     @Setter
+    private String mondayOperatingTime;
+
+    @Setter
+    private String tuesdayOperatingTime;
+
+    @Setter
+    private String wednesdayOperatingTime;
+
+    @Setter
+    private String thursdayOperatingTime;
+
+    @Setter
+    private String fridayOperatingTime;
+
+    @Setter
     private String saturdayOperatingTime;
 
     @Setter

@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -77,9 +78,12 @@ public class OperatingService {
     @Transactional
     public void updateIsOperating(LocalTime now, DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean isEvenWeek) {
         List<Building> buildings = buildingRepository.findAll();
-        List<Place> placesWithCondition = operatingConditionRepository.findAll().stream().map(OperatingCondition::getPlace).distinct().toList();
+        List<Place> placesWithCondition = findOperatingConditionList(dayOfWeek, isHoliday, isVacation, isEvenWeek).stream().map(OperatingCondition::getPlace).distinct().toList();
 
         for(Building building : buildings) {
+            // 건물에 해당하는 장소 목록
+            List<Place> places = placeRepository.findAllByBuilding(building);
+
             // 상시 개방이 아닌 건물만 확인
             if(!alwaysOpenBuildings.contains(building.getId())) {
                 boolean isOperating = checkBuildingIsOperating(building, now, dayOfWeek);
@@ -91,10 +95,32 @@ public class OperatingService {
                     changeNodeIsOperating(isOperating, building);
                     // 건물 운영 여부 변경
                     building.setOperating(isOperating);
-                    // 건물에 속하면서 장소만의 운영 시간이 없는 경우 운영 여부 동기화
-                    List<Place> places = placeRepository.findAllByBuilding(building);
+                    // 건물 내 장소 운영 여부 변경
                     for(Place place : places) {
-                        if(!placesWithCondition.contains(place)) place.setOperating(isOperating);
+                        // 장소만의 시간이 없는 경우 건물과 동기화
+                        if(dayOfWeek.getOperatingTime(place) == null && !placesWithCondition.contains(place)) {
+                            place.setOperating(isOperating);
+                        }
+                    }
+                }
+            }
+
+            // 건물에 해당하는 장소에 운영 시간이 있는 경우 운영 여부 설정
+            for(Place place : places) {
+                String todayOperatingTime = dayOfWeek.getOperatingTime(place);
+
+                // 장소에 운영시간이 존재
+                if(todayOperatingTime != null) {
+                    // 설정된 오늘 시간과 일치하지 않으면(예: 휴무이면 다음 운영 시간으로 설정됨) 운영 x
+                    if(!isTimeRangePattern(todayOperatingTime)) {
+                        place.setOperating(true);
+                    }
+                    else if(!Objects.equals(place.getOperatingTime(), todayOperatingTime)) {
+                        place.setOperating(false);
+                    }
+                    // 일치하면 운영 여부 확인
+                    else {
+                        place.setOperating(isInOperatingTime(now, todayOperatingTime));
                     }
                 }
             }
@@ -144,13 +170,35 @@ public class OperatingService {
     private String findPlaceOperatingTime(Place place, DayOfWeek dayOfWeek) {
         String operatingTime = dayOfWeek.getOperatingTime(place);
 
-        // 장소의 운영 시간이 시간 형식이 아니면 건물의 운영 시간을 따라감
+        // 장소의 운영 시간이 시간 형식이 아니면
         if(!isTimeRangePattern(operatingTime)) {
-            if(place.getBuilding() == null) return DEFAULT_OPERATING_TIME;
-            operatingTime = place.getBuilding().getOperatingTime();
+            // 장소의 다음 운영 시간
+            operatingTime = findOtherPlaceOperatingTime(place, dayOfWeek);
+            if(operatingTime == null) {
+                // 건물이 있으면 건물 운영 시간으로
+                if(place.getBuilding() != null) operatingTime = place.getBuilding().getOperatingTime();
+                // 없으면 기본 시간
+                else operatingTime = DEFAULT_OPERATING_TIME;
+            }
         }
 
         return operatingTime;
+    }
+
+    /**
+     * 시간 형식인 다음 운영 시간을 찾음
+     */
+    private String findOtherPlaceOperatingTime(Place place, DayOfWeek dayOfWeek) {
+        DayOfWeek nextDay = dayOfWeek.findNext();
+        String operatingTime = nextDay.getOperatingTime(place);
+
+        while(dayOfWeek != nextDay) {
+            if(isTimeRangePattern(operatingTime)) return operatingTime;
+            nextDay = nextDay.findNext();
+            operatingTime = nextDay.getOperatingTime(place);
+        }
+
+        return null;
     }
 
     /**
@@ -266,6 +314,8 @@ public class OperatingService {
      * 오늘에 맞는 운영 조건 목록 찾기
      */
     private List<OperatingCondition> findOperatingConditionList(DayOfWeek dayOfWeek, boolean isHoliday, boolean isVacation, boolean isEvenWeek) {
+        if(dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY) dayOfWeek = DayOfWeek.WEEKDAY;
+
         List<OperatingCondition> operatingConditionList  = operatingConditionRepository.findByDayOfWeekAndIsHolidayAndIsVacationOrNot(dayOfWeek, isHoliday, isVacation);
 
         if(dayOfWeek == DayOfWeek.SATURDAY) { // 토요일인 경우

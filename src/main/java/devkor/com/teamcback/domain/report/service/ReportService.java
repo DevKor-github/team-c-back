@@ -1,10 +1,9 @@
 package devkor.com.teamcback.domain.report.service;
 
 import devkor.com.teamcback.domain.report.dto.request.CreateReviewReportReq;
-import devkor.com.teamcback.domain.report.dto.response.CreateReviewReportRes;
-import devkor.com.teamcback.domain.report.dto.response.GetReportedReviewRes;
-import devkor.com.teamcback.domain.report.dto.response.GetUserReviewReportStatusRes;
+import devkor.com.teamcback.domain.report.dto.response.*;
 import devkor.com.teamcback.domain.report.entity.Report;
+import devkor.com.teamcback.domain.report.entity.ReportStatus;
 import devkor.com.teamcback.domain.report.entity.TargetType;
 import devkor.com.teamcback.domain.report.repository.ReportRepository;
 import devkor.com.teamcback.domain.review.entity.Review;
@@ -58,7 +57,7 @@ public class ReportService {
      * 사용자가 신고되었는지 확인
      */
     @Transactional(readOnly = true)
-    public GetUserReviewReportStatusRes searchUserReviewReportStatus(Long userId) {
+    public GetUserReviewReportStatusRes getUserReviewReportStatus(Long userId) {
         // 사용자 검색
         User user = findUser(userId);
 
@@ -73,6 +72,24 @@ public class ReportService {
         }
 
         return new GetUserReviewReportStatusRes(user, reviewList);
+    }
+
+    /**
+     * 신고 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public GetReportListRes getReportList(ReportStatus status) {
+        List<Report> reportList;
+
+        // 신고 상태에 따라 조회
+        if (status == null) {
+            reportList = reportRepository.findAllByOrderByCreatedAtDesc();
+        }
+        else {
+            reportList = reportRepository.findByStatusOrderByCreatedAtDesc(status);
+        }
+
+        return new GetReportListRes(reportList.stream().map(GetReportRes::new).toList());
     }
 
     /**

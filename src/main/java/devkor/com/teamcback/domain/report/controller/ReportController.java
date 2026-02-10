@@ -3,7 +3,6 @@ package devkor.com.teamcback.domain.report.controller;
 import devkor.com.teamcback.domain.report.dto.request.CreateReviewReportReq;
 import devkor.com.teamcback.domain.report.dto.response.CreateReviewReportRes;
 import devkor.com.teamcback.domain.report.dto.response.GetUserReviewReportStatusRes;
-import devkor.com.teamcback.domain.report.entity.TargetType;
 import devkor.com.teamcback.domain.report.service.ReportService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -48,10 +47,10 @@ public class ReportController {
             @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
                     content = @Content(schema = @Schema(implementation = CommonResponse.class))),
     })
-    @PostMapping(value = "/status")
-    public CommonResponse<GetUserReviewReportStatusRes> searchUserReviewReportStatus(
+    @GetMapping(value = "/status")
+    public CommonResponse<GetUserReviewReportStatusRes> getUserReviewReportStatus(
             @Parameter(description = "사용자정보", required = true) @AuthenticationPrincipal UserDetailsImpl userDetail)
     {
-        return CommonResponse.success(reportService.searchUserReviewReportStatus(userDetail.getUser().getUserId()));
+        return CommonResponse.success(reportService.getUserReviewReportStatus(userDetail.getUser().getUserId()));
     }
 }

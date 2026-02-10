@@ -1,6 +1,8 @@
 package devkor.com.teamcback.domain.report.controller;
 
+import devkor.com.teamcback.domain.report.dto.request.UpdateReportStatusReq;
 import devkor.com.teamcback.domain.report.dto.response.GetReportListRes;
+import devkor.com.teamcback.domain.report.dto.response.UpdateReportStatusRes;
 import devkor.com.teamcback.domain.report.entity.ReportStatus;
 import devkor.com.teamcback.domain.report.service.ReportService;
 import devkor.com.teamcback.global.response.CommonResponse;
@@ -31,5 +33,20 @@ public class AdminReportController {
             @Parameter(name = "reportStatus", description = "신고 상태 종류") @RequestParam(required = false) ReportStatus reportStatus
     ) {
         return CommonResponse.success(reportService.getReportList(reportStatus));
+    }
+
+    @Operation(summary = "신고 상태 변경",
+            description = "신고 상태 변경")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @PutMapping("/{reportId}")
+    public CommonResponse<UpdateReportStatusRes> updateReportStatus(
+            @Parameter(description = "변경할 신고 id") @PathVariable Long reportId,
+            @Parameter(description = "신고의 변경할 생태") @RequestBody UpdateReportStatusReq req
+    ) {
+        return CommonResponse.success(reportService.updateReportStatus(reportId, req));
     }
 }

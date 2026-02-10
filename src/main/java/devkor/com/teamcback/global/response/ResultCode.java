@@ -97,8 +97,10 @@ public enum ResultCode {
 
     // 리뷰 15000번대
     NOT_FOUND_REVIEW_TAG(HttpStatus.NOT_FOUND, 15000, "리뷰 태그를 찾을 수 없습니다."),
-    NOT_FOUND_REVIEW(HttpStatus.NOT_FOUND, 15001, "리뷰를 찾을 수 없습니다.")
-    ;
+    NOT_FOUND_REVIEW(HttpStatus.NOT_FOUND, 15001, "리뷰를 찾을 수 없습니다."),
+
+    // 신고 16000번대
+    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final int code;

@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -31,10 +32,12 @@ public class Report extends BaseEntity {
     @Column(length = 300)
     private String content;
 
+    @Setter
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
 
+    @Setter
     @Column
     private LocalDate effectiveAt; // 신고 정지 시작일
 

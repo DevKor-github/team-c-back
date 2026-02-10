@@ -21,8 +21,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static devkor.com.teamcback.domain.report.entity.ReportStatus.PENDING;
-import static devkor.com.teamcback.domain.report.entity.ReportStatus.RESOLVED;
+import static devkor.com.teamcback.domain.report.entity.ReportStatus.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
@@ -118,6 +117,24 @@ public class ReportService {
         }
 
         return new UpdateReportStatusRes();
+    }
+
+    /**
+     * 신고 유효일 체크하고 상태 수정
+     */
+    @Transactional
+    public void updateExpiredReportStatus() {
+        // 유효한 신고 내역 조회
+        List<Report> reportList = reportRepository.findAllByStatus(RESOLVED);
+
+        for(Report report : reportList) {
+            LocalDate thirtyDaysAfter = report.getEffectiveAt().plusDays(30);
+
+            if (LocalDate.now().isAfter(thirtyDaysAfter)) {
+                // 30일이 지났으면 상태 변경
+                report.setStatus(EXPIRED);
+            }
+        }
     }
 
     /**

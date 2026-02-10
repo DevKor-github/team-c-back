@@ -39,15 +39,20 @@ public class Report extends BaseEntity {
     private LocalDate effectiveAt; // 신고 정지 시작일
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "reporter_id")
     private User reporter;
 
-    public Report(TargetType targetType, Long targetId, ReasonCategory reasonCategory, String content, ReportStatus status, User reporter) {
+    @ManyToOne
+    @JoinColumn(name = "reported_user_id")
+    private User reportedUser;
+
+    public Report(TargetType targetType, Long targetId, ReasonCategory reasonCategory, String content, ReportStatus status, User reporter, User reportedUser) {
         this.targetType = targetType;
         this.targetId = targetId;
         this.reasonCategory = reasonCategory;
         this.content = content;
         this.status = status;
         this.reporter = reporter;
+        this.reportedUser = reportedUser;
     }
 }

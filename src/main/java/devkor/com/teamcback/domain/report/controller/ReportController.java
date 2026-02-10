@@ -2,6 +2,8 @@ package devkor.com.teamcback.domain.report.controller;
 
 import devkor.com.teamcback.domain.report.dto.request.CreateReviewReportReq;
 import devkor.com.teamcback.domain.report.dto.response.CreateReviewReportRes;
+import devkor.com.teamcback.domain.report.dto.response.GetUserReviewReportStatusRes;
+import devkor.com.teamcback.domain.report.entity.TargetType;
 import devkor.com.teamcback.domain.report.service.ReportService;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
@@ -37,5 +39,19 @@ public class ReportController {
             @Parameter(description = "리뷰 작성 내용", required = true) @Valid @RequestBody CreateReviewReportReq req) {
 
         return CommonResponse.success(reportService.createReviewReport(userDetail == null ? null : userDetail.getUser().getUserId(), reviewId, req));
+    }
+
+    @Operation(summary = "사용자 리뷰 신고 여부 조회",
+            description = "사용자 신고된 상태인지 확인하고 알림(비회원은 조회 x)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "정상 처리 되었습니다."),
+            @ApiResponse(responseCode = "401", description = "권한이 없습니다.",
+                    content = @Content(schema = @Schema(implementation = CommonResponse.class))),
+    })
+    @PostMapping(value = "/status")
+    public CommonResponse<GetUserReviewReportStatusRes> searchUserReviewReportStatus(
+            @Parameter(description = "사용자정보", required = true) @AuthenticationPrincipal UserDetailsImpl userDetail)
+    {
+        return CommonResponse.success(reportService.searchUserReviewReportStatus(userDetail.getUser().getUserId()));
     }
 }

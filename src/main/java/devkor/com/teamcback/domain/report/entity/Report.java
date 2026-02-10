@@ -28,7 +28,7 @@ public class Report extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ReasonCategory reasonCategory;
 
-    @Column
+    @Column(length = 300)
     private String content;
 
     @Column(nullable = false)
@@ -36,9 +36,18 @@ public class Report extends BaseEntity {
     private ReportStatus status;
 
     @Column
-    private LocalDate effective_at; // 신고 정지 시작일
+    private LocalDate effectiveAt; // 신고 정지 시작일
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User reporter;
+
+    public Report(TargetType targetType, Long targetId, ReasonCategory reasonCategory, String content, ReportStatus status, User reporter) {
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.reasonCategory = reasonCategory;
+        this.content = content;
+        this.status = status;
+        this.reporter = reporter;
+    }
 }

@@ -60,7 +60,7 @@ public class VoteService {
     /**
      * 투표 저장
      */
-    @UpdateScore(addScore = 3)
+    @UpdateScore(addScore = 5)
     @Transactional
     public SaveVoteRecordRes saveVoteRecord(Long userId, SaveVoteRecordReq req) {
         if(userId == null) throw new GlobalException(FORBIDDEN);

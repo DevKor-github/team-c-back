@@ -1,7 +1,7 @@
 package devkor.com.teamcback.global.aop;
 
-import devkor.com.teamcback.domain.bookmark.dto.request.CreateBookmarkReq;
-import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
+import devkor.com.teamcback.domain.suggestion.dto.request.CreateSuggestionReq;
+import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.entity.Level;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
@@ -18,6 +18,8 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -30,7 +32,7 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_USER;
 public class UpdateScoreAspect {
 
     private final UserRepository userRepository;
-    private final UserBookmarkLogRepository userBookmarkLogRepository;
+    private final SuggestionRepository suggestionRepository;
     private final VoteRecordRepository voteRecordRepository;
 
     @Around("@annotation(updateScore)")
@@ -91,9 +93,12 @@ public class UpdateScoreAspect {
 
         // 기타 조건 확인
         for (Object arg : args) {
-            // 북마크 추가 시 점수 증가 여부 확인 (중복 로그 확인)
-            if (arg instanceof CreateBookmarkReq req) {
-                if (userBookmarkLogRepository.existsByUserAndLocationIdAndLocationType(user, req.getLocationId(), req.getLocationType())) {
+            // 건의 작성 시 하루 2회까지만 점수 지급
+            if (arg instanceof CreateSuggestionReq) {
+                LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+                LocalDateTime endOfDay = startOfDay.plusDays(1);
+                long todayCount = suggestionRepository.countByUserAndCreatedAtBetween(user, startOfDay, endOfDay);
+                if (todayCount >= 2) {
                     return false;
                 }
             }

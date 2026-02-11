@@ -46,7 +46,7 @@ public class UpdateScoreAspect {
         // 점수 갱신 불가 확인
         if(!checkUpdatable(user, args)) {
             Object result = joinPoint.proceed();
-            injectScoreInfo(result, user, false);
+            injectScoreInfo(result, user, false, false);
             return result;
         }
 
@@ -63,7 +63,7 @@ public class UpdateScoreAspect {
         increaseScore(user, addScore);
 
         // 점수 정보 주입
-        injectScoreInfo(result, user, user.isUpgraded());
+        injectScoreInfo(result, user, user.isUpgraded(), true);
 
         return result;
     }
@@ -107,10 +107,11 @@ public class UpdateScoreAspect {
         return true;
     }
 
-    private void injectScoreInfo(Object result, User user, boolean isLevelUp) {
+    private void injectScoreInfo(Object result, User user, boolean isLevelUp, boolean scoreGained) {
         if (result instanceof ScoreUpdateResponse response && user != null) {
             response.setLevelUp(isLevelUp);
             response.setCurrentScore(user.getScore());
+            response.setScoreGained(scoreGained);
         }
     }
 

@@ -16,6 +16,9 @@ public class CreateSuggestionRes implements ScoreUpdateResponse {
     @Setter
     @Schema(description = "현재 점수", example = "15")
     private Long currentScore;
+    @Setter
+    @Schema(description = "점수 획득 여부", example = "true")
+    private boolean scoreGained;
 
     public CreateSuggestionRes(Suggestion suggestion) {
         this.suggestionId = suggestion.getId();

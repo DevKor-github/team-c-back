@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.vote.dto.request.SaveVoteRecordReq;
 import devkor.com.teamcback.domain.vote.repository.VoteRecordRepository;
 import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.ScoreUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -44,7 +45,9 @@ public class UpdateScoreAspect {
 
         // 점수 갱신 불가 확인
         if(!checkUpdatable(user, args)) {
-            return joinPoint.proceed();
+            Object result = joinPoint.proceed();
+            injectScoreInfo(result, user, false);
+            return result;
         }
 
         // 비지니스 로직 수행
@@ -58,6 +61,9 @@ public class UpdateScoreAspect {
 
         // 점수 증가
         increaseScore(user, addScore);
+
+        // 점수 정보 주입
+        injectScoreInfo(result, user, user.isUpgraded());
 
         return result;
     }
@@ -99,6 +105,13 @@ public class UpdateScoreAspect {
             }
         }
         return true;
+    }
+
+    private void injectScoreInfo(Object result, User user, boolean isLevelUp) {
+        if (result instanceof ScoreUpdateResponse response && user != null) {
+            response.setLevelUp(isLevelUp);
+            response.setCurrentScore(user.getScore());
+        }
     }
 
     public void increaseScore(User user, int addScore) {

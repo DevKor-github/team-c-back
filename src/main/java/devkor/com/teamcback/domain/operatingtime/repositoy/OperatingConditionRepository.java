@@ -15,5 +15,5 @@ public interface OperatingConditionRepository extends JpaRepository<OperatingCon
 
     @Query("SELECT e FROM OperatingCondition e WHERE (e.dayOfWeek = :dayOfWeek OR e.dayOfWeek IS NULL) " +
     "AND (e.isHoliday = :isHoliday OR e.isHoliday IS NULL)" + "AND (e.isVacation = :isVacation OR e.isVacation IS NULL)" + "AND (e.place = :place)")
-    OperatingCondition findByDayOfWeekAndIsHolidayAndIsVacationAndPlace(@Param("dayOfWeek") DayOfWeek dayOfWeek, @Param("isHoliday") boolean isHoliday, @Param("isVacation") boolean isVacation, @Param("place") Place place);
+    OperatingCondition findByDayOfWeekAndIsHolidayAndIsVacationAndPlace(@Param("dayOfWeek") DayOfWeek dayOfWeek, @Param("isHoliday") Boolean isHoliday, @Param("isVacation") Boolean isVacation, @Param("place") Place place);
 }

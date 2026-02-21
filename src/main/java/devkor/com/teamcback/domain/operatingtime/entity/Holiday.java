@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.entity;
 
-import devkor.com.teamcback.domain.operatingtime.dto.HolidayResDto;
+import devkor.com.teamcback.domain.operatingtime.dto.response.HolidayResDto;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;

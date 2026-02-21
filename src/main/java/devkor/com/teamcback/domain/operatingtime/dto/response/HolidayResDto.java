@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.operatingtime.dto;
+package devkor.com.teamcback.domain.operatingtime.dto.response;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +16,7 @@ public class HolidayResDto {
     public HolidayResDto(JSONObject itemJson) {
         this.name = itemJson.getString("dateName");
         String holidayOrNot = itemJson.getString("isHoliday");
-        this.isHoliday = holidayOrNot.equals("Y") ? true : false;
+        this.isHoliday = holidayOrNot.equals("Y");
         String dateString = itemJson.getBigInteger("locdate").toString();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         this.date = LocalDate.parse(dateString, formatter);

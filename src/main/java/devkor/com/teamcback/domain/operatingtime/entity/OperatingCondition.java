@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.operatingtime.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.operatingtime.dto.request.SavePlaceOperatingTimeConditionReq;
 import devkor.com.teamcback.domain.place.entity.Place;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -31,4 +32,11 @@ public class OperatingCondition extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "place_id")
     private Place place;
+
+    public OperatingCondition(SavePlaceOperatingTimeConditionReq req) {
+        this.dayOfWeek = req.getDayOfWeek();
+        this.isEvenWeek = req.getIsEvenWeek();
+        this.isHoliday = req.getIsHoliday();
+        this.isVacation = req.getIsVacation();
+    }
 }

@@ -36,6 +36,7 @@ public class Review extends BaseEntity {
     @Column(nullable = false, length = 500)
     private String comment = "";     // 500자까지 작성 가능
 
+    @Setter
     @Column(nullable = false)
     private boolean isReported = false;  // 신고 여부
 

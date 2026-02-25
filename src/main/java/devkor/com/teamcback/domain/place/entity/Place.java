@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.place.entity;
 
+import devkor.com.teamcback.domain.operatingtime.dto.request.SavePlaceOperatingTimeReq;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -51,6 +52,21 @@ public class Place extends BaseEntity {
 
     @Setter
     private String weekdayOperatingTime;
+
+    @Setter
+    private String mondayOperatingTime;
+
+    @Setter
+    private String tuesdayOperatingTime;
+
+    @Setter
+    private String wednesdayOperatingTime;
+
+    @Setter
+    private String thursdayOperatingTime;
+
+    @Setter
+    private String fridayOperatingTime;
 
     @Setter
     private String saturdayOperatingTime;
@@ -120,5 +136,16 @@ public class Place extends BaseEntity {
         this.building = building;
         this.node = node;
         this.description = req.getDescription();
+    }
+
+    public void updateOperatingTime(SavePlaceOperatingTimeReq req) {
+        this.setWeekdayOperatingTime(req.getWeekDayOperatingTime());
+        this.setMondayOperatingTime(req.getMondayOperatingTime());
+        this.setTuesdayOperatingTime(req.getTuesdayOperatingTime());
+        this.setWednesdayOperatingTime(req.getWednesdayOperatingTime());
+        this.setThursdayOperatingTime(req.getThursdayOperatingTime());
+        this.setFridayOperatingTime(req.getFridayOperatingTime());
+        this.setSaturdayOperatingTime(req.getSaturdayOperatingTime());
+        this.setSundayOperatingTime(req.getSundayOperatingTime());
     }
 }

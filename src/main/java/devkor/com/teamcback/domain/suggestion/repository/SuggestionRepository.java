@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.suggestion.repository;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.entity.SuggestionType;
 import devkor.com.teamcback.domain.user.entity.User;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,4 +17,6 @@ public interface SuggestionRepository extends JpaRepository<Suggestion, Long> {
     Page<Suggestion> findBySuggestionTypeAndIsSolved(Pageable pageable, SuggestionType type, Boolean isSolved);
 
     List<Suggestion> findByUser(User user);
+
+    long countByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
 }

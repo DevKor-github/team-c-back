@@ -18,6 +18,7 @@ import devkor.com.teamcback.domain.search.dto.response.SearchPlaceImageRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceReviewTagRes;
 import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
+import devkor.com.teamcback.global.annotation.UpdateScore;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.ResultCode;
 import devkor.com.teamcback.infra.s3.FilePath;
@@ -128,9 +129,17 @@ public class ReviewService {
 
     /**
      * 리뷰 작성
+     * - 기본 점수: +3점 (별점)
+     * - 한줄평 10글자 이상: +7점
+     * - 사진 1장 이상: +3점
+     * - 같은 장소 하루 1개 리뷰 제한
      */
     @Transactional
+    @UpdateScore(dynamic = true)
     public CreateReviewRes createReview(Long userId, Long placeId, CreateReviewReq createReviewReq) {
+        // 한줄평 길이 검증 (작성했다면 10글자 이상)
+        validateCommentLength(createReviewReq.getComment());
+
         // 사용자 검색
         User user = findUserById(userId);
 
@@ -175,9 +184,15 @@ public class ReviewService {
 
     /**
      * 리뷰 수정
+     * - 한줄평/사진 추가 시 추가 점수 부여
+     * - 한줄평/사진 제거 시 해당 점수 차감
      */
     @Transactional
+    @UpdateScore(dynamic = true)
     public ModifyReviewRes modifyReview(Long userId, Long reviewId, @Valid ModifyReviewReq modifyReviewReq) {
+        // 한줄평 길이 검증 (작성했다면 10글자 이상)
+        validateCommentLength(modifyReviewReq.getComment());
+
         // 사용자 검색
         User user = findUserById(userId);
 
@@ -210,8 +225,10 @@ public class ReviewService {
 
     /**
      * 리뷰 삭제
+     * - 삭제한 리뷰의 점수만큼 차감 (최소 0점)
      */
     @Transactional
+    @UpdateScore(dynamic = true)
     public DeleteReviewRes deleteReview(Long userId, Long reviewId) {
         // 사용자 검색
         User user = findUserById(userId);
@@ -280,6 +297,15 @@ public class ReviewService {
         // 권한 검사 (자신이 작성한 리뷰만 수정 가능)
         if(!user.getUserId().equals(review.getUser().getUserId())) {
             throw new GlobalException(ResultCode.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * 한줄평 길이 검증 (작성했다면 10글자 이상)
+     */
+    private void validateCommentLength(String comment) {
+        if(comment != null && !comment.isBlank() && comment.length() < 10) {
+            throw new GlobalException(ResultCode.COMMENT_TOO_SHORT);
         }
     }
 

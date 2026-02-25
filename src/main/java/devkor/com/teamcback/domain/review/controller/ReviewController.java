@@ -68,7 +68,6 @@ public class ReviewController {
         return CommonResponse.success(reviewService.getReviewPlaceDetailImages(placeId, lastFileId));
     }
 
-    // TODO: 리뷰 작성 시 포인트 부여
     @Operation(summary = "리뷰 작성",
             description = "식당, 카페에 대한 리뷰를 작성")
     @ApiResponses(value = {
@@ -114,7 +113,6 @@ public class ReviewController {
         return CommonResponse.success(reviewService.modifyReview(userDetail.getUser().getUserId(), reviewId, modifyReviewReq));
     }
 
-    // TODO: 리뷰 삭제 시 포인트 제거
     @Operation(summary = "리뷰 삭제",
             description = "식당, 카페에 대한 리뷰를 삭제")
     @ApiResponses(value = {

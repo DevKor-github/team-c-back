@@ -98,6 +98,8 @@ public enum ResultCode {
     // 리뷰 15000번대
     NOT_FOUND_REVIEW_TAG(HttpStatus.NOT_FOUND, 15000, "리뷰 태그를 찾을 수 없습니다."),
     NOT_FOUND_REVIEW(HttpStatus.NOT_FOUND, 15001, "리뷰를 찾을 수 없습니다."),
+    ALREADY_REVIEWED_TODAY(HttpStatus.CONFLICT, 15002, "오늘 이미 해당 장소에 리뷰를 작성했습니다."),
+    COMMENT_TOO_SHORT(HttpStatus.BAD_REQUEST, 15003, "한줄평은 10글자 이상 작성해주세요."),
 
     // 신고 16000번대
     NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다.");

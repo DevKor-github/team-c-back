@@ -45,7 +45,7 @@ public class SuggestionService {
      * 건의 생성
      */
     @Transactional
-    @UpdateScore(addScore = 3)
+    @UpdateScore(addScore = 10)
     public CreateSuggestionRes createSuggestion(Long userId, CreateSuggestionReq req, List<MultipartFile> images) {
         User user = null;
         if(userId != null) user = findUser(userId);

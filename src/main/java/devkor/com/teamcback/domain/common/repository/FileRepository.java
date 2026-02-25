@@ -16,4 +16,6 @@ public interface FileRepository extends JpaRepository<File, Long>, CustomFileRep
     List<File> findTop3AllByFileUuidOrderBySortNumAsc(String fileUuid);
 
     File findByFileUuidAndSortNum(String fileUuid, Long sortNum);
+
+    boolean existsByFileUuid(String fileUuid);
 }

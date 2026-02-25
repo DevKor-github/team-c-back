@@ -38,7 +38,7 @@ public class Review extends BaseEntity {
 
     @Setter
     @Column(nullable = false)
-    private boolean isReported = false;
+    private boolean isReported = false;  // 신고 여부
 
     @ManyToOne
     @JoinColumn(name = "user_id")

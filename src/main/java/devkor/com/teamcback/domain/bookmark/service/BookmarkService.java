@@ -45,7 +45,6 @@ public class BookmarkService {
      * 즐겨찾기 업데이트
      */
     @Transactional
-    @UpdateScore(addScore = 1)
     public CreateBookmarkRes createBookmark(Long userId, CreateBookmarkReq req) {
         User user = findUser(userId);
 

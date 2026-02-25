@@ -74,10 +74,7 @@ public class ReviewService {
         Place place = findPlaceById(placeId);
 
         // 식당, 카페만 조회 가능하도록 제한
-        if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE
-                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP && place.getType() != PlaceType.CONV_TEMP) {
-            throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
-        }
+        checkReviewPlaceType(place);
 
         // 장소 대표 사진 조회 (사진 5장 제한 - 원본 사진)
         List<SearchPlaceImageRes> placeImageList = new ArrayList<>();
@@ -119,9 +116,7 @@ public class ReviewService {
         Place place = findPlaceById(placeId);
 
         // 식당, 카페만 조회 가능하도록 제한
-        if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE) {
-            throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
-        }
+        checkReviewPlaceType(place);
 
         // 리뷰 전체 이미지 조회(원본 - 10장까지)
         return fileRepository.getReviewFilesByPlaceWithPage(placeId, lastFileId, 10).stream().map(file -> new SearchReviewImageRes(file.getId(), file.getFileSavedName())).toList();
@@ -275,6 +270,17 @@ public class ReviewService {
      */
     private Review findReviewById(Long reviewId) {
         return reviewRepository.findById(reviewId).orElseThrow(() -> new GlobalException(ResultCode.NOT_FOUND_REVIEW));
+    }
+
+    /**
+     * 리뷰에 해당하는 장소 타입인지 확인
+     */
+    private void checkReviewPlaceType(Place place) {
+        // 식당, 카페만 조회 가능하도록 제한
+        if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE
+                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP && place.getType() != PlaceType.CONV_TEMP) {
+            throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
+        }
     }
 
     /**

@@ -149,7 +149,8 @@ public class UpdateScoreAspect {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
         if (reviewRepository.existsByUserAndPlaceAndCreatedAtBetween(user, place, startOfDay, endOfDay)) {
-            throw new GlobalException(ALREADY_REVIEWED_TODAY);
+            // throw new GlobalException(ALREADY_REVIEWED_TODAY);
+            return joinPoint.proceed();
         }
 
         // 비즈니스 로직 수행

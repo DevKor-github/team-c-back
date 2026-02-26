@@ -35,8 +35,7 @@ public class CustomReportRepositoryImpl implements CustomReportRepository {
                                 .and(report.targetType.eq(type))
                                 .and(report.status.eq(status))
                 )
-                .groupBy(report.targetId, report.reasonCategory)
-                .where();
+                .groupBy(report.targetId, report.reasonCategory);
 
         return jpaQueryFactory
                 .selectFrom(report)

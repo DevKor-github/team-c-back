@@ -61,7 +61,6 @@ public class ReportService {
         // 사용자 검색
         User user = findUser(userId);
 
-        // TODO: 하나만 조회하는 경우 수정
         // 신고 검색
         List<Report> reportList = reportRepository.findUniqueReportsForUserReviewReportStatus(user, TargetType.REVIEW, RESOLVED);
 

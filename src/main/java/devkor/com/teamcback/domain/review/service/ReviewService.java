@@ -86,7 +86,7 @@ public class ReviewService {
         List<SearchPlaceReviewTagRes> reviewTagList = findPlaceReviewTagList(place);
 
         // 리뷰 최신순 조회
-        List<Review> reviewList = reviewRepository.findAllByPlaceOrderByCreatedAtDesc(place);
+        List<Review> reviewList = reviewRepository.findAllByPlaceAndIsReportedOrderByCreatedAtDesc(place, false);
 
         // 리뷰별 이미지 조회(썸네일)
         List<SearchPlaceReviewRes> reviewImageList = new ArrayList<>();

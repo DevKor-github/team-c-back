@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    List<Review> findAllByPlaceOrderByCreatedAtDesc(Place place);
+    List<Review> findAllByPlaceAndIsReportedOrderByCreatedAtDesc(Place place, boolean reported);
 
     /**
      * 특정 사용자가 특정 장소에 특정 기간 내 작성한 리뷰 존재 여부 확인

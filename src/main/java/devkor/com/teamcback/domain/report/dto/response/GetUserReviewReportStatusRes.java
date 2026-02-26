@@ -11,11 +11,13 @@ public class GetUserReviewReportStatusRes {
     private String userName;
     private boolean isReported;
     private List<GetReportedReviewRes> reviewList;
+    private List<String> reportReasons;
 
     public GetUserReviewReportStatusRes(User user, List<GetReportedReviewRes> reviewList) {
         this.userId = user.getUserId();
         this.userName = user.getUsername();
         this.isReported = !reviewList.isEmpty();
         this.reviewList = reviewList;
+        this.reportReasons = reviewList.stream().map(GetReportedReviewRes::getReasonCategory).toList();
     }
 }

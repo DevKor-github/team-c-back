@@ -67,7 +67,7 @@ public class ReportService {
         // 신고된 리뷰 목록 조회
         List<GetReportedReviewRes> reviewList = new ArrayList<>();
         for(Report report : reportList) {
-            reviewList.add(new GetReportedReviewRes(findReview(report.getTargetId()), report.getReasonCategory().toString()));
+            reviewList.add(new GetReportedReviewRes(findReview(report.getTargetId()), report.getReasonCategory().getLabel()));
         }
 
         return new GetUserReviewReportStatusRes(user, reviewList);

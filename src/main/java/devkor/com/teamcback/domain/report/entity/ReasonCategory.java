@@ -1,7 +1,9 @@
 package devkor.com.teamcback.domain.report.entity;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter
 @RequiredArgsConstructor
 public enum ReasonCategory {
     ABUSE_OR_DISCRIMINATION("욕설/비하"),

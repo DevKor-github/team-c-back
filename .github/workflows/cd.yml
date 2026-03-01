@@ -43,9 +43,12 @@ jobs:
         if: contains(github.ref, 'develop') || contains(github.ref, 'main')
         run: |
           docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t kodaero -f ./Dockerfile .
-          docker tag kodaero:latest ${{ secrets.DOCKER_USER }}/kodaero:latest
-          docker push ${{ secrets.DOCKER_USER }}/kodaero:latest
+          docker pull ${{ secrets.DOCKER_USER }}/kodaero-app:latest || true
+          docker tag ${{ secrets.DOCKER_USER }}/kodaero-app:latest ${{ secrets.DOCKER_USER }}/kodaero-app:stable || true
+          docker push ${{ secrets.DOCKER_USER }}/kodaero-app:stable || true
+          docker build -t kodaero-app -f ./Dockerfile .
+          docker tag kodaero-app:latest ${{ secrets.DOCKER_USER }}/kodaero-app:latest
+          docker push ${{ secrets.DOCKER_USER }}/kodaero-app:latest
           
           
   pull_from_registry:
@@ -66,7 +69,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            docker pull ${{ secrets.DOCKER_USER }}/kodaero:latest
-            chmod +x ./deploy.sh
-            sudo ./deploy.sh prod
+            docker pull ${{ secrets.DOCKER_USER }}/kodaero-app:latest
+            chmod +x ./deploy-prod.sh
+            sudo ./deploy-prod.sh 14
             docker image prune -f

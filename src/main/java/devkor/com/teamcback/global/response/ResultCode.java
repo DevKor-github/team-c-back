@@ -24,6 +24,7 @@ public enum ResultCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, 1013, "권한이 없는 사용자입니다."),
     DB_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 1014, "DB 데이터 문제가 발생했습니다."),
     UNSUPPORTED_REQUEST(HttpStatus.NOT_FOUND, 1015, "존재하지 않는 요청입니다."),
+    EXCEEDED_MAXIMUM_FILE_COUNT(HttpStatus.BAD_REQUEST, 1016, "최대 파일 개수를 초과했습니다."),
 
     // 사용자 2000번대
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, 2000, "사용자를 찾을 수 없습니다."),
@@ -45,6 +46,7 @@ public enum ResultCode {
     NOT_FOUND_PLACE(HttpStatus.NOT_FOUND, 4000, "장소를 찾을 수 없습니다."),
     NOT_FOUND_PLACE_NICKNAME(HttpStatus.NOT_FOUND, 4001, "장소 별명을 찾을 수 없습니다."),
     NOT_SUPPORTED_PLACE_TYPE(HttpStatus.BAD_REQUEST, 4002, "지원하지 않는 장소 타입입니다."),
+    DUPLICATED_PLACE_IMAGE(HttpStatus.CONFLICT, 4003, "해당 시설의 이미지가 이미 존재합니다."),
 
     // 길찾기 6000번대
     NOT_FOUND_NODE(HttpStatus.NOT_FOUND, 6000, "노드를 찾을 수 없습니다."),
@@ -91,8 +93,16 @@ public enum ResultCode {
     EXISTING_PLACE_FOR_DEVICE(HttpStatus.CONFLICT, 13004, "중복되는 device placeId입니다."),
 
     // 강의 14000번대
-    NOT_FOUND_COURSE(HttpStatus.NOT_FOUND, 14000, "강의를 찾을 수 없습니다.")
-    ;
+    NOT_FOUND_COURSE(HttpStatus.NOT_FOUND, 14000, "강의를 찾을 수 없습니다."),
+
+    // 리뷰 15000번대
+    NOT_FOUND_REVIEW_TAG(HttpStatus.NOT_FOUND, 15000, "리뷰 태그를 찾을 수 없습니다."),
+    NOT_FOUND_REVIEW(HttpStatus.NOT_FOUND, 15001, "리뷰를 찾을 수 없습니다."),
+    ALREADY_REVIEWED_TODAY(HttpStatus.CONFLICT, 15002, "오늘 이미 해당 장소에 리뷰를 작성했습니다."),
+    COMMENT_TOO_SHORT(HttpStatus.BAD_REQUEST, 15003, "한줄평은 10글자 이상 작성해주세요."),
+
+    // 신고 16000번대
+    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final int code;

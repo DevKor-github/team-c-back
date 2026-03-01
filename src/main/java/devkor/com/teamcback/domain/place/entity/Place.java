@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.place.entity;
 
+import devkor.com.teamcback.domain.operatingtime.dto.request.SavePlaceOperatingTimeReq;
 import devkor.com.teamcback.domain.place.dto.request.CreatePlaceReq;
 import devkor.com.teamcback.domain.place.dto.request.ModifyPlaceReq;
 import devkor.com.teamcback.domain.building.entity.Building;
@@ -53,6 +54,21 @@ public class Place extends BaseEntity {
     private String weekdayOperatingTime;
 
     @Setter
+    private String mondayOperatingTime;
+
+    @Setter
+    private String tuesdayOperatingTime;
+
+    @Setter
+    private String wednesdayOperatingTime;
+
+    @Setter
+    private String thursdayOperatingTime;
+
+    @Setter
+    private String fridayOperatingTime;
+
+    @Setter
     private String saturdayOperatingTime;
 
     @Setter
@@ -65,13 +81,16 @@ public class Place extends BaseEntity {
     private Integer maskIndex;
 
     @Column(nullable = false)
-    private Integer starSum = 0;
+    private double starSum = 0;
 
     @Column(nullable = false)
-    private Integer starNum = 0;
+    private int starNum = 0;
 
     @Column
     private String contact; // 연락처 등
+
+    @Column
+    private String foodType;
 
     @ManyToOne
     @JoinColumn(name = "building_id")
@@ -117,5 +136,16 @@ public class Place extends BaseEntity {
         this.building = building;
         this.node = node;
         this.description = req.getDescription();
+    }
+
+    public void updateOperatingTime(SavePlaceOperatingTimeReq req) {
+        this.setWeekdayOperatingTime(req.getWeekDayOperatingTime());
+        this.setMondayOperatingTime(req.getMondayOperatingTime());
+        this.setTuesdayOperatingTime(req.getTuesdayOperatingTime());
+        this.setWednesdayOperatingTime(req.getWednesdayOperatingTime());
+        this.setThursdayOperatingTime(req.getThursdayOperatingTime());
+        this.setFridayOperatingTime(req.getFridayOperatingTime());
+        this.setSaturdayOperatingTime(req.getSaturdayOperatingTime());
+        this.setSundayOperatingTime(req.getSundayOperatingTime());
     }
 }

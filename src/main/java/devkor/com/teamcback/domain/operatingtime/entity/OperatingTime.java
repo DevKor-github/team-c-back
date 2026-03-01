@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.operatingtime.entity;
 
 import devkor.com.teamcback.domain.building.entity.Building;
+import devkor.com.teamcback.domain.operatingtime.dto.request.SavePlaceOperatingTimeConditionTimeReq;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,4 +32,10 @@ public class OperatingTime {
     @ManyToOne
     @JoinColumn(name = "operating_condition_id")
     private OperatingCondition operatingCondition;
+
+    public OperatingTime(OperatingCondition operatingCondition, LocalTime startTime, LocalTime endTime) {
+        this.operatingCondition = operatingCondition;
+        this.startTime = startTime;
+        this.endTime = endTime;
+    }
 }

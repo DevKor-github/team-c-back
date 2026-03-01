@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.operatingtime.service;
 
-import devkor.com.teamcback.domain.operatingtime.dto.HolidayResDto;
+import devkor.com.teamcback.domain.operatingtime.dto.response.HolidayResDto;
 import devkor.com.teamcback.domain.operatingtime.entity.Holiday;
 import devkor.com.teamcback.domain.operatingtime.repositoy.HolidayRepository;
 import java.net.URI;

@@ -12,9 +12,11 @@ import devkor.com.teamcback.domain.common.util.FileUtil;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
-import devkor.com.teamcback.domain.place.repository.PlaceImageRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
+import devkor.com.teamcback.domain.review.entity.PlaceReviewTagMap;
+import devkor.com.teamcback.domain.review.repository.PlaceReviewTagMapRepository;
+import devkor.com.teamcback.domain.review.repository.ReviewTagRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
@@ -54,8 +56,9 @@ public class SearchService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final PlaceImageRepository placeImageRepository;
     private final NodeRepository nodeRepository;
+    private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
+    private final ReviewTagRepository reviewTagRepository;
     private final LogUtil logUtil;
     private final FileUtil fileUtil;
 
@@ -196,7 +199,15 @@ public class SearchService {
             if(place.getFileUuid() != null) {
                 imageUrl = fileUtil.getThumbnail(place.getFileUuid());
             }
-            map.get(place.getFloor()).add(new SearchFacilityRes(place, imageUrl));
+
+            SearchFacilityRes facilityRes = new SearchFacilityRes(place, imageUrl);
+
+            // 리뷰 내용 추가
+            if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                facilityRes.setTagList(findPlaceReviewTagList(place));
+            }
+
+            map.get(place.getFloor()).add(facilityRes);
         }
 
         res.setFacilities(map);
@@ -236,7 +247,14 @@ public class SearchService {
                  imageUrl = fileUtil.getThumbnail(place.getFileUuid());
              }
 
-             placeResList.add(new SearchRoomDetailRes(place, imageUrl));
+             SearchRoomDetailRes detailRes = new SearchRoomDetailRes(place, imageUrl);
+
+             // 리뷰 내용 추가
+             if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                 detailRes.setTagList(findPlaceReviewTagList(place));
+             }
+
+             placeResList.add(detailRes);
          }
 
         List<SearchNodeRes> nodeList = nodeRepository.findAllByBuildingAndFloorAndTypeIn(building, floor, List.of(ENTRANCE, STAIR, ELEVATOR))
@@ -276,7 +294,14 @@ public class SearchService {
                 imageUrl = fileUtil.getThumbnail(place.getFileUuid());
             }
 
-            placeResList.add(new SearchPlaceRes(place, imageUrl));
+            SearchPlaceRes placeRes = new SearchPlaceRes(place, imageUrl);
+
+            // 리뷰 내용 추가
+            if(place.getType() == PlaceType.CAFE || place.getType() == PlaceType.CAFETERIA) {
+                placeRes.setTagList(findPlaceReviewTagList(place));
+            }
+
+            placeResList.add(placeRes);
         }
         logUtil.logClick(null, null, null, placeType.toString());
         return new SearchFacilityListRes(placeResList);
@@ -345,7 +370,7 @@ public class SearchService {
         // 건물 대표 이미지 확인
         String imageUrl = null;
         if(building.getFileUuid() != null) {
-            imageUrl = fileUtil.getThumbnail(building.getFileUuid());
+            imageUrl = fileUtil.getOriginalFile(building.getFileUuid());
         }
         logUtil.logClick(building.getName(), null, null, null);
         return new SearchBuildingDetailRes(res, containPlaceTypes, building, imageUrl, bookmarked);
@@ -395,15 +420,11 @@ public class SearchService {
         Place place = findPlace(placeId);
 
         // 장소 사진
-        // TODO: 나중에 수정
         String imageUrl = null;
-        List<SearchPlaceImageRes> placeImageList;
+        List<SearchPlaceImageRes> placeImageList = new ArrayList<>();
         if(place.getFileUuid() != null) {
-            placeImageList = fileUtil.getThumbnailFiles(place.getFileUuid()).stream().map(image -> new SearchPlaceImageRes(0L, image)).toList();
+            placeImageList = fileUtil.getFiles(place.getFileUuid()).stream().map(file -> new SearchPlaceImageRes(file.getId(), file.getFileSavedName())).toList();
             imageUrl = placeImageList.isEmpty() ? null : placeImageList.get(0).getImage();
-        }
-        else {
-            placeImageList = new ArrayList<>();placeImageRepository.findAllByPlace(place).stream().map(SearchPlaceImageRes::new).toList();
         }
 
         // 즐겨찾기
@@ -704,5 +725,16 @@ public class SearchService {
 
     private Place findPlace(Long placeId) {
         return placeRepository.findById(placeId).orElseThrow(() -> new GlobalException(NOT_FOUND_PLACE));
+    }
+
+    private List<SearchPlaceReviewTagRes> findPlaceReviewTagList(Place place) {
+        List<PlaceReviewTagMap> reviewTagMaps = placeReviewTagMapRepository.findByPlaceOrderByNumDesc(place);
+
+        List<SearchPlaceReviewTagRes> tagResList = new ArrayList<>();
+        for(PlaceReviewTagMap reviewTagMap : reviewTagMaps) {
+            tagResList.add(new SearchPlaceReviewTagRes(reviewTagMap.getReviewTag().getId(), reviewTagMap.getReviewTag().getTag(), reviewTagMap.getNum()));
+        }
+
+        return tagResList;
     }
 }

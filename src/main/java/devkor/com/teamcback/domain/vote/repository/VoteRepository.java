@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface VoteRepository extends JpaRepository<Vote, Long> {
     Optional<Vote> findByVoteTopicIdAndPlaceId(Long voteTopicId, Long placeId);
 
-    @Query("SELECT v FROM Vote v WHERE v.status IS NULL OR v.status = :status")
-    List<Vote> findAllByStatus(@Param("status")VoteStatus status);
+    void deleteByPlaceId(Long id);
+
+    List<Vote> findByVoteTopicId(Long voteTopicId);
 }

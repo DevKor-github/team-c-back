@@ -10,10 +10,7 @@ import devkor.com.teamcback.domain.search.service.SearchService;
 import devkor.com.teamcback.global.redis.RedisLockUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,11 +26,11 @@ public class CourseScheduler {
     //@EventListener(ApplicationReadyEvent.class)
     //@Transactional
     public void updateCourseDetails() {
-        redisLockUtil.executeWithLock("course_lock", 1, 300, () -> {
+        redisLockUtil.executeWithLock("course_lock", 1, 5000, () -> {
 
             log.info("강의 장소 업데이트");
 
-            List<CourseDetail> courseDetails = courseDetailRepository.findLimitByPlaceIdIsNull(500);
+            List<CourseDetail> courseDetails = courseDetailRepository.findLimitByPlaceIdIsNull(1000);
 
             for (CourseDetail courseDetail : courseDetails) {
                 String placeName = courseDetail.getPlaceName();

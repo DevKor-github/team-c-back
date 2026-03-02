@@ -10,6 +10,9 @@ import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.routes.entity.Node;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
+import devkor.com.teamcback.domain.vote.entity.Vote;
+import devkor.com.teamcback.domain.vote.entity.VoteStatus;
+import devkor.com.teamcback.domain.vote.repository.VoteRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,7 @@ public class AdminPlaceService {
     private final PlaceRepository placeRepository;
     private final NodeRepository nodeRepository;
     private final FileUtil fileUtil;
+    private final VoteRepository voteRepository;
 
     // 건물 id와 층에 해당하는 장소 리스트 조회
     @Transactional(readOnly = true)
@@ -55,6 +59,10 @@ public class AdminPlaceService {
         Building building = findBuilding(req.getBuildingId());
         Node node = findNode(req.getNodeId());
         Place place = placeRepository.save(new Place(req, building, node));
+
+        // vote 추가
+        voteRepository.save(new Vote(1L, place.getId(), VoteStatus.OPEN));
+
         return new CreatePlaceRes(place);
     }
 
@@ -72,6 +80,10 @@ public class AdminPlaceService {
     @Transactional
     public DeletePlaceRes deletePlace(Long facilityId) {
         Place place = findPlace(facilityId);
+        
+        // 투표 삭제
+        voteRepository.deleteByPlaceId(place.getId());
+
         placeRepository.delete(place);
 
         return new DeletePlaceRes();

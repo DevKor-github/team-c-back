@@ -3,10 +3,7 @@ package devkor.com.teamcback.domain.vote.service;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.vote.dto.request.SaveVoteRecordReq;
-import devkor.com.teamcback.domain.vote.dto.response.ChangeVoteStatusRes;
-import devkor.com.teamcback.domain.vote.dto.response.GetVoteOptionRes;
-import devkor.com.teamcback.domain.vote.dto.response.GetVoteRes;
-import devkor.com.teamcback.domain.vote.dto.response.SaveVoteRecordRes;
+import devkor.com.teamcback.domain.vote.dto.response.*;
 import devkor.com.teamcback.domain.vote.entity.*;
 import devkor.com.teamcback.domain.vote.repository.VoteOptionRepository;
 import devkor.com.teamcback.domain.vote.repository.VoteRecordRepository;
@@ -22,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 import static devkor.com.teamcback.domain.vote.entity.VoteStatus.CLOSED;
+import static devkor.com.teamcback.domain.vote.entity.VoteStatus.OPEN;
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Service
@@ -132,6 +130,30 @@ public class VoteService {
     }
 
     /**
+     * 득표 수 많은 투표 조회
+     */
+    public List<GetVoteRes> getMajorVoteList(VoteStatus status) {
+        List<GetVoteRes> resList = new ArrayList<>();
+
+        List<Vote> voteList = voteOptionRepository.findMajorVote(status, 20);
+
+        for(Vote vote : voteList) {
+            // 투표 주제
+            VoteTopic voteTopic = findVoteTopic(vote.getVoteTopicId());
+
+            // 투표 장소
+            Place place = findPlace(vote.getPlaceId());
+
+            // 투표 항목, 현황
+            List<GetVoteOptionRes> voteOptionList = voteOptionRepository.getVoteOptionByVoteId(vote.getId());
+
+            resList.add(new GetVoteRes(vote.getId(), vote.getStatus().toString(), voteTopic.getId(), voteTopic.getTopic(), place.getId(), place.getName(), voteOptionList));
+        }
+
+        return resList;
+    }
+
+    /**
      * 투표 상태 변경
      */
     public ChangeVoteStatusRes changeVoteStatus(Long voteId, VoteStatus status) {
@@ -142,6 +164,24 @@ public class VoteService {
         vote.changeStatus(status);
 
         return new ChangeVoteStatusRes();
+    }
+
+    /**
+     * 장소에 투표 생성(일괄)
+     */
+    @Transactional
+    public CreatePlaceVoteRes createPlaceVote(Long voteTopicId) {
+        // 해당 투표를 가지고 있는 장소 id
+        List<Long> placeIdsOfVote = voteRepository.findByVoteTopicId(voteTopicId).stream().map(Vote::getPlaceId).toList();
+
+        List<Place> places = placeRepository.findAll();
+        for(Place place : places) {
+            if(!placeIdsOfVote.contains(place.getId())) {
+                voteRepository.save(new Vote(voteTopicId, place.getId(), OPEN));
+            }
+        }
+
+        return new CreatePlaceVoteRes();
     }
 
     private Vote findVote(Long voteTopicId, Long placeId) {

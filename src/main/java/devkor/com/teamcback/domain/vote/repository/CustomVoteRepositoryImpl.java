@@ -2,15 +2,13 @@ package devkor.com.teamcback.domain.vote.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
-import static devkor.com.teamcback.domain.place.entity.QPlace.place;
 import static devkor.com.teamcback.domain.vote.entity.QVoteOption.voteOption;
 import static devkor.com.teamcback.domain.vote.entity.QVoteRecord.voteRecord;
 import static devkor.com.teamcback.domain.vote.entity.QVote.vote;
 
-import devkor.com.teamcback.domain.place.entity.Place;
-import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.vote.dto.response.GetVoteOptionRes;
 import devkor.com.teamcback.domain.vote.dto.response.QGetVoteOptionRes;
 import devkor.com.teamcback.domain.vote.entity.Vote;
@@ -124,6 +122,21 @@ public class CustomVoteRepositoryImpl implements CustomVoteRepository{
                         voteRecord.id.count().intValue().asc()
                 )
                 .fetch();
+    }
+
+    @Override
+    public List<Vote> findMajorVote(VoteStatus status, int count){
+        return jpaQueryFactory
+                .selectFrom(vote)
+                .where(vote.id.in(
+                        JPAExpressions
+                                .select(voteRecord.voteId)
+                                .from(voteRecord)
+                                .groupBy(voteRecord.voteId)
+                                .having(voteRecord.id.count().goe(count))
+                ).and(vote.status.eq(status)))
+                .fetch();
+
     }
 
     private BooleanExpression gtVoteCursor(Long lastVoteId) {

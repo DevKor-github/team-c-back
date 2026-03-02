@@ -105,10 +105,6 @@ dependencies {
     // actuator
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // cloudwatch
-    implementation 'io.micrometer:micrometer-registry-cloudwatch2'
-    implementation 'software.amazon.awssdk:cloudwatch'
-
     // prometheus
     implementation 'io.micrometer:micrometer-registry-prometheus'
 

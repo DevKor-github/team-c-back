@@ -30,6 +30,12 @@ public class Vote extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private VoteStatus status;
 
+    public Vote(Long voteTopicId, Long placeId, VoteStatus voteStatus) {
+        this.voteTopicId = voteTopicId;
+        this.placeId = placeId;
+        this.status = voteStatus;
+    }
+
     public void checkStatus() {
         if(this.status == CLOSED) throw new GlobalException(CLOSED_VOTE);
     }

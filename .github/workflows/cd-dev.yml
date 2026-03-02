@@ -67,6 +67,7 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             docker pull ${{ secrets.DOCKER_USER }}/kodaero-dev:latest
+            cd infra
             chmod +x ./deploy-dev.sh
             sudo ./deploy-dev.sh
             docker image prune -f

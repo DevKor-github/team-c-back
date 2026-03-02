@@ -13,10 +13,10 @@ spring:
       ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
       dialect: org.hibernate.dialect.MySQL8InnoDBDialect
     defer-datasource-initialization: true
     sql:
@@ -54,7 +54,7 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: debug
+    org.hibernate.SQL: off
 #    org.elasticsearch.client: TRACE
 
 jwt:

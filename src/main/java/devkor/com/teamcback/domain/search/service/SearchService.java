@@ -16,7 +16,6 @@ import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import devkor.com.teamcback.domain.review.entity.PlaceReviewTagMap;
 import devkor.com.teamcback.domain.review.repository.PlaceReviewTagMapRepository;
-import devkor.com.teamcback.domain.review.repository.ReviewTagRepository;
 import devkor.com.teamcback.domain.routes.repository.NodeRepository;
 import devkor.com.teamcback.domain.search.dto.request.SaveSearchLogReq;
 import devkor.com.teamcback.domain.search.dto.response.*;
@@ -58,7 +57,6 @@ public class SearchService {
     private final BookmarkRepository bookmarkRepository;
     private final NodeRepository nodeRepository;
     private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
-    private final ReviewTagRepository reviewTagRepository;
     private final LogUtil logUtil;
     private final FileUtil fileUtil;
 
@@ -559,7 +557,7 @@ public class SearchService {
         return scores;
     }
 
-    private static List<GlobalSearchRes> orderSequence(Map<GlobalSearchRes, Integer> scores) {
+    private List<GlobalSearchRes> orderSequence(Map<GlobalSearchRes, Integer> scores) {
         // 점수를 기준으로 그룹화
         Map<Integer, List<GlobalSearchRes>> groupedByScore = scores.entrySet().stream()
             .collect(Collectors.groupingBy(

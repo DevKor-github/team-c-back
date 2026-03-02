@@ -15,4 +15,6 @@ public interface CustomVoteRepository {
     List<GetVoteOptionRes> getVoteOptionByVoteId(Long voteId);
 
     List<GetVoteOptionRes> getVoteOptionByVoteIdOrderByCount(Long voteId);
+
+    List<Vote> findMajorVote(VoteStatus status, int count);
 }

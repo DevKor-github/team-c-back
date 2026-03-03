@@ -73,7 +73,9 @@ public class BLEService {
 
     //count, ratio, defaultcount로 예측 인원 계산(int)
     private int calculate_people(int count, double ratio, double defaultCount) {
-        return (int) Math.round(count * ratio + defaultCount);
+        int people = (int) Math.round(count * ratio + defaultCount);
+        if (people < 0) people = 0;
+        return people;
     }
 
     @Transactional(readOnly = true)

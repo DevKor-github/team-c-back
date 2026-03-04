@@ -102,7 +102,7 @@ public class KoyeonService {
         return scores;
     }
 
-    private static List<GlobalPubSearchRes> orderSequence(Map<GlobalPubSearchRes, Integer> scores) {
+    private List<GlobalPubSearchRes> orderSequence(Map<GlobalPubSearchRes, Integer> scores) {
         // 점수를 기준으로 그룹화
         Map<Integer, List<GlobalPubSearchRes>> groupedByScore = scores.entrySet().stream()
             .collect(Collectors.groupingBy(

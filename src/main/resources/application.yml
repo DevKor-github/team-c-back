@@ -134,7 +134,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: prometheus, health, info
+        include: prometheus, health, info, heapdump
   metrics:
     tags:
       application: kodaero

@@ -17,6 +17,9 @@ spring:
     properties:
       hibernate:
         format_sql: false
+        query:
+          plan_cache_max_size: 512 # 캐시 크기 제한 (기본값이 너무 클 수 있음)
+          plan_parameter_metadata_max_size: 128
       dialect: org.hibernate.dialect.MySQL8InnoDBDialect
     defer-datasource-initialization: true
     sql:

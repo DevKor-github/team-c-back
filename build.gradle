@@ -92,6 +92,7 @@ dependencies {
 
     // spring cache
     implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 

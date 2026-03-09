@@ -43,6 +43,7 @@ public class RouteService {
     private final ConnectedBuildingRepository connectedBuildingRepository;
     private final LogUtil logUtil;
     private final ShuttleTimeRepository shuttleTimeRepository;
+    private final RouteGraphCache routeGraphCache;
 
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
@@ -266,59 +267,65 @@ public class RouteService {
 
     /**
      * 그래프 요소 찾기(node, edge 묶음)
-     * 노드 테이블의 String 인접 노드와 거리를 그래프로 변환
+     * 노드·엣지 데이터는 RouteGraphCache에서 건물 단위로 공유 반환 (OOM 방지).
      */
     private GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions) {
         List<Node> graphNode = new ArrayList<>();
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
-        // 조건에 따른 노드 검색
+        List<NodeType> nodeTypes = buildNodeTypes(conditions);
+        boolean isInnerRoute = conditions.contains(Conditions.INNERROUTE);
 
+        // 조건에 따른 노드·엣지 검색 (캐시 우선)
         for (Building building : buildingList) {
             if (conditions.contains(OPERATING)) {
                 if (!building.isOperating()) continue;
             }
-            graphNode.addAll(findNodeWithConditions(building, conditions));
+            graphNode.addAll(routeGraphCache.getNodes(building, nodeTypes));
+            graphEdge.putAll(routeGraphCache.getEdges(building, nodeTypes, isInnerRoute));
         }
 
+        // startNode/endNode가 캐시된 그래프에 없을 경우(routing=false 노드 등) 직접 추가
         if (!graphNode.contains(startNode)) {
             graphNode.add(startNode);
+            buildSingleNodeEdges(startNode, isInnerRoute, graphEdge);
         }
         if (!graphNode.contains(endNode)) {
             graphNode.add(endNode);
+            buildSingleNodeEdges(endNode, isInnerRoute, graphEdge);
         }
 
-        for (Node node : graphNode) {
-            String rawAdjacentNode = node.getAdjacentNode();
-            String rawDistance = node.getDistance();
-
-            if (rawAdjacentNode == null || rawDistance == null || rawAdjacentNode.isEmpty() || rawDistance.isEmpty())
-                continue;
-
-            Long[] nextNodeId;
-            Long[] distance;
-            try {
-                nextNodeId = convertStringToArray(node.getAdjacentNode());
-                distance = convertStringToArray(node.getDistance());
-            } catch (NumberFormatException e) {
-                throw new AdminException(INCORRECT_NODE_DATA, "노드" + node.getId() + "의 인접 노드 혹은 거리에 잘못된 입력이 있습니다.");
-            }
-
-            // 인접 노드와 거리의 개수가 맞지 않을 때
-            if (nextNodeId.length != distance.length) {
-                throw new AdminException(INCORRECT_NODE_DATA, "노드" + node.getId() + "의 인접 노드와 거리 개수가 다릅니다.");
-            }
-
-            if (!graphEdge.containsKey(node.getId())) {
-                graphEdge.put(node.getId(), new ArrayList<>());
-            }
-            for (int i = 0; i < nextNodeId.length; i++) {
-                long weight = (conditions.contains(Conditions.INNERROUTE) && node.getBuilding().getId() != OUTDOOR_ID) ? Math.round(distance[i] * INDOOR_ROUTE_WEIGHT) : distance[i];
-                Edge edge = new Edge(distance[i], weight, node.getId(), nextNodeId[i]);
-                graphEdge.get(node.getId()).add(edge);
-            }
-        }
         return new GetGraphRes(graphNode, graphEdge);
+    }
+
+    /**
+     * 단일 노드의 엣지를 직접 파싱해 graphEdge에 추가.
+     * routing=false인 startNode/endNode 등 캐시 미포함 노드 처리용.
+     */
+    private void buildSingleNodeEdges(Node node, boolean isInnerRoute, Map<Long, List<Edge>> graphEdge) {
+        String rawAdjacentNode = node.getAdjacentNode();
+        String rawDistance = node.getDistance();
+        if (rawAdjacentNode == null || rawDistance == null || rawAdjacentNode.isEmpty() || rawDistance.isEmpty()) return;
+
+        Long[] nextNodeId;
+        Long[] distance;
+        try {
+            nextNodeId = convertStringToArray(rawAdjacentNode);
+            distance   = convertStringToArray(rawDistance);
+        } catch (NumberFormatException e) {
+            throw new AdminException(INCORRECT_NODE_DATA, "노드" + node.getId() + "의 인접 노드 혹은 거리에 잘못된 입력이 있습니다.");
+        }
+        if (nextNodeId.length != distance.length) {
+            throw new AdminException(INCORRECT_NODE_DATA, "노드" + node.getId() + "의 인접 노드와 거리 개수가 다릅니다.");
+        }
+
+        List<Edge> edges = new ArrayList<>();
+        for (int i = 0; i < nextNodeId.length; i++) {
+            long weight = (isInnerRoute && node.getBuilding().getId() != OUTDOOR_ID)
+                ? Math.round(distance[i] * INDOOR_ROUTE_WEIGHT) : distance[i];
+            edges.add(new Edge(distance[i], weight, node.getId(), nextNodeId[i]));
+        }
+        graphEdge.put(node.getId(), edges);
     }
 
     /**
@@ -326,6 +333,13 @@ public class RouteService {
      * 추후 이 메서드와 getGraph 수정하여 operating 여부, 실내 탐색 필요.
      */
     private List<Node> findNodeWithConditions(Building building, List<Conditions> conditions) {
+        return routeGraphCache.getNodes(building, buildNodeTypes(conditions));
+    }
+
+    /**
+     * 조건에 따른 NodeType 목록 구성 (getGraph와 RouteGraphCache 캐시 키 공유용)
+     */
+    private List<NodeType> buildNodeTypes(List<Conditions> conditions) {
         List<NodeType> nodeTypes = new ArrayList<>(Arrays.asList(NodeType.NORMAL, NodeType.STAIR, NodeType.ELEVATOR, NodeType.ENTRANCE, NodeType.CHECKPOINT));
         if (conditions != null) {
             if (conditions.contains(BARRIERFREE)) {
@@ -334,7 +348,7 @@ public class RouteService {
                 nodeTypes.add(NodeType.SHUTTLE);
             }
         }
-        return nodeRepository.findByBuildingAndRoutingAndTypeIn(building, true, nodeTypes);
+        return nodeTypes;
     }
 
     /**
@@ -392,11 +406,18 @@ public class RouteService {
             }
         }
 
-        //path 생성
+        // path 생성 - graphNode Map으로 조회해 N+1 DB 쿼리 제거
+        Map<Long, Node> nodeMap = new HashMap<>();
+        for (Node n : nodes) nodeMap.put(n.getId(), n);
+
         List<Node> path = new ArrayList<>();
         Long finalDistance = distances.get(endNode.getId());
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
-            Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
+            Node node = nodeMap.get(at);
+            if (node == null) {
+                // 그래프 경계를 넘는 희귀 케이스 fallback
+                node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
+            }
             path.add(node);
         }
         Collections.reverse(path);

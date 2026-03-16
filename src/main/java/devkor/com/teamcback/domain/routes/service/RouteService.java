@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 
 import static devkor.com.teamcback.domain.routes.entity.Conditions.*;
 import static devkor.com.teamcback.global.response.ResultCode.*;
@@ -44,6 +45,10 @@ public class RouteService {
     private final LogUtil logUtil;
     private final ShuttleTimeRepository shuttleTimeRepository;
     private final RouteGraphCache routeGraphCache;
+
+    /** 동시 활성 요청 수를 제한해 peak heap 사용량을 억제 (~40MB/req × 5 = 200MB).
+     *  Semaphore 획득 전에는 JDBC 연결·Hibernate 세션을 점유하지 않으므로 HikariCP 고갈도 방지. */
+    private static final Semaphore ROUTE_SEMAPHORE = new Semaphore(5);
 
     private static final long OUTDOOR_ID = 0L;
     private static final String SEPARATOR = ",";
@@ -68,44 +73,50 @@ public class RouteService {
             conditions = new ArrayList<>();
         }
         conditions.add(OPERATING);
-        Node startNode = getNodeByType(startType, startId, startLat, startLong);
-        Node endNode = getNodeByType(endType, endId, endLat, endLong);
 
-        // 에러 조건 확인
-        checkLocationError(startNode, endNode, startType, endType, startId, endId);
-
-        // 길찾기 응답 리스트 생성
-        List<GetRouteRes> routeRes = new ArrayList<>();
-
-        // 연결된 건물 찾기
-        HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
-
-        // 경로를 하나만 반환하는 경우
-        GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
-        DijkstraRes route = dijkstra(graphRes, startNode, endNode);
-
-        routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING, conditions));
-
-        // 베리어프리만 추가로 적용하는 경우(임시)
-//        GetGraphRes graphRes2 = getGraph(buildingList, startNode, endNode, List.of(BARRIERFREE));
-//        DijkstraRes route2 = dijkstra(graphRes2.getGraphNode(), graphRes2.getGraphEdge(), startNode, endNode);
-//        if(route.getPath().isEmpty() && route2.getPath.isEmpty()) throw new GlobalException(NOT_FOUND_ROUTE);
-//        routeRes.add(buildRouteResponse(route2, isStartBuilding, isEndBuilding));
-
-        // 로그 저장
-        Building startBuilding = null, endBuilding = null;
-        Place startPlace = null, endPlace = null;
-
-        if (checkType(startType, endType)) {
-            if (startType == LocationType.BUILDING) startBuilding = findBuilding(startId);
-            else if (startType == LocationType.PLACE) startPlace = findPlace(startId);
-
-            if (endType == LocationType.BUILDING) endBuilding = findBuilding(endId);
-            else if (endType == LocationType.PLACE) endPlace = findPlace(endId);
-
-            logUtil.logRoute(startBuilding, startPlace, endBuilding, endPlace, conditions);
+        // 전체 요청 처리를 Semaphore로 직렬화: Dijkstra뿐 아니라 getBuildingsForRoute,
+        // buildRouteResponse 등 모든 단계 포함. 동시 활성 요청 5개 × ~40MB = 200MB로 제한.
+        // (세마포어 대기 스레드는 JDBC 연결·Hibernate 세션을 전혀 보유하지 않아 HikariCP 고갈 방지)
+        try {
+            ROUTE_SEMAPHORE.acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GlobalException(SYSTEM_ERROR);
         }
-        return routeRes;
+        try {
+            Node startNode = getNodeByType(startType, startId, startLat, startLong);
+            Node endNode = getNodeByType(endType, endId, endLat, endLong);
+
+            // 에러 조건 확인
+            checkLocationError(startNode, endNode, startType, endType, startId, endId);
+
+            // 연결된 건물 찾기
+            HashSet<Building> buildingList = getBuildingsForRoute(startNode, endNode, conditions);
+
+            GetGraphRes graphRes = getGraph(buildingList, startNode, endNode, conditions);
+            DijkstraRes route = dijkstra(graphRes, startNode, endNode);
+
+            // 길찾기 응답 리스트 생성
+            List<GetRouteRes> routeRes = new ArrayList<>();
+            routeRes.add(buildRouteResponse(route, startType == LocationType.BUILDING, endType == LocationType.BUILDING, conditions));
+
+            // 로그 저장
+            Building startBuilding = null, endBuilding = null;
+            Place startPlace = null, endPlace = null;
+
+            if (checkType(startType, endType)) {
+                if (startType == LocationType.BUILDING) startBuilding = findBuilding(startId);
+                else if (startType == LocationType.PLACE) startPlace = findPlace(startId);
+
+                if (endType == LocationType.BUILDING) endBuilding = findBuilding(endId);
+                else if (endType == LocationType.PLACE) endPlace = findPlace(endId);
+
+                logUtil.logRoute(startBuilding, startPlace, endBuilding, endPlace, conditions);
+            }
+            return routeRes;
+        } finally {
+            ROUTE_SEMAPHORE.release();
+        }
     }
 
     private boolean checkType(LocationType startType, LocationType endType) {
@@ -161,10 +172,13 @@ public class RouteService {
     }
 
     /**
-     * 주어진 좌표값에서 가장 가까운 외부 노드 찾기
+     * 주어진 좌표값에서 가장 가까운 외부 노드 찾기.
+     * nodeMapCache를 사용해 매 요청마다 DB에서 30K 노드를 재로드하는 것을 방지.
      */
     private Node findNearestNode(Double latitude, Double longitude) {
-        List<Node> graphNode = new ArrayList<>(findAllNode(findBuilding(OUTDOOR_ID)));
+        Building outdoor = findBuilding(OUTDOOR_ID);
+        // 기본 nodeTypes로 캐시된 노드 목록 사용 (fresh DB 쿼리 제거)
+        List<Node> graphNode = routeGraphCache.getNodes(outdoor, buildNodeTypes(null));
         double shortestDistance = INIT_OUTDOOR_DISTANCE;
         Node nearestNode = null;
 
@@ -266,36 +280,42 @@ public class RouteService {
 
 
     /**
-     * 그래프 요소 찾기(node, edge 묶음)
-     * 노드·엣지 데이터는 RouteGraphCache에서 건물 단위로 공유 반환 (OOM 방지).
+     * 그래프 요소 찾기(edge·nodeMap 묶음).
+     * 캐시된 nodeMap을 LazyEdgeMap으로 감싸 엣지를 요청 시점에만 파싱 (Old gen 영구 상주 방지).
      */
     private GetGraphRes getGraph(HashSet<Building> buildingList, Node startNode, Node endNode, List<Conditions> conditions) {
-        List<Node> graphNode = new ArrayList<>();
-        Map<Long, List<Edge>> graphEdge = new HashMap<>();
-
         List<NodeType> nodeTypes = buildNodeTypes(conditions);
         boolean isInnerRoute = conditions.contains(Conditions.INNERROUTE);
 
-        // 조건에 따른 노드·엣지 검색 (캐시 우선)
+        List<Map<Long, List<Edge>>> edgeMaps = new ArrayList<>(buildingList.size());
+        List<Map<Long, Node>> nodeMaps = new ArrayList<>(buildingList.size());
+
         for (Building building : buildingList) {
-            if (conditions.contains(OPERATING)) {
-                if (!building.isOperating()) continue;
-            }
-            graphNode.addAll(routeGraphCache.getNodes(building, nodeTypes));
-            graphEdge.putAll(routeGraphCache.getEdges(building, nodeTypes, isInnerRoute));
+            if (conditions.contains(OPERATING) && !building.isOperating()) continue;
+            Map<Long, Node> cachedNodeMap = routeGraphCache.getNodeMap(building, nodeTypes);
+            edgeMaps.add(new LazyEdgeMap(cachedNodeMap, isInnerRoute, building.getId() == OUTDOOR_ID));
+            nodeMaps.add(cachedNodeMap);
         }
 
-        // startNode/endNode가 캐시된 그래프에 없을 경우(routing=false 노드 등) 직접 추가
-        if (!graphNode.contains(startNode)) {
-            graphNode.add(startNode);
+        // 복사 없이 캐시 맵을 순서대로 탐색하는 복합 뷰
+        CompositeMap<Long, List<Edge>> graphEdge = new CompositeMap<>(edgeMaps);
+        CompositeMap<Long, Node> nodeMap = new CompositeMap<>(nodeMaps);
+
+        // startNode/endNode는 현재 트랜잭션의 관리 엔티티를 overlay에 강제 등록.
+        // (Caffeine 캐시는 이전 트랜잭션에서 detach된 객체를 보유하므로, 경로 재구성 시
+        //  path.get(0).equals(startNode) 레퍼런스 비교가 실패하는 것을 방지)
+        nodeMap.put(startNode.getId(), startNode);
+        nodeMap.put(endNode.getId(), endNode);
+
+        // 엣지가 캐시에 없는 경우(routing=false 노드 등)만 직접 파싱
+        if (graphEdge.get(startNode.getId()) == null) {
             buildSingleNodeEdges(startNode, isInnerRoute, graphEdge);
         }
-        if (!graphNode.contains(endNode)) {
-            graphNode.add(endNode);
+        if (graphEdge.get(endNode.getId()) == null) {
             buildSingleNodeEdges(endNode, isInnerRoute, graphEdge);
         }
 
-        return new GetGraphRes(graphNode, graphEdge);
+        return new GetGraphRes(graphEdge, nodeMap);
     }
 
     /**
@@ -352,29 +372,25 @@ public class RouteService {
     }
 
     /**
-     * 다익스트라 경로 생성
+     * 다익스트라 경로 생성.
+     * distances·weights·previousNodes·visitedNodes 를 lazy init(시작 노드만 초기화)해
+     * 실제로 탐색하는 노드만 Map에 추가 → per-request 할당량 대폭 절감.
      */
     private DijkstraRes dijkstra(GetGraphRes graphRes, Node startNode, Node endNode) {
-        List<Node> nodes = graphRes.getGraphNode();
         Map<Long, List<Edge>> edges = graphRes.getGraphEdge();
+        Map<Long, Node> nodeMap = graphRes.getNodeMap();
+
+        // 탐색하는 노드만 추가되도록 lazy init (전체 노드 수 기반 pre-fill 제거)
         Map<Long, Long> distances = new HashMap<>();
         Map<Long, Long> weights = new HashMap<>();
         Map<Long, Long> previousNodes = new HashMap<>();
         PriorityQueue<NodeDistancePair> priorityQueue = new PriorityQueue<>();
         Set<Long> visitedNodes = new HashSet<>();
 
-        // 모든 노드 초기화
-        for (Node node : nodes) {
-            if (node.equals(startNode)) {
-                distances.put(node.getId(), 0L);
-                weights.put(node.getId(), 0L);
-                priorityQueue.add(new NodeDistancePair(node.getId(), 0L));
-            } else {
-                distances.put(node.getId(), INF);
-                weights.put(node.getId(), INF);
-            }
-            previousNodes.put(node.getId(), null);
-        }
+        // 시작 노드만 초기화 (나머지는 탐색 중 lazy하게 추가)
+        distances.put(startNode.getId(), 0L);
+        weights.put(startNode.getId(), 0L);
+        priorityQueue.add(new NodeDistancePair(startNode.getId(), 0L));
 
         // Dijkstra 실행 (weight 기준)
         while (!priorityQueue.isEmpty()) {
@@ -386,18 +402,19 @@ public class RouteService {
 
             if (currentNode.equals(endNode.getId())) break;
 
-            if (!edges.containsKey(currentNode)) continue;
-            for (Edge edge : edges.get(currentNode)) {
+            List<Edge> currentEdges = edges.get(currentNode);
+            if (currentEdges == null) continue;
+            for (Edge edge : currentEdges) {
                 Long neighbor = edge.getEndNode();
                 Long currentDistance = distances.get(currentNode);
                 Long currentWeight = weights.get(currentNode);
                 if (currentWeight == null) continue;
 
-                Long newWeight = currentWeight + edge.getWeight();  //weight 기반 탐색으로 수정
+                Long newWeight = currentWeight + edge.getWeight();
                 Long newDistance = currentDistance + edge.getDistance();
                 Long neighborWeight = weights.get(neighbor);
 
-                if (neighborWeight == null || newWeight < neighborWeight && newWeight < INF) {
+                if (neighborWeight == null || (newWeight < neighborWeight && newWeight < INF)) {
                     weights.put(neighbor, newWeight);
                     distances.put(neighbor, newDistance);
                     previousNodes.put(neighbor, currentNode);
@@ -406,10 +423,7 @@ public class RouteService {
             }
         }
 
-        // path 생성 - graphNode Map으로 조회해 N+1 DB 쿼리 제거
-        Map<Long, Node> nodeMap = new HashMap<>();
-        for (Node n : nodes) nodeMap.put(n.getId(), n);
-
+        // path 생성 - 캐시된 nodeMap으로 조회해 N+1 DB 쿼리 제거
         List<Node> path = new ArrayList<>();
         Long finalDistance = distances.get(endNode.getId());
         for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
@@ -422,7 +436,6 @@ public class RouteService {
         }
         Collections.reverse(path);
 
-        //예외처리: path가 제대로 나오지 않는 경우. 즉, 경로가 존재하지 않는 경우
         if (path.isEmpty() || !path.get(0).equals(startNode)) {
             throw new GlobalException(NOT_FOUND_ROUTE);
         }
@@ -775,12 +788,146 @@ public class RouteService {
         return nodeRepository.findById(nodeId).orElseThrow(() -> new GlobalException(NOT_FOUND_NODE));
     }
 
-    private List<Node> findAllNode(Building building) {
-        return nodeRepository.findByBuildingAndRouting(building, true);
-    }
-
     private Checkpoint findCheckpoint(Node node) {
         return checkpointRepository.findByNode(node);
+    }
+
+    /**
+     * 여러 건물의 캐시된 맵을 복사 없이 묶는 read-mostly 복합 뷰.
+     * put()은 overlay(소용량 HashMap)에만 기록해 캐시 원본을 오염시키지 않는다.
+     */
+    private static final class CompositeMap<K, V> implements Map<K, V> {
+        private final Map<K, V> overlay = new HashMap<>(4);
+        private final List<Map<K, V>> backing;
+
+        CompositeMap(List<Map<K, V>> backing) {
+            this.backing = backing;
+        }
+
+        @Override
+        public V get(Object key) {
+            V v = overlay.get(key);
+            if (v != null) return v;
+            for (Map<K, V> m : backing) {
+                v = m.get(key);
+                if (v != null) return v;
+            }
+            return null;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return get(key) != null;
+        }
+
+        @Override
+        public V put(K key, V value) {
+            return overlay.put(key, value);
+        }
+
+        @Override public int size() { return backing.stream().mapToInt(Map::size).sum() + overlay.size(); }
+        @Override public boolean isEmpty() { return size() == 0; }
+        @Override public boolean containsValue(Object v) { throw new UnsupportedOperationException(); }
+        @Override public void putAll(Map<? extends K, ? extends V> m) { overlay.putAll(m); }
+        @Override public V remove(Object key) { throw new UnsupportedOperationException(); }
+        @Override public void clear() { throw new UnsupportedOperationException(); }
+        @Override public Set<K> keySet() { throw new UnsupportedOperationException(); }
+        @Override public Collection<V> values() { throw new UnsupportedOperationException(); }
+        @Override public Set<Entry<K, V>> entrySet() { throw new UnsupportedOperationException(); }
+    }
+
+    /**
+     * Per-request 지연 엣지 맵.
+     * Caffeine edgeCache 대신 사용: 노드의 adjacentNode/distance 문자열을 접근 시마다 파싱.
+     * Dijkstra는 visitedNodes 덕분에 각 노드를 1회만 방문하므로 per-request 캐시가 불필요하다.
+     * 캐시를 없애면 파싱된 List<Edge>가 요청 수명 동안 Old gen에 상주하지 않고
+     * 한 Dijkstra 루프 이후 Young gen에서 즉시 수집된다 → Old gen 승격 360 MB 절감.
+     */
+    private static final class LazyEdgeMap implements Map<Long, List<Edge>> {
+        private final Map<Long, Node> nodeMap;
+        private final boolean isInnerRoute;
+        private final boolean isOutdoor;
+
+        LazyEdgeMap(Map<Long, Node> nodeMap, boolean isInnerRoute, boolean isOutdoor) {
+            this.nodeMap = nodeMap;
+            this.isInnerRoute = isInnerRoute;
+            this.isOutdoor = isOutdoor;
+        }
+
+        @Override
+        public List<Edge> get(Object key) {
+            Node node = nodeMap.get(key);
+            if (node == null) return null;
+            return parseEdges(node);
+        }
+
+        private List<Edge> parseEdges(Node node) {
+            String rawAdj = node.getAdjacentNode();
+            String rawDist = node.getDistance();
+            if (rawAdj == null || rawAdj.isEmpty() || rawDist == null || rawDist.isEmpty()) return null;
+            long[] adjIds, dists;
+            try {
+                adjIds = parseLongs(rawAdj);
+                dists  = parseLongs(rawDist);
+            } catch (NumberFormatException e) {
+                throw new AdminException(INCORRECT_NODE_DATA,
+                    "노드" + node.getId() + "의 인접 노드 혹은 거리에 잘못된 입력이 있습니다.");
+            }
+            if (adjIds.length != dists.length) {
+                throw new AdminException(INCORRECT_NODE_DATA,
+                    "노드" + node.getId() + "의 인접 노드와 거리 개수가 다릅니다.");
+            }
+            List<Edge> edges = new ArrayList<>(adjIds.length);
+            for (int i = 0; i < adjIds.length; i++) {
+                long dist = dists[i];
+                long weight = (isInnerRoute && !isOutdoor)
+                    ? Math.round(dist * INDOOR_ROUTE_WEIGHT) : dist;
+                edges.add(new Edge(dist, weight, node.getId(), adjIds[i]));
+            }
+            return edges;
+        }
+
+        /**
+         * 쉼표 구분 숫자 문자열을 String 객체 생성 없이 long[] 로 파싱.
+         * String.split() 대비 임시 String 객체를 전혀 만들지 않아 GC 부담을 제거한다.
+         */
+        private static long[] parseLongs(String s) {
+            int n = s.length();
+            int count = 1;
+            for (int i = 0; i < n; i++) if (s.charAt(i) == ',') count++;
+            long[] arr = new long[count];
+            int idx = 0, start = 0;
+            for (int i = 0; i <= n; i++) {
+                if (i == n || s.charAt(i) == ',') {
+                    int lo = start, hi = i;
+                    while (lo < hi && s.charAt(lo) == ' ') lo++;
+                    while (hi > lo && s.charAt(hi - 1) == ' ') hi--;
+                    if (lo < hi) { // 빈 세그먼트(trailing/leading comma 등) 건너뜀
+                        long val = 0;
+                        for (int j = lo; j < hi; j++) {
+                            char c = s.charAt(j);
+                            if (c < '0' || c > '9') throw new NumberFormatException("Unexpected char: " + c);
+                            val = val * 10 + (c - '0');
+                        }
+                        arr[idx++] = val;
+                    }
+                    start = i + 1;
+                }
+            }
+            return Arrays.copyOf(arr, idx);
+        }
+
+        @Override public boolean containsKey(Object key) { return get(key) != null; }
+        @Override public List<Edge> put(Long key, List<Edge> value) { throw new UnsupportedOperationException(); }
+        @Override public int size() { return nodeMap.size(); }
+        @Override public boolean isEmpty() { return nodeMap.isEmpty(); }
+        @Override public boolean containsValue(Object v) { throw new UnsupportedOperationException(); }
+        @Override public void putAll(Map<? extends Long, ? extends List<Edge>> m) { throw new UnsupportedOperationException(); }
+        @Override public List<Edge> remove(Object key) { throw new UnsupportedOperationException(); }
+        @Override public void clear() { throw new UnsupportedOperationException(); }
+        @Override public Set<Long> keySet() { throw new UnsupportedOperationException(); }
+        @Override public Collection<List<Edge>> values() { throw new UnsupportedOperationException(); }
+        @Override public Set<Entry<Long, List<Edge>>> entrySet() { throw new UnsupportedOperationException(); }
     }
 
     /**

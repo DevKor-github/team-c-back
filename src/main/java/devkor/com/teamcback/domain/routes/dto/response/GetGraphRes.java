@@ -10,11 +10,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GetGraphRes {
-    private List<Node> graphNode;
     private Map<Long, List<Edge>> graphEdge;
+    private Map<Long, Node> nodeMap;
 
-    public GetGraphRes(List<Node> graphNode, Map<Long, List<Edge>> graphEdge){
-        this.graphNode = graphNode;
+    public GetGraphRes(Map<Long, List<Edge>> graphEdge, Map<Long, Node> nodeMap) {
         this.graphEdge = graphEdge;
+        this.nodeMap = nodeMap;
     }
 }

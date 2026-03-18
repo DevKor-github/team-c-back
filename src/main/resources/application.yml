@@ -38,6 +38,14 @@ spring:
       host: ${REDIS_HOST}
       port: 6379
       password: ${REDIS_PASSWORD}
+      lettuce:
+        pool:
+          # 핵심: true로 되어 있다면 false로 변경 (매 요청마다 PING 방지)
+          test-on-borrow: false
+          # 대신 연결이 유효한지 백그라운드에서 가끔 확인
+          test-while-idle: true
+          # 유효성 검사 주기 (예: 30초)
+          time-between-eviction-runs: 30s
 
   mail:
     host: smtp.gmail.com

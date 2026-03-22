@@ -96,7 +96,7 @@ public class Place extends BaseEntity {
     @JoinColumn(name = "building_id")
     private Building building;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @JoinColumn(name = "node_id")
     private Node node;
 

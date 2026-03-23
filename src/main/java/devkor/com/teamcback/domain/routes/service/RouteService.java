@@ -66,7 +66,7 @@ public class RouteService {
         if (conditions == null) {
             conditions = new ArrayList<>();
         }
-        conditions.add(OPERATING);
+//        conditions.add(OPERATING);
         Node startNode = getNodeByType(startType, startId, startLat, startLong);
         Node endNode = getNodeByType(endType, endId, endLat, endLong);
 
@@ -273,7 +273,6 @@ public class RouteService {
         Map<Long, List<Edge>> graphEdge = new HashMap<>();
 
         // 조건에 따른 노드 검색
-
         for (Building building : buildingList) {
             if (conditions.contains(OPERATING)) {
                 if (!building.isOperating()) continue;
@@ -395,9 +394,10 @@ public class RouteService {
         //path 생성
         List<Node> path = new ArrayList<>();
         Long finalDistance = distances.get(endNode.getId());
-        for (Long at = endNode.getId(); at != null; at = previousNodes.get(at)) {
+        for (Long at = endNode.getId(); at != null;) {
             Node node = nodeRepository.findById(at).orElseThrow(() -> new GlobalException(NOT_FOUND_ROUTE));
             path.add(node);
+            at = previousNodes.get(at);
         }
         Collections.reverse(path);
 
@@ -500,8 +500,12 @@ public class RouteService {
             else if (!Objects.equals(thisNode.getFloor(), nextNode.getFloor())) {
                 partialRoute.add(thisNode);
 
+                // 층 생략 여부 확인
+                boolean isFloorSkipped = false;
+
                 // 계단/엘리베이터를 통한 연속적인 층 이동을 감지하여 중간 층을 생략
-                while (!Objects.equals(thisNode.getFloor(), nextNode.getFloor()) && thisNode.getBuilding().equals(nextNode.getBuilding())) {
+                while (!Objects.equals(thisNode.getFloor(), nextNode.getFloor()) && thisNode.getBuilding().equals(nextNode.getBuilding()) && thisNode.getBuilding().getId() != OUTDOOR_ID) {
+                    isFloorSkipped = true;
                     count++;
                     thisNode = route.get(count);
                     nextNode = route.get(count+1);
@@ -510,7 +514,7 @@ public class RouteService {
                 partialRoute.clear();
 
                 // 끝 층의 시작 노드를 새 경로로 추가
-                count--;
+                if(isFloorSkipped) count--;
             } else {
                 partialRoute.add(thisNode);
             }

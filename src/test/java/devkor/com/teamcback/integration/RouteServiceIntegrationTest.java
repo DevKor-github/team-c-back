@@ -22,7 +22,7 @@ import java.util.List;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @TestInstance(Lifecycle.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@ActiveProfiles("test")
+//@ActiveProfiles("test")
 public class RouteServiceIntegrationTest extends BaseMvcTest {
     @Autowired
     RouteService routeService;

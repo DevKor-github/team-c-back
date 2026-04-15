@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 application-test.yml
 logback-spring.xml
+*.log
 
 ### STS ###
 .apt_generated

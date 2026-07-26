@@ -278,7 +278,8 @@ public class ReviewService {
     private void checkReviewPlaceType(Place place) {
         // 식당, 카페만 조회 가능하도록 제한
         if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE
-                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP && place.getType() != PlaceType.CONV_TEMP) {
+                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP
+                && place.getType() != PlaceType.CONV_TEMP && place.getType() != PlaceType.PHARMACY) {
             throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
         }
     }

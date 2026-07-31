@@ -33,5 +33,5 @@ public class CommonResponse<T> {
     public static <T> CommonResponse<T> success(T data) {
         return new CommonResponse<>(ResultCode.SUCCESS, data);
     }
-
+    public static CommonResponse<Void> success() {return new CommonResponse<>(ResultCode.SUCCESS);}
 }

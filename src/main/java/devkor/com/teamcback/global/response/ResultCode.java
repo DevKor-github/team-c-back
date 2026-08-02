@@ -102,7 +102,16 @@ public enum ResultCode {
     COMMENT_TOO_SHORT(HttpStatus.BAD_REQUEST, 15003, "한줄평은 10글자 이상 작성해주세요."),
 
     // 신고 16000번대
-    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다.");
+    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다."),
+
+    // 캐릭터 17000번대
+    NOT_FOUND_CHARACTER(HttpStatus.NOT_FOUND, 17000, "캐릭터를 찾을 수 없습니다."),
+    ALREADY_OWNED_CHARACTER(HttpStatus.CONFLICT, 17001, "이미 보유한 캐릭터입니다."),
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, 17002, "포인트가 부족합니다."),
+    NOT_OWNED_CHARACTER(HttpStatus.BAD_REQUEST, 17003, "보유하지 않은 캐릭터입니다."),
+    CHARACTER_IN_USE(HttpStatus.CONFLICT, 17004, "사용자가 보유 중인 캐릭터는 삭제할 수 없습니다."),
+    INACTIVE_CHARACTER(HttpStatus.BAD_REQUEST, 17005, "비활성화된 캐릭터입니다."),
+    INSUFFICIENT_LEVEL(HttpStatus.BAD_REQUEST, 17006, "레벨이 부족합니다.");
 
     private final HttpStatus status;
     private final int code;

@@ -1,10 +1,11 @@
-package devkor.com.teamcback.domain.notification.service;
+package devkor.com.teamcback.domain.notification.factory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devkor.com.teamcback.domain.notification.dto.payload.PushPayload;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.validation.PushActionValidator;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.notification.service;
+package devkor.com.teamcback.domain.notification.resolver;
 
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;

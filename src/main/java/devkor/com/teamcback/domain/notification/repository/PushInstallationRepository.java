@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.notification.repository;
 
-import devkor.com.teamcback.domain.notification.entity.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;
 import org.springframework.data.jpa.repository.JpaRepository;
 

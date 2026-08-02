@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.entity;
 
+import devkor.com.teamcback.domain.notification.entity.type.*;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

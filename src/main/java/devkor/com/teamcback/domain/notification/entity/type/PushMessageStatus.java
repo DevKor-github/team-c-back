@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.notification.entity;
+package devkor.com.teamcback.domain.notification.entity.type;
 
 public enum PushMessageStatus {
     QUEUED,

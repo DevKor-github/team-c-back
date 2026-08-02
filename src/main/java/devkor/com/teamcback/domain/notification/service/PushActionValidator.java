@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.notification.service;
 
-import devkor.com.teamcback.domain.notification.entity.AppVariant;
-import devkor.com.teamcback.domain.notification.entity.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Collections;
 import java.util.LinkedHashMap;

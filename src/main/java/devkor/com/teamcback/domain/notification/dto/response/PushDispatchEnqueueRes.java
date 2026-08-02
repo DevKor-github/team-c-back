@@ -1,7 +1,7 @@
 package devkor.com.teamcback.domain.notification.dto.response;
 
 import devkor.com.teamcback.domain.notification.entity.PushDispatch;
-import devkor.com.teamcback.domain.notification.entity.PushDispatchStatus;
+import devkor.com.teamcback.domain.notification.entity.type.PushDispatchStatus;
 import lombok.Getter;
 
 @Getter

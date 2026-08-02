@@ -1,10 +1,10 @@
 package devkor.com.teamcback.domain.notification.dto.request;
 
-import devkor.com.teamcback.domain.notification.entity.AppVariant;
-import devkor.com.teamcback.domain.notification.entity.NotificationType;
-import devkor.com.teamcback.domain.notification.entity.PushActionType;
-import devkor.com.teamcback.domain.notification.entity.PushMode;
-import devkor.com.teamcback.domain.notification.entity.PushTargetType;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.NotificationType;
+import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushMode;
+import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import java.util.Map;
 
 public record PushDispatchCommand(

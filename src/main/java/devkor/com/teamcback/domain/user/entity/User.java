@@ -12,6 +12,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -38,6 +41,13 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Long score = 0L;
 
+    // MySQL native enum 타입 대신 VARCHAR로 저장하여 레벨 추가 시 ALTER 없이 확장 가능하게 유지
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @ColumnDefault("'LEVEL1'")
+    @Column(nullable = false)
+    private Level level = Level.LEVEL1;
+
     @Column(nullable = false)
     private boolean isUpgraded = false;
 
@@ -60,11 +70,16 @@ public class User extends BaseEntity {
 
     public void updateScore(Long score, boolean isUpgraded) {
         this.score = score;
+        this.level = Level.fromScore(score); // score와 level이 발산하지 않도록 단일 지점에서 갱신
         this.isUpgraded = isUpgraded;
     }
 
     public void updateUpgraded(boolean isUpgraded) {
         this.isUpgraded = isUpgraded;
+    }
+
+    public void syncLevel() {
+        this.level = Level.fromScore(this.score);
     }
 
 }

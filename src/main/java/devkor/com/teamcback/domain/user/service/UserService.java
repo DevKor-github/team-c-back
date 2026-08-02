@@ -37,9 +37,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Comparator;
-
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -71,7 +68,11 @@ public class UserService {
     @Transactional
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
-        Level level = getLevel(user.getScore());
+        Level level = user.getLevel();
+        if(level == null) { // 백필 전 레거시 행 방어 (백필 완료 후엔 도달하지 않음)
+            user.syncLevel();
+            level = user.getLevel();
+        }
         Level nextLevel = level.getNextLevel();
         Long remainScoreToNextLevel =  nextLevel == null ? 0 : nextLevel.getMinScore() - user.getScore();
         int percent = 100;
@@ -215,14 +216,6 @@ public class UserService {
         if(userRepository.existsByUsernameAndUserIdNot(username, user.getUserId())) {
             throw new GlobalException(DUPLICATED_USERNAME);
         }
-    }
-
-    private Level getLevel(Long score) {
-        // score >= minScore 인 경우 중 가장 높은 레벨 반환
-        return Arrays.stream(Level.values())
-            .filter(lv -> score >= lv.getMinScore())
-            .max(Comparator.comparingInt(Level::getMinScore))
-            .orElse(Level.LEVEL1);
     }
 
     private User findUser(Long userId) {

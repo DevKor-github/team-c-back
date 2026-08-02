@@ -55,6 +55,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private boolean isUpgraded = false;
 
+    // 대표 캐릭터 (tb_character 논리 참조, 미장착 시 null)
+    private Long equippedCharacterId;
+
     @Setter
     @Column(unique = true)
     private String code;
@@ -92,6 +95,10 @@ public class User extends BaseEntity {
 
     public void addPoint(long amount) {
         this.point = Math.max(0, getPoint() + amount);
+    }
+
+    public void updateEquippedCharacter(Long characterId) {
+        this.equippedCharacterId = characterId;
     }
 
 }

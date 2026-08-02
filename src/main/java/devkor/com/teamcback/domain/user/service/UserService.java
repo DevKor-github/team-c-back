@@ -7,6 +7,7 @@ import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
+import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
 import devkor.com.teamcback.domain.notification.service.PushInstallationService;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
@@ -48,6 +49,7 @@ public class UserService {
     private final BookmarkRepository bookmarkRepository;
     private final UserBookmarkLogRepository userBookmarkLogRepository;
     private final SuggestionRepository suggestionRepository;
+    private final UserCharacterRepository userCharacterRepository;
     private final JwtUtil jwtUtil;
     private final KakaoValidator kakaoValidator;
     private final GoogleValidator googleValidator;
@@ -188,6 +190,7 @@ public class UserService {
         userBookmarkLogRepository.deleteAll(userBookmarkLogRepository.findByUser(user));
         pushInstallationService.deactivateAll(user.getUserId());
 //        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
+        userCharacterRepository.deleteAllByUser(user);
         userRepository.delete(user);
 
         return new DeleteUserRes();

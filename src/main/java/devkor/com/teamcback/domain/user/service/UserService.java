@@ -7,6 +7,7 @@ import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
+import devkor.com.teamcback.domain.notification.service.PushInstallationService;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
@@ -55,6 +56,7 @@ public class UserService {
     private final GoogleValidator googleValidator;
     private final AppleValidator appleValidator;
     private final PasswordEncoder passwordEncoder;
+    private final PushInstallationService pushInstallationService;
 
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
@@ -183,6 +185,7 @@ public class UserService {
         }
 
         userBookmarkLogRepository.deleteAll(userBookmarkLogRepository.findByUser(user));
+        pushInstallationService.deactivateAll(user.getUserId());
 //        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
         userRepository.delete(user);
 

@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.notification.validation;
 
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,17 +24,20 @@ public class PushActionValidator {
 
     public Map<String, Object> validateAndNormalize(
             PushActionType actionType,
+            PushMode mode,
             AppVariant appVariant,
             Map<String, Object> params
     ) {
-        if (actionType == null || appVariant == null) {
+        if (actionType == null || mode == null || appVariant == null) {
             throw new GlobalException(INVALID_INPUT);
         }
 
         Map<String, Object> safeParams = params == null ? Collections.emptyMap() : params;
 
-        if (PushActionType.TEST.equals(actionType)
-                && AppVariant.PRODUCTION.equals(appVariant)) {
+        if (PushActionType.TEST.equals(actionType) && (
+                AppVariant.PRODUCTION.equals(appVariant)
+                        || PushMode.ACTUAL.equals(mode)
+        )) {
             throw new GlobalException(INVALID_INPUT);
         }
 

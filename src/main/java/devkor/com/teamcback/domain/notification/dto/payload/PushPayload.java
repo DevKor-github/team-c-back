@@ -9,9 +9,15 @@ public record PushPayload(
 ) {
 
     public record PushPayloadData(
-            int schemaVersion,
-            String actionType,
-            Map<String, Object> actionParams
+            int version,
+            String notificationId,
+            PushPayloadAction action
+    ) {
+    }
+
+    public record PushPayloadAction(
+            String type,
+            Map<String, Object> params
     ) {
     }
 }

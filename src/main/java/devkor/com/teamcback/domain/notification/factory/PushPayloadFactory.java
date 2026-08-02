@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import devkor.com.teamcback.domain.notification.dto.payload.PushPayload;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.validation.PushActionValidator;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Map;
@@ -17,24 +18,29 @@ import static devkor.com.teamcback.global.response.ResultCode.INVALID_INPUT;
 @RequiredArgsConstructor
 public class PushPayloadFactory {
 
-    private static final int SCHEMA_VERSION = 1;
+    private static final int PAYLOAD_VERSION = 1;
     private static final int MAX_PAYLOAD_BYTES = 4096;
+    private static final String SIZE_VALIDATION_NOTIFICATION_ID = "00000000-0000-4000-8000-000000000000";
 
     private final PushActionValidator actionValidator;
     private final ObjectMapper objectMapper;
 
     public PushPayload create(
+            String notificationId,
             String title,
             String body,
+            PushMode mode,
+            AppVariant appVariant,
             PushActionType actionType,
-            Map<String, Object> actionParams,
-            AppVariant appVariant
+            Map<String, Object> actionParams
     ) {
+        validateText(notificationId);
         validateText(title);
         validateText(body);
 
         Map<String, Object> normalizedActionParams = actionValidator.validateAndNormalize(
                 actionType,
+                mode,
                 appVariant,
                 actionParams
         );
@@ -43,14 +49,37 @@ public class PushPayloadFactory {
                 title,
                 body,
                 new PushPayload.PushPayloadData(
-                        SCHEMA_VERSION,
-                        actionType.name(),
-                        normalizedActionParams
+                        PAYLOAD_VERSION,
+                        notificationId,
+                        new PushPayload.PushPayloadAction(
+                                actionType.name(),
+                                normalizedActionParams
+                        )
                 )
         );
 
         validatePayloadSize(payload);
         return payload;
+    }
+
+    public PushPayload createForPreDispatchValidation(
+            String title,
+            String body,
+            PushMode mode,
+            AppVariant appVariant,
+            PushActionType actionType,
+            Map<String, Object> actionParams
+    ) {
+        // PushMessage uses an identity Long, so the worker must create the final payload with the real message id and re-check size.
+        return create(
+                SIZE_VALIDATION_NOTIFICATION_ID,
+                title,
+                body,
+                mode,
+                appVariant,
+                actionType,
+                actionParams
+        );
     }
 
     public String serializeActionParams(Map<String, Object> actionParams) {

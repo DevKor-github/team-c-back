@@ -40,12 +40,13 @@ public class PushDispatchService {
     public PushDispatchEnqueueRes enqueue(PushDispatchCommand command) {
         validateCommand(command);
 
-        PushPayload payload = pushPayloadFactory.create(
+        PushPayload payload = pushPayloadFactory.createForPreDispatchValidation(
                 command.title(),
                 command.body(),
+                command.mode(),
+                command.appVariant(),
                 command.actionType(),
-                command.actionParams(),
-                command.appVariant()
+                command.actionParams()
         );
 
         return pushDispatchRepository.findByIdempotencyKey(command.idempotencyKey())
@@ -75,7 +76,7 @@ public class PushDispatchService {
                         command.title(),
                         command.body(),
                         command.actionType(),
-                        pushPayloadFactory.serializeActionParams(payload.data().actionParams()),
+                        pushPayloadFactory.serializeActionParams(payload.data().action().params()),
                         command.idempotencyKey(),
                         command.createdBy(),
                         now

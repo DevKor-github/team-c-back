@@ -340,6 +340,7 @@ public class UpdateScoreAspect {
         // 변했으면 true
         boolean isChanged = beforeLv != afterLv;
         user.updateScore(newScore, isChanged);
+        user.addPoint(addScore); // 스토어 재화는 score와 같은 양으로 적립
     }
 
     /**
@@ -356,5 +357,7 @@ public class UpdateScoreAspect {
         // 변했으면 true
         boolean isChanged = beforeLv != afterLv;
         user.updateScore(newScore, isChanged);
+        // 리뷰 삭제 후 재작성으로 포인트를 무한 적립하는 것을 막기 위해 차감도 동일하게 반영 (최소 0)
+        user.addPoint(newScore - oldScore);
     }
 }

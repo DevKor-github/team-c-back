@@ -152,3 +152,10 @@ management:
 
 staff:
   emails: leeyejin113@gmail.com,pingdoll3110@naver.com,ku.kodaero@gmail.com
+
+push:
+  expo:
+    base-url: https://exp.host/--/api/v2/push
+    access-token: ${EXPO_ACCESS_TOKEN:}
+    connect-timeout: 3s
+    read-timeout: 10s

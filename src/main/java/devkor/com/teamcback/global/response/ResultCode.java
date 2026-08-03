@@ -102,7 +102,16 @@ public enum ResultCode {
     COMMENT_TOO_SHORT(HttpStatus.BAD_REQUEST, 15003, "한줄평은 10글자 이상 작성해주세요."),
 
     // 신고 16000번대
-    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다.");
+    NOT_FOUND_REPORT(HttpStatus.NOT_FOUND, 16000, "신고를 찾을 수 없습니다."),
+
+    // notification 17000
+    NOT_FOUND_PUSH_INSTALLATION(HttpStatus.NOT_FOUND, 17000, "Push installation not found."),
+    FORBIDDEN_PUSH_INSTALLATION(HttpStatus.FORBIDDEN, 17001, "Push installation is not owned by the current user."),
+    INACTIVE_PUSH_INSTALLATION(HttpStatus.BAD_REQUEST, 17002, "Push installation is inactive."),
+    UNSUPPORTED_PUSH_INSTALLATION_VARIANT(HttpStatus.BAD_REQUEST, 17003, "Push installation variant is not supported for test push."),
+    EXPO_PUSH_RETRYABLE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, 17004, "Expo push request failed with retryable error."),
+    EXPO_PUSH_NON_RETRYABLE_ERROR(HttpStatus.BAD_GATEWAY, 17005, "Expo push request failed with non-retryable error."),
+    EXPO_PUSH_TICKET_ERROR(HttpStatus.BAD_GATEWAY, 17006, "Expo push ticket returned error status.");
 
     private final HttpStatus status;
     private final int code;

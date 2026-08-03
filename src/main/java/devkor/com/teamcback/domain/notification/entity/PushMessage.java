@@ -112,4 +112,32 @@ public class PushMessage {
         this.createdAt = now;
         this.updatedAt = now;
     }
+
+    public void recordTicket(
+            String ticketStatus,
+            String expoTicketId,
+            String ticketError,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = ticketStatus;
+        this.expoTicketId = expoTicketId;
+        this.ticketError = ticketError;
+        this.sendAttempts += 1;
+        this.sentAt = now;
+        this.updatedAt = now;
+        this.status = "ok".equals(ticketStatus)
+                ? PushMessageStatus.RECEIPT_PENDING
+                : PushMessageStatus.FAILED;
+    }
+
+    public void recordClientError(
+            boolean retryable,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = "client_error";
+        this.ticketError = retryable ? "retryable" : "non_retryable";
+        this.sendAttempts += 1;
+        this.updatedAt = now;
+        this.status = PushMessageStatus.FAILED;
+    }
 }

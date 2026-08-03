@@ -17,4 +17,15 @@ public class ExpoPushClientException extends RuntimeException {
         this.httpStatus = httpStatus;
         this.retryable = retryable;
     }
+
+    public ExpoPushClientException(
+            String message,
+            Integer httpStatus,
+            boolean retryable,
+            Throwable cause
+    ) {
+        super(message, cause);
+        this.httpStatus = httpStatus;
+        this.retryable = retryable;
+    }
 }

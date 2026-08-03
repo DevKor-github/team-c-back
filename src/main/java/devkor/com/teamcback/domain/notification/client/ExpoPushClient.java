@@ -27,20 +27,18 @@ public class ExpoPushClient {
 
         try {
             ExpoPushResponse response = expoPushApi.send(requests);
-            if (response == null) {
-                throw parsingFailed();
-            }
+            validateSendResponse(response, requests.size());
             return response;
         } catch (ExpoPushClientException e) {
             throw e;
         } catch (RetryableException e) {
-            throw requestFailed(null, true);
+            throw requestFailed(null, true, e);
         } catch (DecodeException e) {
-            throw parsingFailed();
+            throw parsingFailed(e);
         } catch (EncodeException e) {
-            throw invalidInput();
+            throw invalidInput(e);
         } catch (FeignException e) {
-            throw requestFailed(e.status(), isRetryable(e.status()));
+            throw requestFailed(e.status(), isRetryable(e.status()), e);
         }
     }
 
@@ -56,13 +54,22 @@ public class ExpoPushClient {
         } catch (ExpoPushClientException e) {
             throw e;
         } catch (RetryableException e) {
-            throw requestFailed(null, true);
+            throw requestFailed(null, true, e);
         } catch (DecodeException e) {
-            throw parsingFailed();
+            throw parsingFailed(e);
         } catch (EncodeException e) {
-            throw invalidInput();
+            throw invalidInput(e);
         } catch (FeignException e) {
-            throw requestFailed(e.status(), isRetryable(e.status()));
+            throw requestFailed(e.status(), isRetryable(e.status()), e);
+        }
+    }
+
+    private void validateSendResponse(
+            ExpoPushResponse response,
+            int requestCount
+    ) {
+        if (response == null || response.data() == null || response.data().size() != requestCount) {
+            throw parsingFailed();
         }
     }
 
@@ -117,6 +124,15 @@ public class ExpoPushClient {
         );
     }
 
+    private ExpoPushClientException invalidInput(Throwable cause) {
+        return new ExpoPushClientException(
+                "Invalid Expo push client request",
+                HttpStatus.BAD_REQUEST.value(),
+                false,
+                cause
+        );
+    }
+
     private ExpoPushClientException parsingFailed() {
         return new ExpoPushClientException(
                 "Failed to parse Expo push response",
@@ -125,14 +141,25 @@ public class ExpoPushClient {
         );
     }
 
+    private ExpoPushClientException parsingFailed(Throwable cause) {
+        return new ExpoPushClientException(
+                "Failed to parse Expo push response",
+                null,
+                false,
+                cause
+        );
+    }
+
     private ExpoPushClientException requestFailed(
             Integer httpStatus,
-            boolean retryable
+            boolean retryable,
+            Throwable cause
     ) {
         return new ExpoPushClientException(
                 "Expo push request failed",
                 httpStatus,
-                retryable
+                retryable,
+                cause
         );
     }
 }

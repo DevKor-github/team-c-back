@@ -1,4 +1,4 @@
-package devkor.com.teamcback.domain.notification.entity;
+package devkor.com.teamcback.domain.notification.entity.type;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

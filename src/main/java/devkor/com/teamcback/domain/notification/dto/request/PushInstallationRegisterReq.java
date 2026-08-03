@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.notification.dto.request;
 
-import devkor.com.teamcback.domain.notification.entity.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

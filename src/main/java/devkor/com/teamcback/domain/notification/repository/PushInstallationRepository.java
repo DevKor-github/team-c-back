@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.repository;
 
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -23,5 +24,15 @@ public interface PushInstallationRepository extends JpaRepository<PushInstallati
 
     List<PushInstallation> findAllByUserIdAndActiveTrue(
             Long userId
+    );
+
+    Optional<PushInstallation> findByInstallationIdAndAppVariantAndActiveTrue(
+            String installationId,
+            AppVariant appVariant
+    );
+
+    List<PushInstallation> findAllByUserIdAndAppVariantAndActiveTrue(
+            Long userId,
+            AppVariant appVariant
     );
 }

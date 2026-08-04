@@ -34,6 +34,26 @@ public interface PushMessageRepository extends JpaRepository<PushMessage, Long> 
             @Param("limit") int limit
     );
 
+    @Query(
+            value = """
+                    SELECT *
+                    FROM tb_push_message
+                    WHERE status = 'RECEIPT_PENDING'
+                      AND expo_ticket_id IS NOT NULL
+                      AND expo_ticket_id <> ''
+                      AND receipt_available_at IS NOT NULL
+                      AND receipt_available_at <= :now
+                    ORDER BY receipt_available_at ASC, push_message_id ASC
+                    LIMIT :limit
+                    FOR UPDATE SKIP LOCKED
+                    """,
+            nativeQuery = true
+    )
+    List<PushMessage> findDueReceiptPendingForUpdateSkipLocked(
+            @Param("now") LocalDateTime now,
+            @Param("limit") int limit
+    );
+
     @EntityGraph(attributePaths = "dispatch")
     List<PushMessage> findAllByPushMessageIdIn(
             Collection<Long> pushMessageIds

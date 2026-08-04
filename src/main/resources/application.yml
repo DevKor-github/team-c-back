@@ -165,3 +165,8 @@ push:
     batch-size: ${PUSH_WORKER_BATCH_SIZE:100}
     max-send-attempts: ${PUSH_WORKER_MAX_SEND_ATTEMPTS:3}
     retry-delay-ms: ${PUSH_WORKER_RETRY_DELAY_MS:30000}
+  receipt-worker:
+    enabled: ${PUSH_RECEIPT_WORKER_ENABLED:false}
+    fixed-delay-ms: ${PUSH_RECEIPT_WORKER_FIXED_DELAY_MS:60000}
+    batch-size: ${PUSH_RECEIPT_WORKER_BATCH_SIZE:1000}
+    max-receipt-attempts: ${PUSH_RECEIPT_WORKER_MAX_RECEIPT_ATTEMPTS:3}

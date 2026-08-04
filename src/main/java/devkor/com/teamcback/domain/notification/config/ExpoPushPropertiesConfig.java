@@ -6,7 +6,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
         ExpoPushProperties.class,
-        PushWorkerProperties.class
+        PushWorkerProperties.class,
+        PushReceiptWorkerProperties.class
 })
 public class ExpoPushPropertiesConfig {
 }

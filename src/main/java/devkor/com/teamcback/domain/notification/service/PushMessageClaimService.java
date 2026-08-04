@@ -34,6 +34,7 @@ public class PushMessageClaimService {
     private static final String DEFAULT_SOUND = "default";
     private static final String TICKET_STATUS_ERROR = "error";
     private static final String RETRYABLE_TICKET_ERROR = "MessageRateExceeded";
+    private static final String DEVICE_NOT_REGISTERED_ERROR = "DeviceNotRegistered";
 
     private final PushMessageRepository pushMessageRepository;
     private final PushInstallationRepository pushInstallationRepository;
@@ -91,7 +92,16 @@ public class PushMessageClaimService {
 
             ExpoPushTicket ticket = tickets == null || i >= tickets.size() ? null : tickets.get(i);
             String ticketError = ticketError(ticket);
-            if (isRetryableTicket(ticket)) {
+            if (isDeviceNotRegisteredTicket(ticket)) {
+                message.recordTicket(
+                        ticket.status(),
+                        ticket.id(),
+                        ticketError,
+                        now
+                );
+                pushInstallationRepository.findById(message.getPushInstallationId())
+                        .ifPresent(installation -> installation.deactivate(now));
+            } else if (isRetryableTicket(ticket)) {
                 message.recordRetryableTicketError(
                         ticket.status(),
                         ticketError,
@@ -237,11 +247,11 @@ public class PushMessageClaimService {
                             new EnumMap<>(PushMessageStatus.class)
                     );
                     dispatch.updateStatusFromMessageSummary(
-                            count(counts, PushMessageStatus.QUEUED),
+                            count(counts, PushMessageStatus.QUEUED)
+                                    + count(counts, PushMessageStatus.TICKET_RECEIVED)
+                                    + count(counts, PushMessageStatus.RECEIPT_PENDING),
                             count(counts, PushMessageStatus.SENDING),
-                            count(counts, PushMessageStatus.TICKET_RECEIVED)
-                                    + count(counts, PushMessageStatus.RECEIPT_PENDING)
-                                    + count(counts, PushMessageStatus.DELIVERED),
+                            count(counts, PushMessageStatus.DELIVERED),
                             count(counts, PushMessageStatus.FAILED),
                             now
                     );
@@ -259,6 +269,13 @@ public class PushMessageClaimService {
         return ticket != null
                 && TICKET_STATUS_ERROR.equals(ticket.status())
                 && RETRYABLE_TICKET_ERROR.equals(ticketError(ticket));
+    }
+
+    private boolean isDeviceNotRegisteredTicket(ExpoPushTicket ticket) {
+        return ticket != null
+                && TICKET_STATUS_ERROR.equals(ticket.status())
+                && ticket.details() != null
+                && DEVICE_NOT_REGISTERED_ERROR.equals(ticket.details().error());
     }
 
     private String ticketError(ExpoPushTicket ticket) {

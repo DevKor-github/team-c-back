@@ -265,4 +265,26 @@ public class PushMessage {
         this.receiptAvailableAt = null;
         this.updatedAt = now;
     }
+
+    public void recoverInterruptedSendingWithoutTicket(
+            String ticketError,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = "worker_interrupted";
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
+        this.updatedAt = now;
+    }
+
+    public void recoverInterruptedSendingWithTicket(LocalDateTime now) {
+        this.status = PushMessageStatus.RECEIPT_PENDING;
+        this.nextRetryAt = null;
+        if (this.receiptAvailableAt == null) {
+            this.receiptAvailableAt = now;
+        }
+        this.updatedAt = now;
+    }
 }

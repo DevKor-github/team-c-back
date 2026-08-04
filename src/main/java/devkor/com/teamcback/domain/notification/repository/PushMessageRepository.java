@@ -54,6 +54,23 @@ public interface PushMessageRepository extends JpaRepository<PushMessage, Long> 
             @Param("limit") int limit
     );
 
+    @Query(
+            value = """
+                    SELECT *
+                    FROM tb_push_message
+                    WHERE status = 'SENDING'
+                      AND updated_at <= :staleBefore
+                    ORDER BY updated_at ASC, push_message_id ASC
+                    LIMIT :limit
+                    FOR UPDATE SKIP LOCKED
+                    """,
+            nativeQuery = true
+    )
+    List<PushMessage> findStaleSendingForUpdateSkipLocked(
+            @Param("staleBefore") LocalDateTime staleBefore,
+            @Param("limit") int limit
+    );
+
     @EntityGraph(attributePaths = "dispatch")
     List<PushMessage> findAllByPushMessageIdIn(
             Collection<Long> pushMessageIds

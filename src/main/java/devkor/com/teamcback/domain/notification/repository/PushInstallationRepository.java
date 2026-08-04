@@ -35,4 +35,10 @@ public interface PushInstallationRepository extends JpaRepository<PushInstallati
             Long userId,
             AppVariant appVariant
     );
+
+    Optional<PushInstallation> findByPushInstallationIdAndInstallationIdAndAppVariantAndActiveTrue(
+            Long pushInstallationId,
+            String installationId,
+            AppVariant appVariant
+    );
 }

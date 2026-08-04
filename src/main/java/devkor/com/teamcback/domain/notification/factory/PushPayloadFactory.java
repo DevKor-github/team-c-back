@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.notification.factory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import devkor.com.teamcback.domain.notification.dto.payload.PushPayload;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
@@ -85,6 +86,19 @@ public class PushPayloadFactory {
     public String serializeActionParams(Map<String, Object> actionParams) {
         try {
             return objectMapper.writeValueAsString(actionParams);
+        } catch (JsonProcessingException e) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+    }
+
+    public Map<String, Object> deserializeActionParams(String actionParams) {
+        if (actionParams == null || actionParams.isBlank()) {
+            return Map.of();
+        }
+
+        try {
+            return objectMapper.readValue(actionParams, new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
             throw new GlobalException(INVALID_INPUT);
         }

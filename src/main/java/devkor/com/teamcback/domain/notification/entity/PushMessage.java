@@ -81,6 +81,9 @@ public class PushMessage {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
+    @Column(name = "receipt_available_at")
+    private LocalDateTime receiptAvailableAt;
+
     @Column(name = "receipt_checked_at")
     private LocalDateTime receiptCheckedAt;
 
@@ -108,6 +111,7 @@ public class PushMessage {
         this.receiptAttempts = 0;
         this.nextRetryAt = null;
         this.sentAt = null;
+        this.receiptAvailableAt = null;
         this.receiptCheckedAt = null;
         this.createdAt = now;
         this.updatedAt = now;
@@ -128,6 +132,88 @@ public class PushMessage {
         this.status = "ok".equals(ticketStatus)
                 ? PushMessageStatus.RECEIPT_PENDING
                 : PushMessageStatus.FAILED;
+        this.receiptAvailableAt = "ok".equals(ticketStatus) ? now.plusMinutes(15) : null;
+        this.nextRetryAt = null;
+    }
+
+    public void markSending(LocalDateTime now) {
+        this.status = PushMessageStatus.SENDING;
+        this.updatedAt = now;
+    }
+
+    public void markReceiptChecking(LocalDateTime now) {
+        this.status = PushMessageStatus.SENDING;
+        this.updatedAt = now;
+    }
+
+    public void recordReceipt(
+            String receiptStatus,
+            String receiptError,
+            LocalDateTime now
+    ) {
+        this.receiptStatus = receiptStatus;
+        this.receiptError = "ok".equals(receiptStatus) ? null : receiptError;
+        this.receiptAttempts += 1;
+        this.receiptCheckedAt = now;
+        this.receiptAvailableAt = null;
+        this.updatedAt = now;
+        this.status = "ok".equals(receiptStatus)
+                ? PushMessageStatus.DELIVERED
+                : PushMessageStatus.FAILED;
+    }
+
+    public void scheduleReceiptRetry(
+            String receiptStatus,
+            String receiptError,
+            int maxReceiptAttempts,
+            LocalDateTime nextReceiptAvailableAt,
+            LocalDateTime now
+    ) {
+        this.receiptStatus = receiptStatus;
+        this.receiptError = receiptError;
+        this.receiptAttempts += 1;
+        this.receiptCheckedAt = now;
+        this.updatedAt = now;
+        if (receiptAttempts < maxReceiptAttempts) {
+            this.status = PushMessageStatus.RECEIPT_PENDING;
+            this.receiptAvailableAt = nextReceiptAvailableAt;
+            return;
+        }
+        this.status = PushMessageStatus.FAILED;
+        this.receiptAvailableAt = null;
+    }
+
+    public void recordReceiptExpired(LocalDateTime now) {
+        this.receiptStatus = "expired";
+        this.receiptError = "receipt_expired";
+        this.receiptCheckedAt = now;
+        this.receiptAvailableAt = null;
+        this.updatedAt = now;
+        this.status = PushMessageStatus.FAILED;
+    }
+
+    public void recordRetryableTicketError(
+            String ticketStatus,
+            String ticketError,
+            int maxSendAttempts,
+            LocalDateTime nextRetryAt,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = ticketStatus;
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.sendAttempts += 1;
+        this.sentAt = now;
+        this.updatedAt = now;
+        if (sendAttempts < maxSendAttempts) {
+            this.status = PushMessageStatus.QUEUED;
+            this.nextRetryAt = nextRetryAt;
+            this.receiptAvailableAt = null;
+            return;
+        }
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
     }
 
     public void recordClientError(
@@ -139,5 +225,66 @@ public class PushMessage {
         this.sendAttempts += 1;
         this.updatedAt = now;
         this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
+    }
+
+    public void recordClientError(
+            boolean retryable,
+            String ticketError,
+            int maxSendAttempts,
+            LocalDateTime nextRetryAt,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = "client_error";
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.sendAttempts += 1;
+        this.updatedAt = now;
+        if (retryable && sendAttempts < maxSendAttempts) {
+            this.status = PushMessageStatus.QUEUED;
+            this.nextRetryAt = nextRetryAt;
+            this.receiptAvailableAt = null;
+            return;
+        }
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
+    }
+
+    public void recordSkipped(
+            String ticketStatus,
+            String ticketError,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = ticketStatus;
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
+        this.updatedAt = now;
+    }
+
+    public void recoverInterruptedSendingWithoutTicket(
+            String ticketError,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = "worker_interrupted";
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.receiptAvailableAt = null;
+        this.updatedAt = now;
+    }
+
+    public void recoverInterruptedSendingWithTicket(LocalDateTime now) {
+        this.status = PushMessageStatus.RECEIPT_PENDING;
+        this.nextRetryAt = null;
+        if (this.receiptAvailableAt == null) {
+            this.receiptAvailableAt = now;
+        }
+        this.updatedAt = now;
     }
 }

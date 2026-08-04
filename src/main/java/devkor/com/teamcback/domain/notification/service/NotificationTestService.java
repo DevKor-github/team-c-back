@@ -1,10 +1,5 @@
 package devkor.com.teamcback.domain.notification.service;
 
-import devkor.com.teamcback.domain.notification.client.ExpoPushClient;
-import devkor.com.teamcback.domain.notification.client.ExpoPushClientException;
-import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushRequest;
-import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushResponse;
-import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushTicket;
 import devkor.com.teamcback.domain.notification.dto.request.NotificationTestReq;
 import devkor.com.teamcback.domain.notification.dto.response.NotificationTestRes;
 import devkor.com.teamcback.domain.notification.entity.PushDispatch;
@@ -30,8 +25,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import static devkor.com.teamcback.global.response.ResultCode.EXPO_PUSH_NON_RETRYABLE_ERROR;
-import static devkor.com.teamcback.global.response.ResultCode.EXPO_PUSH_RETRYABLE_ERROR;
-import static devkor.com.teamcback.global.response.ResultCode.EXPO_PUSH_TICKET_ERROR;
 import static devkor.com.teamcback.global.response.ResultCode.FORBIDDEN_PUSH_INSTALLATION;
 import static devkor.com.teamcback.global.response.ResultCode.INACTIVE_PUSH_INSTALLATION;
 import static devkor.com.teamcback.global.response.ResultCode.INVALID_INPUT;
@@ -46,16 +39,11 @@ public class NotificationTestService {
     private static final int SCHEMA_VERSION = 1;
     private static final String TEST_TITLE = "고대로 테스트 알림";
     private static final String TEST_BODY = "푸시 알림 연결이 정상적으로 동작합니다.";
-    private static final String DEFAULT_SOUND = "default";
-    private static final String TICKET_STATUS_OK = "ok";
-    private static final String CLIENT_ERROR_STATUS = "client_error";
-    private static final String RETRYABLE_ERROR = "retryable";
 
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchRepository pushDispatchRepository;
     private final PushMessageRepository pushMessageRepository;
     private final PushPayloadFactory pushPayloadFactory;
-    private final ExpoPushClient expoPushClient;
     private final Clock clock;
 
     public NotificationTestRes sendTest(
@@ -72,26 +60,22 @@ public class NotificationTestService {
 
         return pushDispatchRepository.findByIdempotencyKey(idempotencyKey)
                 .map(dispatch -> responseFromExistingDispatch(dispatch, installation))
-                .orElseGet(() -> createAndSend(
+                .orElseGet(() -> enqueue(
                         userId,
                         idempotencyKey,
                         installation
                 ));
     }
 
-    private NotificationTestRes createAndSend(
+    private NotificationTestRes enqueue(
             Long userId,
             String idempotencyKey,
             PushInstallation installation
     ) {
-        String notificationId = UUID.randomUUID().toString();
         LocalDateTime now = LocalDateTime.now(clock);
 
-        PushDispatch dispatch;
-        PushMessage message;
-
         try {
-            dispatch = pushDispatchRepository.saveAndFlush(new PushDispatch(
+            PushDispatch dispatch = pushDispatchRepository.saveAndFlush(new PushDispatch(
                     NotificationType.GENERAL,
                     PushMode.TEST,
                     installation.getAppVariant(),
@@ -100,13 +84,13 @@ public class NotificationTestService {
                     TEST_TITLE,
                     TEST_BODY,
                     PushActionType.TEST,
-                    notificationId,
+                    pushPayloadFactory.serializeActionParams(Collections.emptyMap()),
                     idempotencyKey,
                     userId,
                     now
             ));
 
-            message = pushMessageRepository.saveAndFlush(new PushMessage(
+            PushMessage message = pushMessageRepository.saveAndFlush(new PushMessage(
                     dispatch,
                     installation,
                     now
@@ -114,58 +98,12 @@ public class NotificationTestService {
 
             dispatch.updateRecipientCount(1);
             pushDispatchRepository.save(dispatch);
+
+            return response(dispatch, message);
         } catch (DataIntegrityViolationException e) {
             return pushDispatchRepository.findByIdempotencyKey(idempotencyKey)
                     .map(dispatchFromRace -> responseFromExistingDispatch(dispatchFromRace, installation))
                     .orElseThrow(() -> new GlobalException(EXPO_PUSH_NON_RETRYABLE_ERROR));
-        }
-
-        try {
-            ExpoPushResponse response = expoPushClient.send(List.of(new ExpoPushRequest(
-                    installation.getExpoPushToken(),
-                    TEST_TITLE,
-                    TEST_BODY,
-                    DEFAULT_SOUND,
-                    pushPayloadFactory.create(
-                            notificationId,
-                            TEST_TITLE,
-                            TEST_BODY,
-                            PushMode.TEST,
-                            installation.getAppVariant(),
-                            PushActionType.TEST,
-                            Collections.emptyMap()
-                    ).data()
-            )));
-
-            ExpoPushTicket ticket = response.data().get(0);
-            message.recordTicket(
-                    ticket.status(),
-                    ticket.id(),
-                    ticket.details() == null ? null : ticket.details().error(),
-                    LocalDateTime.now(clock)
-            );
-            pushMessageRepository.save(message);
-
-            if (!TICKET_STATUS_OK.equals(ticket.status())) {
-                throw new GlobalException(EXPO_PUSH_TICKET_ERROR);
-            }
-
-            return new NotificationTestRes(
-                    notificationId,
-                    installation.getInstallationId(),
-                    installation.getAppVariant(),
-                    ticket.status(),
-                    ticket.id()
-            );
-        } catch (ExpoPushClientException e) {
-            message.recordClientError(
-                    e.isRetryable(),
-                    LocalDateTime.now(clock)
-            );
-            pushMessageRepository.save(message);
-            throw new GlobalException(e.isRetryable()
-                    ? EXPO_PUSH_RETRYABLE_ERROR
-                    : EXPO_PUSH_NON_RETRYABLE_ERROR);
         }
     }
 
@@ -185,25 +123,18 @@ public class NotificationTestService {
             throw new GlobalException(INVALID_INPUT);
         }
 
-        if (message.getTicketStatus() == null) {
-            throw new GlobalException(EXPO_PUSH_RETRYABLE_ERROR);
-        }
+        return response(dispatch, message);
+    }
 
-        if (CLIENT_ERROR_STATUS.equals(message.getTicketStatus())) {
-            throw new GlobalException(RETRYABLE_ERROR.equals(message.getTicketError())
-                    ? EXPO_PUSH_RETRYABLE_ERROR
-                    : EXPO_PUSH_NON_RETRYABLE_ERROR);
-        }
-
-        if (!TICKET_STATUS_OK.equals(message.getTicketStatus())) {
-            throw new GlobalException(EXPO_PUSH_TICKET_ERROR);
-        }
-
+    private NotificationTestRes response(
+            PushDispatch dispatch,
+            PushMessage message
+    ) {
         return new NotificationTestRes(
-                dispatch.getActionParams(),
+                String.valueOf(message.getPushMessageId()),
                 message.getInstallationId(),
                 dispatch.getAppVariant(),
-                message.getTicketStatus(),
+                message.getStatus(),
                 message.getExpoTicketId()
         );
     }

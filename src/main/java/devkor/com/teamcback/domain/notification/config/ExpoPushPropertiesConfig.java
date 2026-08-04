@@ -4,6 +4,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(ExpoPushProperties.class)
+@EnableConfigurationProperties({
+        ExpoPushProperties.class,
+        PushWorkerProperties.class,
+        PushReceiptWorkerProperties.class,
+        PushRecoveryWorkerProperties.class
+})
 public class ExpoPushPropertiesConfig {
 }

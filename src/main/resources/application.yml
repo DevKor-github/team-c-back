@@ -172,6 +172,6 @@ push:
     max-receipt-attempts: ${PUSH_RECEIPT_WORKER_MAX_RECEIPT_ATTEMPTS:3}
   recovery-worker:
     enabled: ${PUSH_RECOVERY_WORKER_ENABLED:false}
-    cron: ${PUSH_RECOVERY_WORKER_CRON:0 0 4 * * *}
+    cron: "${PUSH_RECOVERY_WORKER_CRON:0 0 4 * * *}"
     stale-threshold-minutes: ${PUSH_RECOVERY_STALE_THRESHOLD_MINUTES:30}
     batch-size: ${PUSH_RECOVERY_BATCH_SIZE:100}

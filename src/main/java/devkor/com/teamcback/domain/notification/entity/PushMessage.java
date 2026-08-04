@@ -128,6 +128,34 @@ public class PushMessage {
         this.status = "ok".equals(ticketStatus)
                 ? PushMessageStatus.RECEIPT_PENDING
                 : PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+    }
+
+    public void markSending(LocalDateTime now) {
+        this.status = PushMessageStatus.SENDING;
+        this.updatedAt = now;
+    }
+
+    public void recordRetryableTicketError(
+            String ticketStatus,
+            String ticketError,
+            int maxSendAttempts,
+            LocalDateTime nextRetryAt,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = ticketStatus;
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.sendAttempts += 1;
+        this.sentAt = now;
+        this.updatedAt = now;
+        if (sendAttempts < maxSendAttempts) {
+            this.status = PushMessageStatus.QUEUED;
+            this.nextRetryAt = nextRetryAt;
+            return;
+        }
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
     }
 
     public void recordClientError(
@@ -139,5 +167,40 @@ public class PushMessage {
         this.sendAttempts += 1;
         this.updatedAt = now;
         this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+    }
+
+    public void recordClientError(
+            boolean retryable,
+            String ticketError,
+            int maxSendAttempts,
+            LocalDateTime nextRetryAt,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = "client_error";
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.sendAttempts += 1;
+        this.updatedAt = now;
+        if (retryable && sendAttempts < maxSendAttempts) {
+            this.status = PushMessageStatus.QUEUED;
+            this.nextRetryAt = nextRetryAt;
+            return;
+        }
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+    }
+
+    public void recordSkipped(
+            String ticketStatus,
+            String ticketError,
+            LocalDateTime now
+    ) {
+        this.ticketStatus = ticketStatus;
+        this.expoTicketId = null;
+        this.ticketError = ticketError;
+        this.status = PushMessageStatus.FAILED;
+        this.nextRetryAt = null;
+        this.updatedAt = now;
     }
 }

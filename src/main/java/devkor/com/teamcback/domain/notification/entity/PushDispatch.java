@@ -125,4 +125,32 @@ public class PushDispatch {
     public void updateRecipientCount(int recipientCount) {
         this.recipientCount = recipientCount;
     }
+
+    public void updateStatusFromMessageSummary(
+            long queuedCount,
+            long sendingCount,
+            long successCount,
+            long failedCount,
+            LocalDateTime now
+    ) {
+        if (queuedCount > 0 || sendingCount > 0) {
+            this.status = PushDispatchStatus.PROCESSING;
+            return;
+        }
+
+        if (failedCount == 0 && successCount == recipientCount) {
+            this.status = PushDispatchStatus.COMPLETED;
+            this.completedAt = now;
+            return;
+        }
+
+        if (failedCount == recipientCount) {
+            this.status = PushDispatchStatus.FAILED;
+            this.completedAt = now;
+            return;
+        }
+
+        this.status = PushDispatchStatus.PARTIAL_FAILED;
+        this.completedAt = now;
+    }
 }

@@ -13,7 +13,7 @@ public class PushMessageRecoveryScheduler {
 
     private final PushMessageRecoveryWorker pushMessageRecoveryWorker;
 
-    @Scheduled(cron = "${push.recovery-worker.cron:0 0 4 * * *}")
+    @Scheduled(cron = "${push.recovery-worker.cron}")
     public void recoverStaleSendingMessages() {
         pushMessageRecoveryWorker.recoverStaleSendingMessages();
     }

@@ -68,7 +68,7 @@ class CharacterUnlockedPushEventListenerTest {
 
         ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
         verify(pushDispatchService).enqueue(captor.capture());
-        assertThat(captor.getValue().body()).isEqualTo("새 캐릭터를 만나러 가볼까요?");
+        assertThat(captor.getValue().body()).isEqualTo("새로운 캐릭터을 만나러 가볼까요?");
     }
 
     @Test

@@ -11,6 +11,8 @@ import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
+import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import java.util.LinkedHashSet;
@@ -31,7 +33,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class CrowdVacantPushEventListener {
 
     private static final Long SYSTEM_CREATED_BY = 0L;
-    private static final String TITLE = "기다리던 자리가 생겼어요!";
 
     private final PlaceRepository placeRepository;
     private final CategoryRepository categoryRepository;
@@ -66,9 +67,12 @@ public class CrowdVacantPushEventListener {
                 return;
             }
 
-            String body = locationName(place) + "이 한산해요. 방문하기 전 현황을 확인해보세요.";
+            PushContent content = DomainPushContentFactory.placeBecameVacant(
+                    place.getBuilding() == null ? null : place.getBuilding().getName(),
+                    place.getName()
+            );
             for (Long userId : userIds) {
-                enqueueIfPushTargetExists(event, userId, body);
+                enqueueIfPushTargetExists(event, userId, content);
             }
         } catch (Exception e) {
             log.warn(
@@ -83,7 +87,7 @@ public class CrowdVacantPushEventListener {
     private void enqueueIfPushTargetExists(
             PlaceBecameVacantEvent event,
             Long userId,
-            String body
+            PushContent content
     ) {
         if (userId == null
                 || !pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(userId, AppVariant.PRODUCTION)) {
@@ -96,42 +100,12 @@ public class CrowdVacantPushEventListener {
                 AppVariant.PRODUCTION,
                 PushTargetType.USER,
                 String.valueOf(userId),
-                TITLE,
-                body,
+                content.title(),
+                content.body(),
                 PushActionType.PLACE_DETAIL,
                 Map.of("placeId", event.placeId()),
                 "crowd-vacant:%d:%d:%d".formatted(event.placeId(), userId, event.bleDataId()),
                 SYSTEM_CREATED_BY
         ));
-    }
-
-    private String locationName(Place place) {
-        String buildingName = place.getBuilding() == null ? null : place.getBuilding().getName();
-        String placeName = place.getName();
-        String joined = joinNonBlank(buildingName, placeName);
-        return joined.isBlank() ? "즐겨찾기한 공간" : joined;
-    }
-
-    private String joinNonBlank(
-            String first,
-            String second
-    ) {
-        StringBuilder builder = new StringBuilder();
-        appendIfPresent(builder, first);
-        appendIfPresent(builder, second);
-        return builder.toString();
-    }
-
-    private void appendIfPresent(
-            StringBuilder builder,
-            String value
-    ) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        if (!builder.isEmpty()) {
-            builder.append(" ");
-        }
-        builder.append(value.trim());
     }
 }

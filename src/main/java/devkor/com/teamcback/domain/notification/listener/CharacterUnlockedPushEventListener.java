@@ -9,6 +9,8 @@ import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
+import devkor.com.teamcback.domain.notification.template.PushContent;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,14 +49,15 @@ public class CharacterUnlockedPushEventListener {
                 return;
             }
 
+            PushContent content = DomainPushContentFactory.characterUnlocked(event.characterName());
             pushDispatchService.enqueue(new PushDispatchCommand(
                     NotificationType.GENERAL,
                     PushMode.ACTUAL,
                     AppVariant.PRODUCTION,
                     PushTargetType.USER,
                     String.valueOf(event.userId()),
-                    "새 캐릭터가 기다리고 있어요!",
-                    characterBody(event.characterName()),
+                    content.title(),
+                    content.body(),
                     PushActionType.CHARACTER_STORE,
                     Map.of(),
                     "character-unlock:%d:%d:%d".formatted(
@@ -73,12 +76,5 @@ public class CharacterUnlockedPushEventListener {
                     e.getMessage()
             );
         }
-    }
-
-    private String characterBody(String characterName) {
-        if (characterName == null || characterName.isBlank()) {
-            return "새 캐릭터를 만나러 가볼까요?";
-        }
-        return characterName.trim() + "을 만나러 가볼까요?";
     }
 }

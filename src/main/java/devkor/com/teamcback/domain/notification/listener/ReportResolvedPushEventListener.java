@@ -8,6 +8,8 @@ import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
+import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -47,14 +49,15 @@ public class ReportResolvedPushEventListener {
                 return;
             }
 
+            PushContent content = DomainPushContentFactory.reportResolved();
             pushDispatchService.enqueue(new PushDispatchCommand(
                     NotificationType.GENERAL,
                     PushMode.ACTUAL,
                     AppVariant.PRODUCTION,
                     PushTargetType.USER,
                     String.valueOf(event.reporterUserId()),
-                    "신고 처리 결과를 확인해주세요.",
-                    "접수한 신고의 처리가 완료되었습니다. 고대로에서 결과를 확인해주세요.",
+                    content.title(),
+                    content.body(),
                     PushActionType.HOME,
                     Map.of(),
                     "report-result:%d:%s:%d".formatted(

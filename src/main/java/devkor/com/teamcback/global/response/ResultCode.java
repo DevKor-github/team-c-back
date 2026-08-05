@@ -111,7 +111,17 @@ public enum ResultCode {
     UNSUPPORTED_PUSH_INSTALLATION_VARIANT(HttpStatus.BAD_REQUEST, 17003, "Push installation variant is not supported for test push."),
     EXPO_PUSH_RETRYABLE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, 17004, "Expo push request failed with retryable error."),
     EXPO_PUSH_NON_RETRYABLE_ERROR(HttpStatus.BAD_GATEWAY, 17005, "Expo push request failed with non-retryable error."),
-    EXPO_PUSH_TICKET_ERROR(HttpStatus.BAD_GATEWAY, 17006, "Expo push ticket returned error status.");
+    EXPO_PUSH_TICKET_ERROR(HttpStatus.BAD_GATEWAY, 17006, "Expo push ticket returned error status."),
+  
+    // 캐릭터 18000번대
+    NOT_FOUND_CHARACTER(HttpStatus.NOT_FOUND, 18000, "캐릭터를 찾을 수 없습니다."),
+    ALREADY_OWNED_CHARACTER(HttpStatus.CONFLICT, 18001, "이미 보유한 캐릭터입니다."),
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, 18002, "포인트가 부족합니다."),
+    NOT_OWNED_CHARACTER(HttpStatus.BAD_REQUEST, 18003, "보유하지 않은 캐릭터입니다."),
+    CHARACTER_IN_USE(HttpStatus.CONFLICT, 18004, "사용자가 보유 중인 캐릭터는 삭제할 수 없습니다."),
+    INACTIVE_CHARACTER(HttpStatus.BAD_REQUEST, 18005, "비활성화된 캐릭터입니다."),
+    INSUFFICIENT_LEVEL(HttpStatus.BAD_REQUEST, 18006, "레벨이 부족합니다.");
+
 
     private final HttpStatus status;
     private final int code;

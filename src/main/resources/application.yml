@@ -119,6 +119,10 @@ profile:
     lv4-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv4.jpg
     lv5-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv5.jpg
 
+character:
+  image: # 캐릭터 이미지 (피그마 확정 이미지를 이 경로 규칙대로 S3에 업로드: {base-url}/{NN_slug}.png)
+    base-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/character
+
 place:
   default-image:
     cafe: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFE.jpg

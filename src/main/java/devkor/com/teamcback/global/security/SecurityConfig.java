@@ -93,6 +93,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // 리뷰는 로그인 필요
                         .requestMatchers("/api/reports/status").authenticated() // 신고 상태 확인은 로그인 필요
                         .requestMatchers("/api/notifications/installations/**").authenticated() // 토큰 등록 로그인 필요
+                        .requestMatchers("/api/store/**").authenticated() // 캐릭터 스토어는 로그인 필요
                         .requestMatchers(HttpMethod.POST, "/api/notifications/test").authenticated()
                         .anyRequest().permitAll()
         ).exceptionHandling(ex -> ex

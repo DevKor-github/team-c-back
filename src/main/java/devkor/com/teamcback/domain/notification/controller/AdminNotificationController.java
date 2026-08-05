@@ -13,6 +13,8 @@ import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.CommonResponse;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import java.util.List;
+
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,6 +39,14 @@ public class AdminNotificationController {
 
     private final AdminNotificationService adminNotificationService;
 
+    @Operation(
+            summary = "푸시 대상 installation 검색",
+            description = """
+                userId 또는 installationId를 기준으로
+                푸시 발송 대상 기기를 조회합니다.
+                ExpoPushToken 원문은 응답하지 않습니다.
+                """
+    )
     @GetMapping("/installations/search")
     public CommonResponse<List<AdminPushInstallationRes>> searchInstallations(
             @RequestParam(required = false) Long userId,
@@ -45,6 +55,14 @@ public class AdminNotificationController {
         return CommonResponse.success(adminNotificationService.searchInstallations(userId, installationId));
     }
 
+    @Operation(
+            summary = "관리자 푸시 발송 미리보기",
+            description = """
+                푸시를 실제로 생성하지 않고
+                대상 기기 수와 최종 payload를 확인합니다.
+                PushDispatch와 PushMessage는 저장하지 않습니다.
+                """
+    )
     @PostMapping("/dispatches/preview")
     public CommonResponse<AdminPushDispatchPreviewRes> preview(
             @RequestBody AdminPushDispatchReq request
@@ -52,6 +70,15 @@ public class AdminNotificationController {
         return CommonResponse.success(adminNotificationService.preview(request));
     }
 
+
+    @Operation(
+            summary = "관리자 푸시 수동 발송",
+            description = """
+                관리자가 입력한 내용으로
+                PushDispatch와 PushMessage를 생성합니다.
+                실제 Expo 전송은 기존 비동기 worker가 처리합니다.
+                """
+    )
     @PostMapping("/dispatches")
     public CommonResponse<PushDispatchEnqueueRes> enqueue(
             @AuthenticationPrincipal UserDetailsImpl userDetail,
@@ -69,6 +96,14 @@ public class AdminNotificationController {
         ));
     }
 
+    @Operation(
+            summary = "관리자 푸시 발송 이력 조회",
+            description = """
+                관리자 푸시 발송 내역을 최신순으로 조회합니다.
+                appVariant와 발송 상태로 필터링할 수 있습니다.
+                """
+    )
+
     @GetMapping("/dispatches")
     public CommonResponse<Page<AdminPushDispatchSummaryRes>> getDispatches(
             @RequestParam(defaultValue = DEFAULT_PAGE) int page,
@@ -84,6 +119,14 @@ public class AdminNotificationController {
         ));
     }
 
+    @Operation(
+            summary = "관리자 푸시 발송 상세 조회",
+            description = """
+                발송 기본 정보와 전체 대상 수,
+                메시지 상태별 처리 건수를 조회합니다.
+                ExpoPushToken과 개별 메시지 전체 목록은 반환하지 않습니다.
+                """
+    )
     @GetMapping("/dispatches/{dispatchId}")
     public CommonResponse<AdminPushDispatchDetailRes> getDispatch(
             @PathVariable Long dispatchId

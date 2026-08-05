@@ -147,6 +147,7 @@ class StoreServiceTest {
             () -> storeService.purchaseCharacter(USER_ID, CHARACTER_ID));
         assertEquals(ResultCode.ALREADY_OWNED_CHARACTER, e.getResultCode());
         verify(userRepository, never()).deductPoint(any(), org.mockito.ArgumentMatchers.anyInt());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @DisplayName("비활성 캐릭터는 구매 불가")

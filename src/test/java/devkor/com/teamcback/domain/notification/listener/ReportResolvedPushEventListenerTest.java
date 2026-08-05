@@ -3,9 +3,11 @@ package devkor.com.teamcback.domain.notification.listener;
 import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.report.entity.ReportStatus;
 import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
@@ -30,19 +31,23 @@ class ReportResolvedPushEventListenerTest {
     @Mock
     private PushDispatchService pushDispatchService;
 
+    @Mock
+    private PushEventFlagService pushEventFlagService;
+
     private ReportResolvedPushEventListener listener;
 
     @BeforeEach
     void setUp() {
         listener = new ReportResolvedPushEventListener(
                 pushInstallationRepository,
-                pushDispatchService
+                pushDispatchService,
+                pushEventFlagService
         );
     }
 
     @Test
     void createsReporterDispatch() {
-        ReflectionTestUtils.setField(listener, "reportEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.REPORT)).thenReturn(true);
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
                 .thenReturn(true);
 
@@ -63,7 +68,7 @@ class ReportResolvedPushEventListenerTest {
 
     @Test
     void doesNotCreateDispatchWhenFeatureFlagIsFalse() {
-        ReflectionTestUtils.setField(listener, "reportEnabled", false);
+        when(pushEventFlagService.isEnabled(PushEventType.REPORT)).thenReturn(false);
 
         listener.handle(new ReportResolvedEvent(3L, 7L, ReportStatus.REJECTED));
 
@@ -72,9 +77,20 @@ class ReportResolvedPushEventListenerTest {
 
     @Test
     void doesNotCreateDispatchWhenReporterIsUnknown() {
-        ReflectionTestUtils.setField(listener, "reportEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.REPORT)).thenReturn(true);
 
         listener.handle(new ReportResolvedEvent(3L, null, ReportStatus.REJECTED));
+
+        verify(pushDispatchService, never()).enqueue(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void doesNotCreateDispatchWhenReporterHasNoProductionInstallation() {
+        when(pushEventFlagService.isEnabled(PushEventType.REPORT)).thenReturn(true);
+        when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
+                .thenReturn(false);
+
+        listener.handle(new ReportResolvedEvent(3L, 7L, ReportStatus.REJECTED));
 
         verify(pushDispatchService, never()).enqueue(org.mockito.ArgumentMatchers.any());
     }

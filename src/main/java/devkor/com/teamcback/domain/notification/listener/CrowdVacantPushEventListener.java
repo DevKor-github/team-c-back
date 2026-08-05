@@ -7,9 +7,11 @@ import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.NotificationType;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
 import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
 import devkor.com.teamcback.domain.notification.template.PushContent;
@@ -20,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +39,12 @@ public class CrowdVacantPushEventListener {
     private final CategoryRepository categoryRepository;
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchService pushDispatchService;
-
-    @Value("${push.event.crowd-enabled:false}")
-    private boolean crowdEnabled;
+    private final PushEventFlagService pushEventFlagService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(PlaceBecameVacantEvent event) {
-        if (!crowdEnabled) {
+        if (!pushEventFlagService.isEnabled(PushEventType.CROWD)) {
             return;
         }
 

@@ -189,6 +189,7 @@ class AdminStoreServiceTest {
         GlobalException e = assertThrows(GlobalException.class,
             () -> adminStoreService.grantCharacter(1L, 2L));
         assertEquals(ResultCode.ALREADY_OWNED_CHARACTER, e.getResultCode());
+        verify(eventPublisher, never()).publishEvent(any());
 
         when(userCharacterRepository.existsByUserAndCharacter(user, character)).thenReturn(false);
         when(userCharacterRepository.saveAndFlush(any(UserCharacter.class))).thenAnswer(invocation -> {

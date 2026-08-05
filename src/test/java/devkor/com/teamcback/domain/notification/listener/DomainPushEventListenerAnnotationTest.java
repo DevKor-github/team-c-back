@@ -4,6 +4,8 @@ import devkor.com.teamcback.domain.ble.event.PlaceBecameVacantEvent;
 import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -25,8 +27,13 @@ class DomainPushEventListenerAnnotationTest {
         TransactionalEventListener annotation = listenerClass
                 .getDeclaredMethod("handle", eventClass)
                 .getAnnotation(TransactionalEventListener.class);
+        Transactional transactional = listenerClass
+                .getDeclaredMethod("handle", eventClass)
+                .getAnnotation(Transactional.class);
 
         assertThat(annotation).isNotNull();
         assertThat(annotation.phase()).isEqualTo(TransactionPhase.AFTER_COMMIT);
+        assertThat(transactional).isNotNull();
+        assertThat(transactional.propagation()).isEqualTo(Propagation.REQUIRES_NEW);
     }
 }

@@ -4,17 +4,18 @@ import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.NotificationType;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
 import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,14 +31,12 @@ public class ReportResolvedPushEventListener {
 
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchService pushDispatchService;
-
-    @Value("${push.event.report-enabled:false}")
-    private boolean reportEnabled;
+    private final PushEventFlagService pushEventFlagService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(ReportResolvedEvent event) {
-        if (!reportEnabled || event.reporterUserId() == null) {
+        if (!pushEventFlagService.isEnabled(PushEventType.REPORT) || event.reporterUserId() == null) {
             return;
         }
 

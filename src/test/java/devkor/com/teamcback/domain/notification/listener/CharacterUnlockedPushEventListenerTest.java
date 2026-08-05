@@ -4,16 +4,17 @@ import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
@@ -29,19 +30,23 @@ class CharacterUnlockedPushEventListenerTest {
     @Mock
     private PushDispatchService pushDispatchService;
 
+    @Mock
+    private PushEventFlagService pushEventFlagService;
+
     private CharacterUnlockedPushEventListener listener;
 
     @BeforeEach
     void setUp() {
         listener = new CharacterUnlockedPushEventListener(
                 pushInstallationRepository,
-                pushDispatchService
+                pushDispatchService,
+                pushEventFlagService
         );
     }
 
     @Test
     void createsCharacterStoreDispatch() {
-        ReflectionTestUtils.setField(listener, "characterEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
                 .thenReturn(true);
 
@@ -60,7 +65,7 @@ class CharacterUnlockedPushEventListenerTest {
 
     @Test
     void usesSafeBodyWhenCharacterNameIsBlank() {
-        ReflectionTestUtils.setField(listener, "characterEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
                 .thenReturn(true);
 
@@ -73,7 +78,18 @@ class CharacterUnlockedPushEventListenerTest {
 
     @Test
     void doesNotCreateDispatchWhenFeatureFlagIsFalse() {
-        ReflectionTestUtils.setField(listener, "characterEnabled", false);
+        when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(false);
+
+        listener.handle(new CharacterUnlockedEvent(7L, 4L, 44L, "아기 호랑이"));
+
+        verify(pushDispatchService, never()).enqueue(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void doesNotCreateDispatchWhenUserHasNoProductionInstallation() {
+        when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
+        when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
+                .thenReturn(false);
 
         listener.handle(new CharacterUnlockedEvent(7L, 4L, 44L, "아기 호랑이"));
 

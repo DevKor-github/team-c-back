@@ -7,10 +7,12 @@ import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushActionType;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushMode;
 import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import java.time.LocalDateTime;
@@ -45,6 +47,9 @@ class CrowdVacantPushEventListenerTest {
     @Mock
     private PushDispatchService pushDispatchService;
 
+    @Mock
+    private PushEventFlagService pushEventFlagService;
+
     private CrowdVacantPushEventListener listener;
 
     @BeforeEach
@@ -53,13 +58,14 @@ class CrowdVacantPushEventListenerTest {
                 placeRepository,
                 categoryRepository,
                 pushInstallationRepository,
-                pushDispatchService
+                pushDispatchService,
+                pushEventFlagService
         );
     }
 
     @Test
     void createsUserDispatchesForDistinctFavoriteUsers() {
-        ReflectionTestUtils.setField(listener, "crowdEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.CROWD)).thenReturn(true);
         when(placeRepository.findById(10L)).thenReturn(Optional.of(place("신공학관", "라운지")));
         when(categoryRepository.findDistinctUserIdsByLocationTypeAndLocationId(LocationType.PLACE, 10L))
                 .thenReturn(List.of(1L, 1L, 2L));
@@ -88,7 +94,7 @@ class CrowdVacantPushEventListenerTest {
 
     @Test
     void doesNotCreateDispatchWhenNoFavoriteUsersExist() {
-        ReflectionTestUtils.setField(listener, "crowdEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.CROWD)).thenReturn(true);
         when(placeRepository.findById(10L)).thenReturn(Optional.of(place("신공학관", "라운지")));
         when(categoryRepository.findDistinctUserIdsByLocationTypeAndLocationId(LocationType.PLACE, 10L))
                 .thenReturn(List.of());
@@ -100,7 +106,7 @@ class CrowdVacantPushEventListenerTest {
 
     @Test
     void doesNotCreateDispatchWhenFeatureFlagIsFalse() {
-        ReflectionTestUtils.setField(listener, "crowdEnabled", false);
+        when(pushEventFlagService.isEnabled(PushEventType.CROWD)).thenReturn(false);
 
         listener.handle(event());
 
@@ -110,7 +116,7 @@ class CrowdVacantPushEventListenerTest {
 
     @Test
     void skipsUsersWithoutProductionInstallation() {
-        ReflectionTestUtils.setField(listener, "crowdEnabled", true);
+        when(pushEventFlagService.isEnabled(PushEventType.CROWD)).thenReturn(true);
         when(placeRepository.findById(10L)).thenReturn(Optional.of(place(null, "라운지")));
         when(categoryRepository.findDistinctUserIdsByLocationTypeAndLocationId(LocationType.PLACE, 10L))
                 .thenReturn(List.of(1L));

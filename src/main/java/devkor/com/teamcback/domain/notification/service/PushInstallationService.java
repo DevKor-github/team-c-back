@@ -1,6 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
-import devkor.com.teamcback.domain.notification.entity.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import lombok.RequiredArgsConstructor;

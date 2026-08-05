@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.notification.entity;
 
 import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

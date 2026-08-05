@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
 
@@ -47,7 +48,7 @@ public class BLEService {
     public UpdateBLERes updateBLE(UpdateBLEReq updateBLEReq) {
         BLEDevice bleDevice = bledeviceRepository.findByDeviceName(updateBLEReq.getDeviceName());
         int capacity = bleDevice.getCapacity();
-        int people = getBlEPeople(updateBLEReq.getLastCount(), bleDevice);
+        int people = getBLEPeople(updateBLEReq.getLastCount(), bleDevice);
         double final_ratio = (double) people / capacity;
         BLEstatus status;
         if (final_ratio < 0.3) status = BLEstatus.VACANT;
@@ -64,15 +65,15 @@ public class BLEService {
         return new UpdateBLERes(bleData);
     }
 
-    private int getBlEPeople(int lastCount, BLEDevice bleDevice) {
+    private int getBLEPeople(int lastCount, BLEDevice bleDevice) {
         if (bleDevice == null) throw new GlobalException(ResultCode.NOT_FOUND_DEVICE_NAME);
         double ratio = bleDevice.getRatio();
         double defaultCount = bleDevice.getDefaultCount();
-        return calculate_people(lastCount, ratio, defaultCount);
+        return calculatePeople(lastCount, ratio, defaultCount);
     }
 
     //count, ratio, defaultcount로 예측 인원 계산(int)
-    private int calculate_people(int count, double ratio, double defaultCount) {
+    private int calculatePeople(int count, double ratio, double defaultCount) {
         int people = (int) Math.round(count * ratio + defaultCount);
         if (people < 0) people = 0;
         return people;
@@ -91,7 +92,7 @@ public class BLEService {
         }
         else status = latest.getLastStatus();
 
-        int people = getBlEPeople(latest.getLastCount(), device);
+        int people = getBLEPeople(latest.getLastCount(), device);
         // 사람 수를 예측 후 10의 배수로 리턴: 이젠 필요 없음
         //people = (int) Math.round(people / 10.0) * 10;
         return new GetBLERes(device, latest, status, people);
@@ -147,7 +148,7 @@ public class BLEService {
                 continue;
             }
             // 합/개수 축적
-            sum[dayIndex][bestSlotIndex] += calculate_people(d.getLastCount(), ratio, defaultCount);
+            sum[dayIndex][bestSlotIndex] += calculatePeople(d.getLastCount(), ratio, defaultCount);
             count[dayIndex][bestSlotIndex] += 1;
         }
         // 평균 계산 (반올림 후 int)
@@ -183,7 +184,25 @@ public class BLEService {
                 imageUrl = device.getPlace().getImageUrl();
             }
 
-            BLEDeviceListRes dto = new BLEDeviceListRes(device.getId(), device.getDeviceName(), placeId, device.getCapacity(), imageUrl);
+            Integer lastCount = null;
+            Integer lastStatus = null;
+            LocalDateTime lastTime = null;
+
+            Optional<BLEData> latestOpt = bleDataRepository.findTopByDeviceOrderByLastTimeDesc(device);
+            if (latestOpt.isPresent()) {
+                BLEData latest = latestOpt.get();
+                lastCount = getBLEPeople(latest.getLastCount(), device);
+                lastTime = latest.getLastTime();
+
+                if (lastTime == null || Duration.between(lastTime, LocalDateTime.now()).toMinutes() >= 30) {
+                    lastStatus = BLEstatus.FAILURE.getCode();
+                } else {
+                    lastStatus = latest.getLastStatus().getCode();
+                }
+            }
+
+            BLEDeviceListRes dto = new BLEDeviceListRes(device.getId(), device.getDeviceName(), placeId, device.getCapacity(), imageUrl,
+                    lastCount, lastStatus, lastTime);
 
             result.add(dto);
         }

@@ -19,6 +19,7 @@ public class PushActionValidator {
             PushActionType.HOME,
             PushActionType.NOTICE,
             PushActionType.MY_PAGE,
+            PushActionType.CHARACTER_STORE,
             PushActionType.TEST
     );
 

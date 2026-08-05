@@ -163,6 +163,10 @@ push:
     access-token: ${EXPO_ACCESS_TOKEN:}
     connect-timeout: 3s
     read-timeout: 10s
+  event:
+    crowd-enabled: ${PUSH_EVENT_CROWD_ENABLED:false}
+    report-enabled: ${PUSH_EVENT_REPORT_ENABLED:false}
+    character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}
   worker:
     enabled: ${PUSH_WORKER_ENABLED:false}
     fixed-delay-ms: ${PUSH_WORKER_FIXED_DELAY_MS:5000}

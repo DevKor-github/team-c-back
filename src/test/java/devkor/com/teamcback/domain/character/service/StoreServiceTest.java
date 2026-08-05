@@ -14,6 +14,7 @@ import devkor.com.teamcback.domain.character.dto.response.PurchaseCharacterRes;
 import devkor.com.teamcback.domain.character.entity.KoCharacter;
 import devkor.com.teamcback.domain.character.entity.PurchaseStatus;
 import devkor.com.teamcback.domain.character.entity.UserCharacter;
+import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.character.repository.CharacterRepository;
 import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
 import devkor.com.teamcback.domain.user.entity.Provider;
@@ -29,8 +30,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,6 +48,8 @@ class StoreServiceTest {
     UserCharacterRepository userCharacterRepository;
     @Mock
     UserRepository userRepository;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     static final Long USER_ID = 1L;
     static final Long CHARACTER_ID = 10L;
@@ -75,13 +80,23 @@ class StoreServiceTest {
         when(userCharacterRepository.existsByUserAndCharacter(user, character)).thenReturn(false);
         when(userRepository.deductPoint(USER_ID, 10)).thenReturn(1);
         when(userCharacterRepository.saveAndFlush(any(UserCharacter.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+            .thenAnswer(invocation -> {
+                UserCharacter userCharacter = invocation.getArgument(0);
+                ReflectionTestUtils.setField(userCharacter, "userCharacterId", 55L);
+                return userCharacter;
+            });
 
         PurchaseCharacterRes res = storeService.purchaseCharacter(USER_ID, CHARACTER_ID);
 
         assertEquals(CHARACTER_ID, res.getCharacterId());
         assertEquals(10, res.getPrice());
         verify(userRepository).deductPoint(USER_ID, 10);
+
+        ArgumentCaptor<CharacterUnlockedEvent> eventCaptor = ArgumentCaptor.forClass(CharacterUnlockedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals(USER_ID, eventCaptor.getValue().userId());
+        assertEquals(CHARACTER_ID, eventCaptor.getValue().characterId());
+        assertEquals(55L, eventCaptor.getValue().userCharacterId());
     }
 
     @DisplayName("해금 레벨 미달이면 포인트가 충분해도 구매 불가")
@@ -160,6 +175,7 @@ class StoreServiceTest {
         GlobalException e = assertThrows(GlobalException.class,
             () -> storeService.purchaseCharacter(USER_ID, CHARACTER_ID));
         assertEquals(ResultCode.ALREADY_OWNED_CHARACTER, e.getResultCode());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @DisplayName("미보유 캐릭터 장착 시 예외, 보유 캐릭터는 장착/해제 성공")

@@ -7,5 +7,6 @@ public enum PushActionType {
     BUS_STOP,
     BUILDING_DETAIL,
     PLACE_DETAIL,
+    CHARACTER_STORE,
     TEST
 }

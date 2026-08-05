@@ -12,6 +12,7 @@ import devkor.com.teamcback.domain.character.dto.request.CreateCharacterReq;
 import devkor.com.teamcback.domain.character.dto.response.CreateCharacterRes;
 import devkor.com.teamcback.domain.character.entity.KoCharacter;
 import devkor.com.teamcback.domain.character.entity.UserCharacter;
+import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.character.repository.CharacterRepository;
 import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
 import devkor.com.teamcback.domain.user.entity.Provider;
@@ -23,12 +24,14 @@ import devkor.com.teamcback.global.response.ResultCode;
 import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
 import java.util.Optional;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,6 +48,8 @@ class AdminStoreServiceTest {
     UserRepository userRepository;
     @Mock
     S3Util s3Util;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @DisplayName("캐릭터 생성 시 S3 업로드 후 URL과 가격 저장")
     @Test
@@ -174,7 +179,9 @@ class AdminStoreServiceTest {
     @Test
     void grantCharacter() {
         KoCharacter character = new KoCharacter("이벤트 캐릭터", null, null, "url", 100, 1, 1, true);
+        ReflectionTestUtils.setField(character, "characterId", 1L);
         User user = new User("tester", "tester@test.com", Role.USER, Provider.KAKAO);
+        ReflectionTestUtils.setField(user, "userId", 2L);
         when(characterRepository.findById(1L)).thenReturn(Optional.of(character));
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
         when(userCharacterRepository.existsByUserAndCharacter(user, character)).thenReturn(true);
@@ -184,7 +191,7 @@ class AdminStoreServiceTest {
         assertEquals(ResultCode.ALREADY_OWNED_CHARACTER, e.getResultCode());
 
         when(userCharacterRepository.existsByUserAndCharacter(user, character)).thenReturn(false);
-        when(userCharacterRepository.save(any(UserCharacter.class))).thenAnswer(invocation -> {
+        when(userCharacterRepository.saveAndFlush(any(UserCharacter.class))).thenAnswer(invocation -> {
             UserCharacter userCharacter = invocation.getArgument(0);
             ReflectionTestUtils.setField(userCharacter, "userCharacterId", 5L);
             return userCharacter;
@@ -192,5 +199,10 @@ class AdminStoreServiceTest {
 
         assertEquals(5L, adminStoreService.grantCharacter(1L, 2L).getUserCharacterId());
         assertEquals(0L, user.getPoint()); // 지급은 포인트를 건드리지 않음
+
+        ArgumentCaptor<CharacterUnlockedEvent> eventCaptor = ArgumentCaptor.forClass(CharacterUnlockedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertEquals(2L, eventCaptor.getValue().userId());
+        assertEquals(5L, eventCaptor.getValue().userCharacterId());
     }
 }

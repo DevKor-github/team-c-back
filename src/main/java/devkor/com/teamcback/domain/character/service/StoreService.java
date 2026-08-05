@@ -18,6 +18,7 @@ import devkor.com.teamcback.domain.character.dto.response.UnequipCharacterRes;
 import devkor.com.teamcback.domain.character.entity.KoCharacter;
 import devkor.com.teamcback.domain.character.entity.PurchaseStatus;
 import devkor.com.teamcback.domain.character.entity.UserCharacter;
+import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.character.repository.CharacterRepository;
 import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
 import devkor.com.teamcback.domain.user.entity.Level;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class StoreService {
     private final CharacterRepository characterRepository;
     private final UserCharacterRepository userCharacterRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 스토어 조회 (보유 포인트 + 캐릭터 목록)
@@ -118,6 +121,12 @@ public class StoreService {
 
         try {
             UserCharacter userCharacter = userCharacterRepository.saveAndFlush(new UserCharacter(user, character));
+            eventPublisher.publishEvent(new CharacterUnlockedEvent(
+                    user.getUserId(),
+                    character.getCharacterId(),
+                    userCharacter.getUserCharacterId(),
+                    character.getName()
+            ));
             return new PurchaseCharacterRes(userCharacter, user.getPoint());
         } catch (DataIntegrityViolationException e) { // 동시 중복 구매는 UNIQUE 제약으로 차단 (롤백으로 차감 복구)
             throw new GlobalException(ALREADY_OWNED_CHARACTER);

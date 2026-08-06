@@ -25,6 +25,23 @@ public class PushTargetResolver {
             String targetValue,
             AppVariant appVariant
     ) {
+        return resolve(targetType, targetValue, appVariant, false);
+    }
+
+    public List<PushInstallation> resolveForPreview(
+            PushTargetType targetType,
+            String targetValue,
+            AppVariant appVariant
+    ) {
+        return resolve(targetType, targetValue, appVariant, true);
+    }
+
+    private List<PushInstallation> resolve(
+            PushTargetType targetType,
+            String targetValue,
+            AppVariant appVariant,
+            boolean allowEmpty
+    ) {
         if (targetType == null || targetValue == null || targetValue.isBlank() || appVariant == null) {
             throw new GlobalException(INVALID_INPUT);
         }
@@ -38,7 +55,7 @@ public class PushTargetResolver {
 
         List<PushInstallation> distinctInstallations = distinctByInstallation(installations);
 
-        if (distinctInstallations.isEmpty()) {
+        if (distinctInstallations.isEmpty() && !allowEmpty) {
             throw new GlobalException(INVALID_INPUT);
         }
 

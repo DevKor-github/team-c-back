@@ -77,7 +77,7 @@ public class AdminNotificationService {
     public AdminPushDispatchPreviewRes preview(AdminPushDispatchReq request) {
         validateTargetRules(request);
 
-        List<PushInstallation> installations = pushTargetResolver.resolve(
+        List<PushInstallation> installations = pushTargetResolver.resolveForPreview(
                 request.targetType(),
                 request.targetValue(),
                 request.appVariant()

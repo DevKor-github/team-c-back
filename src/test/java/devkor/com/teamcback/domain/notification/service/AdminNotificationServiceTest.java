@@ -83,7 +83,7 @@ class AdminNotificationServiceTest {
         PushInstallation installation = installation(AppVariant.DEV);
         PushPayload payload = payload();
 
-        when(pushTargetResolver.resolve(PushTargetType.INSTALLATION, "install-1", AppVariant.DEV))
+        when(pushTargetResolver.resolveForPreview(PushTargetType.INSTALLATION, "install-1", AppVariant.DEV))
                 .thenReturn(List.of(installation));
         when(pushPayloadFactory.createForPreDispatchValidation(
                 "title",
@@ -181,7 +181,7 @@ class AdminNotificationServiceTest {
     void actualAllTargetsOnlyActiveInstallationsResolvedForTheVariant() {
         PushDispatch dispatch = dispatch(PushMode.ACTUAL, AppVariant.DEV, PushTargetType.ALL);
         PushDispatchEnqueueRes enqueueResponse = new PushDispatchEnqueueRes(dispatch);
-        when(pushTargetResolver.resolve(PushTargetType.ALL, "ALL", AppVariant.DEV))
+        when(pushTargetResolver.resolveForPreview(PushTargetType.ALL, "ALL", AppVariant.DEV))
                 .thenReturn(List.of(installation(AppVariant.DEV)));
         when(pushPayloadFactory.createForPreDispatchValidation(
                 "title",

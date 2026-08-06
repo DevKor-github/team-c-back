@@ -50,4 +50,29 @@ class PushTargetResolverTest {
                 .extracting("resultCode")
                 .isEqualTo(ResultCode.INVALID_INPUT);
     }
+
+    @Test
+    void previewAllTargetAllowsZeroActiveInstallations() {
+        when(pushInstallationRepository.findAllByAppVariantAndActiveTrue(AppVariant.PRODUCTION))
+                .thenReturn(List.of());
+
+        List<PushInstallation> resolved = resolver.resolveForPreview(
+                PushTargetType.ALL,
+                "ALL",
+                AppVariant.PRODUCTION
+        );
+
+        assertThat(resolved).isEmpty();
+    }
+
+    @Test
+    void actualAllTargetStillRejectsZeroActiveInstallations() {
+        when(pushInstallationRepository.findAllByAppVariantAndActiveTrue(AppVariant.PRODUCTION))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> resolver.resolve(PushTargetType.ALL, "ALL", AppVariant.PRODUCTION))
+                .isInstanceOf(GlobalException.class)
+                .extracting("resultCode")
+                .isEqualTo(ResultCode.INVALID_INPUT);
+    }
 }

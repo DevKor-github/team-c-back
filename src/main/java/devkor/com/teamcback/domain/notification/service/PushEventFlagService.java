@@ -24,6 +24,9 @@ public class PushEventFlagService {
     @Value("${push.event.character-enabled:false}")
     private boolean characterDefaultEnabled;
 
+    @Value("${push.event.survey-enabled:false}")
+    private boolean surveyDefaultEnabled;
+
     public boolean isEnabled(PushEventType eventType) {
         String redisValue = getRedisValue(eventType);
         if ("true".equalsIgnoreCase(redisValue)) {
@@ -62,6 +65,7 @@ public class PushEventFlagService {
             case CROWD -> crowdDefaultEnabled;
             case REPORT -> reportDefaultEnabled;
             case CHARACTER -> characterDefaultEnabled;
+            case SURVEY -> surveyDefaultEnabled;
         };
     }
 }

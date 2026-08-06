@@ -52,4 +52,27 @@ class DomainPushContentFactoryTest {
         assertThat(content.title()).isEqualTo("신고 처리 결과를 확인해주세요.");
         assertThat(content.body()).isEqualTo("접수한 신고의 처리가 완료되었습니다. 고대로에서 결과를 확인해주세요.");
     }
+    @Test
+    void surveyContentsAreConfiguredExactly() {
+        assertThat(DomainPushContentFactory.surveyStarted())
+                .isEqualTo(new PushContent(
+                        "고대로를 함께 만들어주세요!",
+                        "잠깐의 설문으로 고대로를 더 편리하게 만들어주세요."
+                ));
+        assertThat(DomainPushContentFactory.surveyDMinus3())
+                .isEqualTo(new PushContent(
+                        "단 3초! 고대로의 개선을 위해 도와주세요",
+                        "잠깐의 설문으로 고대로를 더 편리하게 만들어주세요."
+                ));
+        assertThat(DomainPushContentFactory.surveyDeadline(100))
+                .isEqualTo(new PushContent(
+                        "설문이 오늘 마감돼요!",
+                        "설문에 참여하면 100 포인트를 받을 수 있어요.(5초 소요)"
+                ));
+        assertThat(DomainPushContentFactory.surveyRemindAfterLater(100))
+                .isEqualTo(new PushContent(
+                        "잠깐, 설문을 잊지 않으셨나요?",
+                        "지금 투표에 참여하고 100포인트를 받아보세요.(5초 소요)"
+                ));
+    }
 }

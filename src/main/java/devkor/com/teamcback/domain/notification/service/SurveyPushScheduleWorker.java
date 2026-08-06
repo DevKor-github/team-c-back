@@ -134,7 +134,7 @@ public class SurveyPushScheduleWorker {
         return new PushDispatchCommand(
                 NotificationType.GENERAL,
                 PushMode.ACTUAL,
-                AppVariant.PRODUCTION,
+                targetAppVariant(),
                 targetType(schedule),
                 targetValue(schedule),
                 content.title(),
@@ -174,10 +174,15 @@ public class SurveyPushScheduleWorker {
             return schedule.getTargetUserId() != null
                     && pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
                     schedule.getTargetUserId(),
-                    AppVariant.PRODUCTION
+                    targetAppVariant()
             );
         }
 
-        return pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION);
+        return pushInstallationRepository.existsByAppVariantAndActiveTrue(targetAppVariant());
+    }
+
+    private AppVariant targetAppVariant() {
+        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
+        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
     }
 }

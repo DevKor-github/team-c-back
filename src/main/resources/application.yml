@@ -164,6 +164,7 @@ push:
     connect-timeout: 3s
     read-timeout: 10s
   event:
+    target-app-variant: ${PUSH_EVENT_TARGET_APP_VARIANT:PRODUCTION}
     crowd-enabled: ${PUSH_EVENT_CROWD_ENABLED:false}
     report-enabled: ${PUSH_EVENT_REPORT_ENABLED:false}
     character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}

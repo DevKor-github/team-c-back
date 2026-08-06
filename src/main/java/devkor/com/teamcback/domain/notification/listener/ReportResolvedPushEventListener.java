@@ -41,9 +41,10 @@ public class ReportResolvedPushEventListener {
         }
 
         try {
+            AppVariant targetAppVariant = targetAppVariant();
             if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
                     event.reporterUserId(),
-                    AppVariant.PRODUCTION
+                    targetAppVariant
             )) {
                 return;
             }
@@ -52,7 +53,7 @@ public class ReportResolvedPushEventListener {
             pushDispatchService.enqueue(new PushDispatchCommand(
                     NotificationType.GENERAL,
                     PushMode.ACTUAL,
-                    AppVariant.PRODUCTION,
+                    targetAppVariant,
                     PushTargetType.USER,
                     String.valueOf(event.reporterUserId()),
                     content.title(),
@@ -75,5 +76,10 @@ public class ReportResolvedPushEventListener {
                     e.getMessage()
             );
         }
+    }
+
+    private AppVariant targetAppVariant() {
+        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
+        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
     }
 }

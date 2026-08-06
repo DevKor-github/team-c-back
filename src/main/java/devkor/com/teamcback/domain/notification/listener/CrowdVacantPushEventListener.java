@@ -88,15 +88,16 @@ public class CrowdVacantPushEventListener {
             Long userId,
             PushContent content
     ) {
+        AppVariant targetAppVariant = targetAppVariant();
         if (userId == null
-                || !pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(userId, AppVariant.PRODUCTION)) {
+                || !pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(userId, targetAppVariant)) {
             return;
         }
 
         pushDispatchService.enqueue(new PushDispatchCommand(
                 NotificationType.GENERAL,
                 PushMode.ACTUAL,
-                AppVariant.PRODUCTION,
+                targetAppVariant,
                 PushTargetType.USER,
                 String.valueOf(userId),
                 content.title(),
@@ -106,5 +107,10 @@ public class CrowdVacantPushEventListener {
                 "crowd-vacant:%d:%d:%d".formatted(event.placeId(), userId, event.bleDataId()),
                 SYSTEM_CREATED_BY
         ));
+    }
+
+    private AppVariant targetAppVariant() {
+        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
+        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
     }
 }

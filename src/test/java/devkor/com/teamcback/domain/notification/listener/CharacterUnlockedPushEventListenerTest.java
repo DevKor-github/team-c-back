@@ -64,6 +64,20 @@ class CharacterUnlockedPushEventListenerTest {
     }
 
     @Test
+    void usesConfiguredDevVariantForAutomaticDispatch() {
+        when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
+        when(pushEventFlagService.getTargetAppVariant()).thenReturn(AppVariant.DEV);
+        when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.DEV))
+                .thenReturn(true);
+
+        listener.handle(new CharacterUnlockedEvent(7L, 4L, 44L, "아기 호랑이"));
+
+        ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
+        verify(pushDispatchService).enqueue(captor.capture());
+        assertThat(captor.getValue().appVariant()).isEqualTo(AppVariant.DEV);
+    }
+
+    @Test
     void usesSafeBodyWhenCharacterNameIsBlank() {
         when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))

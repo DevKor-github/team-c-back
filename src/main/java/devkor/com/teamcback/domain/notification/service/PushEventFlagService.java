@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.notification.service;
 
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushEventFlagRes;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +27,13 @@ public class PushEventFlagService {
 
     @Value("${push.event.survey-enabled:false}")
     private boolean surveyDefaultEnabled;
+
+    @Value("${push.event.target-app-variant:PRODUCTION}")
+    private AppVariant targetAppVariant;
+
+    public AppVariant getTargetAppVariant() {
+        return targetAppVariant;
+    }
 
     public boolean isEnabled(PushEventType eventType) {
         String redisValue = getRedisValue(eventType);

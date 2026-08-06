@@ -41,9 +41,10 @@ public class CharacterUnlockedPushEventListener {
         }
 
         try {
+            AppVariant targetAppVariant = targetAppVariant();
             if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
                     event.userId(),
-                    AppVariant.PRODUCTION
+                    targetAppVariant
             )) {
                 return;
             }
@@ -52,7 +53,7 @@ public class CharacterUnlockedPushEventListener {
             pushDispatchService.enqueue(new PushDispatchCommand(
                     NotificationType.GENERAL,
                     PushMode.ACTUAL,
-                    AppVariant.PRODUCTION,
+                    targetAppVariant,
                     PushTargetType.USER,
                     String.valueOf(event.userId()),
                     content.title(),
@@ -75,5 +76,10 @@ public class CharacterUnlockedPushEventListener {
                     e.getMessage()
             );
         }
+    }
+
+    private AppVariant targetAppVariant() {
+        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
+        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
     }
 }

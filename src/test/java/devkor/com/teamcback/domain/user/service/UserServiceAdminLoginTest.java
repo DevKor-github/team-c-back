@@ -80,6 +80,21 @@ class UserServiceAdminLoginTest {
     }
 
     @Test
+    void usesDedicatedKakaoAdminAudience() {
+        ReflectionTestUtils.setField(request, "provider", Provider.KAKAO);
+        ReflectionTestUtils.setField(request, "token", "kakao-admin-id-token");
+        User admin = new User("operator", "admin@example.com", Role.ADMIN, Provider.KAKAO);
+        ReflectionTestUtils.setField(admin, "userId", 8L);
+        when(kakaoValidator.validateAdminToken("kakao-admin-id-token")).thenReturn("admin@example.com");
+        when(userRepository.findByEmailAndProvider("admin@example.com", Provider.KAKAO)).thenReturn(admin);
+
+        userService.adminLogin(request);
+
+        verify(kakaoValidator).validateAdminToken("kakao-admin-id-token");
+        verify(kakaoValidator, never()).validateToken("kakao-admin-id-token");
+    }
+
+    @Test
     void rejectsNonAdminWithoutCreatingUser() {
         User user = new User("user", "user@example.com", Role.USER, Provider.GOOGLE);
         when(googleValidator.validateToken("google-id-token")).thenReturn("user@example.com");

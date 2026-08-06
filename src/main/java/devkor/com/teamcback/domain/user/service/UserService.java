@@ -134,7 +134,9 @@ public class UserService {
             throw new GlobalException(INVALID_INPUT);
         }
 
-        String email = validateToken(provider, adminLoginReq.getToken());
+        String email = provider == Provider.KAKAO
+            ? kakaoValidator.validateAdminToken(adminLoginReq.getToken())
+            : googleValidator.validateToken(adminLoginReq.getToken());
         User user = userRepository.findByEmailAndProvider(email, provider);
         if(user == null || user.getRole() != Role.ADMIN) {
             throw new GlobalException(FORBIDDEN);

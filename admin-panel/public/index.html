@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#141516">
+  <link rel="manifest" href="/adm/manifest.json">
+  <title>Kodaero Operations</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18191b;
+      --muted: #6f7277;
+      --line: #dedfe2;
+      --paper: #fff;
+      --canvas: #f2f2f0;
+      --red: #a52a30;
+      --red-dark: #7f1f24;
+      --green: #287443;
+      --amber: #9a6500;
+      --black: #141516;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .42; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 72px; }
+    .topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+    .brand-kicker { margin: 0 0 7px; color: var(--red); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 0; font-size: clamp(28px, 5vw, 44px); letter-spacing: -.045em; line-height: 1; }
+    h2 { margin-bottom: 6px; font-size: 20px; letter-spacing: -.02em; }
+    .lede, .section-copy { color: var(--muted); line-height: 1.55; }
+    .lede { margin: 10px 0 0; font-size: 14px; }
+    .section-copy { margin-bottom: 22px; font-size: 13px; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: 0 10px 30px rgba(22, 23, 25, .04); }
+    .login { max-width: 680px; padding: 26px; }
+    .token-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; color: #34363a; font-size: 13px; font-weight: 700; }
+    input[type="password"], input[type="text"], input[type="number"], textarea {
+      width: 100%; margin-top: 8px; border: 1px solid #cacbd0; border-radius: 9px; background: #fff; color: var(--ink); padding: 11px 12px;
+    }
+    textarea { min-height: 108px; resize: vertical; line-height: 1.5; }
+    input:focus, textarea:focus, button:focus-visible { outline: 3px solid rgba(165, 42, 48, .2); outline-offset: 2px; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .button { min-height: 42px; border: 0; border-radius: 9px; padding: 0 16px; background: var(--black); color: #fff; font-weight: 750; }
+    .button:hover:not(:disabled) { background: #303235; }
+    .button.primary { background: var(--red); }
+    .button.primary:hover:not(:disabled) { background: var(--red-dark); }
+    .button.secondary { border: 1px solid #cfd0d3; background: #fff; color: #27282b; }
+    .button.danger { border: 1px solid #d8b8ba; background: #fff; color: var(--red-dark); }
+    .link-button { border: 0; background: transparent; color: var(--red-dark); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+    .hidden { display: none !important; }
+    .dashboard { display: grid; gap: 22px; }
+    .push-card { overflow: hidden; }
+    .push-head { display: flex; justify-content: space-between; gap: 20px; padding: 24px 26px 20px; border-bottom: 1px solid var(--line); }
+    .badge { height: fit-content; border-radius: 99px; background: #f6e8e8; color: var(--red-dark); padding: 6px 9px; font-size: 11px; font-weight: 800; letter-spacing: .06em; }
+    .push-body { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); }
+    .composer { padding: 26px; border-right: 1px solid var(--line); }
+    .preview-panel { padding: 26px; background: #fafaf9; }
+    .field + .field { margin-top: 18px; }
+    .variant-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; }
+    .check-option, .confirm-option {
+      display: flex; align-items: flex-start; gap: 10px; border: 1px solid #d4d5d8; border-radius: 10px; background: #fff; padding: 11px 13px; font-weight: 650;
+    }
+    .check-option { min-width: 142px; }
+    .check-option input, .confirm-option input { width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--red); }
+    .option-note { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 500; }
+    .recipient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 18px; }
+    .recipient { border: 1px solid #ddd; border-radius: 10px; background: #fff; padding: 14px; }
+    .recipient-name { color: var(--muted); font-size: 11px; font-weight: 800; }
+    .recipient-count { display: block; margin-top: 5px; font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
+    .recipient-count small { color: var(--muted); font-size: 12px; }
+    .preview-copy { min-height: 92px; border-left: 3px solid var(--red); background: #fff; padding: 14px 15px; }
+    .preview-title { font-size: 14px; font-weight: 800; }
+    .preview-message { margin-top: 7px; color: #525459; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .confirm-option { margin-top: 16px; font-size: 12px; line-height: 1.45; }
+    .notice { min-height: 20px; margin: 13px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .notice.error { color: #a32228; }
+    .notice.success { color: var(--green); }
+    .section { padding: 24px 26px; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { padding: 10px 9px; border-bottom: 1px solid #cfd0d3; color: #62656a; text-align: left; white-space: nowrap; }
+    td { padding: 12px 9px; border-bottom: 1px solid #e7e7e8; vertical-align: top; }
+    .status-good { color: var(--green); font-weight: 800; }
+    .status-warn { color: var(--amber); font-weight: 800; }
+    .status-bad { color: var(--red); font-weight: 800; }
+    .infra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .deploy-card { padding: 22px; }
+    .deploy-card .button { width: 100%; margin-top: 14px; }
+    pre { min-height: 110px; max-height: 320px; overflow: auto; margin: 0; border-radius: 10px; background: #191a1c; color: #f2f2f0; padding: 16px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+    .empty { color: var(--muted); text-align: center; padding: 26px; }
+
+    @media (max-width: 820px) {
+      .push-body { grid-template-columns: 1fr; }
+      .composer { border-right: 0; border-bottom: 1px solid var(--line); }
+      .infra-grid, .token-grid { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; }
+    }
+    @media (max-width: 520px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 22px; }
+      .push-head, .composer, .preview-panel, .section { padding: 20px; }
+      .topbar { display: block; }
+      .topbar .link-button { margin-top: 16px; }
+      .recipient-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="brand-kicker">KODAERO / OPERATIONS</p>
+        <h1>관리자 콘솔</h1>
+        <p class="lede">알림 수신을 체크한 활성 기기에 공지 푸시를 발송합니다.</p>
+      </div>
+      <button id="logout-button" class="link-button hidden" type="button">로그아웃</button>
+    </header>
+
+    <section id="login-section" class="card login" aria-labelledby="login-title">
+      <h2 id="login-title">관리자 인증</h2>
+      <p class="section-copy">관리자 로그인에서 발급된 토큰을 입력하세요. 토큰은 이 탭의 세션에만 보관됩니다.</p>
+      <form id="login-form">
+        <div class="token-grid">
+          <label>AccessToken
+            <input id="access-token" type="password" autocomplete="off" required>
+          </label>
+          <label>refreshToken <span class="option-note">선택 입력</span>
+            <input id="refresh-token" type="password" autocomplete="off">
+          </label>
+        </div>
+        <div class="actions">
+          <button class="button primary" type="submit">관리자 권한 확인</button>
+        </div>
+        <p id="login-notice" class="notice" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <div id="dashboard" class="dashboard hidden">
+      <section class="card push-card" aria-labelledby="push-title">
+        <div class="push-head">
+          <div>
+            <h2 id="push-title">전체 알림 발송</h2>
+            <p class="section-copy" style="margin-bottom:0">선택한 앱 환경에서 현재 알림 수신이 활성화된 설치만 대상으로 합니다.</p>
+          </div>
+          <span class="badge">ACTIVE ONLY</span>
+        </div>
+        <div class="push-body">
+          <form id="push-form" class="composer">
+            <div class="field">
+              <label>발송 환경</label>
+              <div class="variant-list">
+                <label class="check-option"><input name="variant" type="checkbox" value="DEV" checked><span>DEV<span class="option-note">개발 앱</span></span></label>
+                <label class="check-option"><input name="variant" type="checkbox" value="PRODUCTION"><span>PRODUCTION<span class="option-note">정식 앱</span></span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="push-message-title">알림 제목</label>
+              <input id="push-message-title" type="text" maxlength="100" required placeholder="예: 새로운 공지가 도착했습니다">
+            </div>
+            <div class="field">
+              <label for="push-message-body">알림 내용</label>
+              <textarea id="push-message-body" maxlength="500" required placeholder="전달할 내용을 입력하세요."></textarea>
+            </div>
+            <div class="actions">
+              <button id="preview-button" class="button secondary" type="button">수신 대상 미리보기</button>
+            </div>
+          </form>
+
+          <aside class="preview-panel" aria-labelledby="preview-title">
+            <h3 id="preview-title">발송 전 확인</h3>
+            <p class="section-copy">미리보기 결과는 문구나 환경을 바꾸면 초기화됩니다.</p>
+            <div id="recipient-grid" class="recipient-grid">
+              <div class="recipient"><span class="recipient-name">대상 미확인</span><span class="recipient-count">—</span></div>
+            </div>
+            <div class="preview-copy">
+              <div id="preview-copy-title" class="preview-title">알림 제목</div>
+              <div id="preview-copy-body" class="preview-message">알림 내용이 여기에 표시됩니다.</div>
+            </div>
+            <label class="confirm-option"><input id="send-confirm" type="checkbox" disabled><span>대상 수와 알림 문구를 확인했으며 발송에 동의합니다.</span></label>
+            <button id="send-button" class="button primary" type="button" disabled style="width:100%; margin-top:12px">체크한 모든 활성 사용자에게 발송</button>
+            <p id="push-notice" class="notice" role="status" aria-live="polite"></p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="card section" aria-labelledby="history-title">
+        <div class="section-head">
+          <div><h2 id="history-title">최근 발송 이력</h2><p class="section-copy" style="margin:0">최근 20건의 관리자 발송 요청입니다.</p></div>
+          <button id="history-refresh" class="button secondary" type="button">새로고침</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>시각</th><th>환경</th><th>제목</th><th>대상</th><th>상태</th></tr></thead><tbody id="history-table"></tbody></table></div>
+      </section>
+
+      <section class="card section" aria-labelledby="infra-title">
+        <div class="section-head">
+          <div><h2 id="infra-title">컨테이너 상태</h2><p class="section-copy" style="margin:0">현재 Docker 컨테이너 상태입니다.</p></div>
+          <button id="status-refresh" class="button secondary" type="button">새로고침</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>이름</th><th>상태</th><th>이미지</th></tr></thead><tbody id="status-table"></tbody></table></div>
+      </section>
+
+      <div class="infra-grid">
+        <section class="card deploy-card"><h2>운영 서버 배포</h2><p class="section-copy">Latest를 Stable로 전환하고 지정 버전을 배포합니다.</p><label for="prod-version">배포 버전<input id="prod-version" type="number" min="1" inputmode="numeric" placeholder="예: 14"></label><button class="button" data-deploy="prod" type="button">Latest 배포 시작</button></section>
+        <section class="card deploy-card"><h2>개발 서버 배포</h2><p class="section-copy">app-dev를 최신 개발 코드로 재배포합니다.</p><button class="button" data-deploy="dev" type="button">Dev 재배포 시작</button></section>
+      </div>
+
+      <section class="card section"><h2>실행 로그</h2><pre id="log-output">명령을 기다리는 중...</pre></section>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = "/admin/api";
+    const storage = window.sessionStorage;
+    const state = { previewKey: null, previews: new Map(), busy: false };
+
+    const byId = (id) => document.getElementById(id);
+    const getAccessToken = () => storage.getItem("kodaero_admin_access_token") || "";
+    const getRefreshToken = () => storage.getItem("kodaero_admin_refresh_token") || "";
+    const setNotice = (id, message, kind = "") => {
+      const node = byId(id);
+      node.textContent = message || "";
+      node.className = `notice ${kind}`.trim();
+    };
+    const responseMessage = (payload, fallback) => payload?.message || payload?.error || fallback;
+
+    async function adminFetch(path, options = {}) {
+      const headers = new Headers(options.headers || {});
+      headers.set("AccessToken", getAccessToken());
+      if (getRefreshToken()) headers.set("refreshToken", getRefreshToken());
+      if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+      const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+      const renewed = response.headers.get("AccessToken");
+      if (renewed) storage.setItem("kodaero_admin_access_token", renewed);
+      const text = await response.text();
+      let payload = {};
+      try { payload = text ? JSON.parse(text) : {}; } catch { payload = { message: text }; }
+
+      if (response.status === 401 || response.status === 403) {
+        showLogin("관리자 인증이 만료되었거나 권한이 없습니다.");
+        throw new Error(responseMessage(payload, "관리자 인증 실패"));
+      }
+      if (!response.ok) throw new Error(responseMessage(payload, `요청 실패 (${response.status})`));
+      return payload;
+    }
+
+    function showLogin(message = "") {
+      byId("login-section").classList.remove("hidden");
+      byId("dashboard").classList.add("hidden");
+      byId("logout-button").classList.add("hidden");
+      if (message) setNotice("login-notice", message, "error");
+    }
+
+    function showDashboard() {
+      byId("login-section").classList.add("hidden");
+      byId("dashboard").classList.remove("hidden");
+      byId("logout-button").classList.remove("hidden");
+    }
+
+    function logout() {
+      storage.removeItem("kodaero_admin_access_token");
+      storage.removeItem("kodaero_admin_refresh_token");
+      state.previews.clear();
+      showLogin();
+    }
+
+    const selectedVariants = () => [...document.querySelectorAll('input[name="variant"]:checked')].map((node) => node.value);
+    const formSnapshot = () => JSON.stringify({
+      variants: selectedVariants().sort(),
+      title: byId("push-message-title").value.trim(),
+      body: byId("push-message-body").value.trim(),
+    });
+
+    function invalidatePreview() {
+      state.previewKey = null;
+      state.previews.clear();
+      byId("send-confirm").checked = false;
+      byId("send-confirm").disabled = true;
+      byId("send-button").disabled = true;
+      setNotice("push-notice", "문구와 발송 환경을 입력한 뒤 수신 대상을 확인하세요.");
+      renderRecipients();
+      renderPreviewCopy();
+    }
+
+    function renderPreviewCopy() {
+      byId("preview-copy-title").textContent = byId("push-message-title").value.trim() || "알림 제목";
+      byId("preview-copy-body").textContent = byId("push-message-body").value.trim() || "알림 내용이 여기에 표시됩니다.";
+    }
+
+    function renderRecipients() {
+      const grid = byId("recipient-grid");
+      grid.replaceChildren();
+      const variants = selectedVariants();
+      if (!variants.length) {
+        const empty = document.createElement("div");
+        empty.className = "recipient";
+        empty.textContent = "발송 환경을 선택하세요.";
+        grid.append(empty);
+        return;
+      }
+      variants.forEach((variant) => {
+        const card = document.createElement("div");
+        card.className = "recipient";
+        const name = document.createElement("span");
+        name.className = "recipient-name";
+        name.textContent = variant;
+        const count = document.createElement("span");
+        count.className = "recipient-count";
+        const value = state.previews.get(variant);
+        count.textContent = Number.isInteger(value) ? String(value) : "—";
+        const unit = document.createElement("small");
+        unit.textContent = " 활성 기기";
+        count.append(unit);
+        card.append(name, count);
+        grid.append(card);
+      });
+    }
+
+    const dispatchBody = (variant) => ({
+      mode: "ACTUAL",
+      appVariant: variant,
+      targetType: "ALL",
+      targetValue: "ALL",
+      title: byId("push-message-title").value.trim(),
+      body: byId("push-message-body").value.trim(),
+      actionType: "HOME",
+      actionParams: {},
+      confirm: true,
+    });
+
+    async function previewRecipients() {
+      const variants = selectedVariants();
+      const title = byId("push-message-title").value.trim();
+      const body = byId("push-message-body").value.trim();
+      if (!variants.length) return setNotice("push-notice", "DEV 또는 PRODUCTION을 하나 이상 선택하세요.", "error");
+      if (!title || !body) return setNotice("push-notice", "알림 제목과 내용을 모두 입력하세요.", "error");
+
+      state.busy = true;
+      byId("preview-button").disabled = true;
+      setNotice("push-notice", "활성 수신자를 확인하고 있습니다...");
+      try {
+        const results = await Promise.all(variants.map(async (variant) => {
+          const payload = await adminFetch("/notifications/preview", { method: "POST", body: JSON.stringify(dispatchBody(variant)) });
+          return [variant, Number(payload?.data?.recipientCount || 0)];
+        }));
+        state.previews = new Map(results);
+        state.previewKey = formSnapshot();
+        renderRecipients();
+        byId("send-confirm").disabled = false;
+        setNotice("push-notice", "미리보기가 완료되었습니다. 대상과 문구를 확인해 주세요.", "success");
+      } catch (error) {
+        invalidatePreview();
+        setNotice("push-notice", error.message, "error");
+      } finally {
+        state.busy = false;
+        byId("preview-button").disabled = false;
+      }
+    }
+
+    async function sendPush() {
+      if (state.previewKey !== formSnapshot()) return invalidatePreview();
+      if (!byId("send-confirm").checked) return;
+      const variants = selectedVariants();
+      const total = [...state.previews.values()].reduce((sum, count) => sum + count, 0);
+      if (!window.confirm(`${variants.join(", ")}의 활성 기기 ${total}대에 지금 발송할까요?`)) return;
+
+      byId("send-button").disabled = true;
+      byId("preview-button").disabled = true;
+      setNotice("push-notice", "푸시 발송 요청을 등록하고 있습니다...");
+      try {
+        await Promise.all(variants.map((variant) => adminFetch("/notifications/dispatches", {
+          method: "POST",
+          headers: { "Idempotency-Key": `${crypto.randomUUID()}:${variant.toLowerCase()}` },
+          body: JSON.stringify(dispatchBody(variant)),
+        })));
+        setNotice("push-notice", `${variants.join(", ")} 발송 요청이 등록되었습니다.`, "success");
+        byId("send-confirm").checked = false;
+        await fetchHistory();
+      } catch (error) {
+        setNotice("push-notice", error.message, "error");
+      } finally {
+        byId("preview-button").disabled = false;
+        byId("send-button").disabled = !byId("send-confirm").checked;
+      }
+    }
+
+    function appendCell(row, value, className = "") {
+      const cell = document.createElement("td");
+      cell.textContent = value ?? "—";
+      if (className) cell.className = className;
+      row.append(cell);
+    }
+
+    async function fetchHistory() {
+      const table = byId("history-table");
+      try {
+        const payload = await adminFetch("/notifications/dispatches?page=1&size=20");
+        const rows = payload?.data?.content || [];
+        table.replaceChildren();
+        if (!rows.length) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 5; cell.className = "empty"; cell.textContent = "발송 이력이 없습니다.";
+          row.append(cell); table.append(row); return;
+        }
+        rows.forEach((item) => {
+          const row = document.createElement("tr");
+          const statusClass = item.status === "COMPLETED" ? "status-good" : item.status === "FAILED" ? "status-bad" : "status-warn";
+          appendCell(row, item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR") : "—");
+          appendCell(row, item.appVariant);
+          appendCell(row, item.title);
+          appendCell(row, `${item.recipientCount ?? 0}대`);
+          appendCell(row, item.status, statusClass);
+          table.append(row);
+        });
+      } catch (error) {
+        if (!getAccessToken()) return;
+        table.replaceChildren();
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5; cell.className = "empty status-bad"; cell.textContent = error.message;
+        row.append(cell); table.append(row);
+      }
+    }
+
+    async function fetchStatus() {
+      const table = byId("status-table");
+      try {
+        const payload = await adminFetch("/status");
+        table.replaceChildren();
+        (payload.containers || []).forEach((item) => {
+          const row = document.createElement("tr");
+          appendCell(row, item.name);
+          appendCell(row, item.status, item.status?.includes("Up") ? "status-good" : "status-bad");
+          appendCell(row, item.image);
+          table.append(row);
+        });
+      } catch (error) {
+        if (!getAccessToken()) return;
+        table.replaceChildren();
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 3; cell.className = "empty status-bad"; cell.textContent = error.message;
+        row.append(cell); table.append(row);
+      }
+    }
+
+    async function deploy(type) {
+      const version = byId("prod-version").value.trim();
+      if (type === "prod" && !version) return window.alert("배포 버전을 입력하세요.");
+      const label = type === "prod" ? `운영 ${version} 버전` : "개발 서버";
+      if (!window.confirm(`${label} 배포를 시작할까요?`)) return;
+      const log = byId("log-output");
+      log.textContent = "배포 중...";
+      try {
+        const payload = await adminFetch("/deploy", { method: "POST", body: JSON.stringify({ type, version }) });
+        log.textContent = payload.output || (payload.success ? "배포가 완료되었습니다." : "배포에 실패했습니다.");
+        await fetchStatus();
+      } catch (error) { log.textContent = `오류: ${error.message}`; }
+    }
+
+    byId("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      storage.setItem("kodaero_admin_access_token", byId("access-token").value.trim());
+      const refresh = byId("refresh-token").value.trim();
+      if (refresh) storage.setItem("kodaero_admin_refresh_token", refresh); else storage.removeItem("kodaero_admin_refresh_token");
+      setNotice("login-notice", "관리자 권한을 확인하고 있습니다...");
+      try {
+        await adminFetch("/session");
+        showDashboard();
+        await Promise.all([fetchHistory(), fetchStatus()]);
+      } catch (error) { setNotice("login-notice", error.message, "error"); }
+    });
+    byId("logout-button").addEventListener("click", logout);
+    byId("preview-button").addEventListener("click", previewRecipients);
+    byId("send-button").addEventListener("click", sendPush);
+    byId("send-confirm").addEventListener("change", (event) => { byId("send-button").disabled = !event.target.checked || state.previewKey !== formSnapshot(); });
+    byId("history-refresh").addEventListener("click", fetchHistory);
+    byId("status-refresh").addEventListener("click", fetchStatus);
+    document.querySelectorAll("[data-deploy]").forEach((button) => button.addEventListener("click", () => deploy(button.dataset.deploy)));
+    document.querySelectorAll('input[name="variant"], #push-message-title, #push-message-body').forEach((node) => node.addEventListener("input", invalidatePreview));
+
+    (async function boot() {
+      invalidatePreview();
+      if (!getAccessToken()) return;
+      try {
+        await adminFetch("/session");
+        showDashboard();
+        await Promise.all([fetchHistory(), fetchStatus()]);
+      } catch { /* adminFetch returns to the login screen */ }
+    })();
+  </script>
+</body>
+</html>

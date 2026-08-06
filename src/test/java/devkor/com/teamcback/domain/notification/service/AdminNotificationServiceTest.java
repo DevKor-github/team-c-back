@@ -178,6 +178,47 @@ class AdminNotificationServiceTest {
     }
 
     @Test
+    void actualAllTargetsOnlyActiveInstallationsResolvedForTheVariant() {
+        PushDispatch dispatch = dispatch(PushMode.ACTUAL, AppVariant.DEV, PushTargetType.ALL);
+        PushDispatchEnqueueRes enqueueResponse = new PushDispatchEnqueueRes(dispatch);
+        when(pushTargetResolver.resolve(PushTargetType.ALL, "ALL", AppVariant.DEV))
+                .thenReturn(List.of(installation(AppVariant.DEV)));
+        when(pushPayloadFactory.createForPreDispatchValidation(
+                "title",
+                "body",
+                PushMode.ACTUAL,
+                AppVariant.DEV,
+                PushActionType.HOME,
+                Map.of()
+        )).thenReturn(payload());
+        when(pushDispatchService.enqueue(any(PushDispatchCommand.class)))
+                .thenReturn(enqueueResponse);
+
+        AdminPushDispatchReq request = new AdminPushDispatchReq(
+                PushMode.ACTUAL,
+                AppVariant.DEV,
+                PushTargetType.ALL,
+                "ALL",
+                "title",
+                "body",
+                PushActionType.HOME,
+                Map.of(),
+                false
+        );
+
+        AdminPushDispatchPreviewRes preview = service(false).preview(request);
+        PushDispatchEnqueueRes response = service(false).enqueue(7L, "broadcast-dev-1", request);
+
+        assertThat(preview.recipientCount()).isEqualTo(1);
+        assertThat(response).isSameAs(enqueueResponse);
+        ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
+        verify(pushDispatchService).enqueue(captor.capture());
+        assertThat(captor.getValue().targetType()).isEqualTo(PushTargetType.ALL);
+        assertThat(captor.getValue().targetValue()).isEqualTo("ALL");
+        assertThat(captor.getValue().appVariant()).isEqualTo(AppVariant.DEV);
+    }
+
+    @Test
     void getDispatchCountsAllMessageStatuses() {
         PushDispatch dispatch = dispatch(PushMode.ACTUAL, AppVariant.DEV, PushTargetType.USER);
         ReflectionTestUtils.setField(dispatch, "pushDispatchId", 10L);

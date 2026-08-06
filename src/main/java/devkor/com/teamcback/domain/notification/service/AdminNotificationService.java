@@ -171,7 +171,8 @@ public class AdminNotificationService {
 
         if (PushMode.ACTUAL.equals(request.mode())
                 && !PushTargetType.INSTALLATION.equals(request.targetType())
-                && !PushTargetType.USER.equals(request.targetType())) {
+                && !PushTargetType.USER.equals(request.targetType())
+                && !PushTargetType.ALL.equals(request.targetType())) {
             throw new GlobalException(UNSUPPORTED_REQUEST);
         }
     }

@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.notification.service;
 
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushEventFlagRes;
+import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +34,17 @@ class PushEventFlagServiceTest {
         ReflectionTestUtils.setField(service, "reportDefaultEnabled", true);
         ReflectionTestUtils.setField(service, "characterDefaultEnabled", false);
         ReflectionTestUtils.setField(service, "surveyDefaultEnabled", false);
+        ReflectionTestUtils.setField(service, "targetAppVariants", "DEV,PRODUCTION");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
+    @Test
+    void returnsConfiguredDevAndProductionTargetVariants() {
+        service.isEnabled(PushEventType.CROWD);
+
+        assertThat(service.getTargetAppVariants())
+                .containsExactly(AppVariant.DEV, AppVariant.PRODUCTION);
     }
 
     @Test

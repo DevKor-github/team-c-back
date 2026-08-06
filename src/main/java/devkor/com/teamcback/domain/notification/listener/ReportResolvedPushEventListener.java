@@ -13,6 +13,7 @@ import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
 import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,46 +41,51 @@ public class ReportResolvedPushEventListener {
             return;
         }
 
-        try {
-            AppVariant targetAppVariant = targetAppVariant();
-            if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
-                    event.reporterUserId(),
-                    targetAppVariant
-            )) {
-                return;
-            }
+        for (AppVariant targetAppVariant : targetAppVariants()) {
+            try {
+                if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
+                        event.reporterUserId(),
+                        targetAppVariant
+                )) {
+                    continue;
+                }
 
-            PushContent content = DomainPushContentFactory.reportResolved();
-            pushDispatchService.enqueue(new PushDispatchCommand(
-                    NotificationType.GENERAL,
-                    PushMode.ACTUAL,
-                    targetAppVariant,
-                    PushTargetType.USER,
-                    String.valueOf(event.reporterUserId()),
-                    content.title(),
-                    content.body(),
-                    PushActionType.HOME,
-                    Map.of(),
-                    "report-result:%d:%s:%d".formatted(
-                            event.reportId(),
-                            event.finalStatus().name(),
-                            event.reporterUserId()
-                    ),
-                    SYSTEM_CREATED_BY
-            ));
-        } catch (Exception e) {
-            log.warn(
-                    "report result push failed: reportId={}, reporterUserId={}, finalStatus={}, error={}",
-                    event.reportId(),
-                    event.reporterUserId(),
-                    event.finalStatus(),
-                    e.getMessage()
-            );
+                PushContent content = DomainPushContentFactory.reportResolved();
+                pushDispatchService.enqueue(new PushDispatchCommand(
+                        NotificationType.GENERAL,
+                        PushMode.ACTUAL,
+                        targetAppVariant,
+                        PushTargetType.USER,
+                        String.valueOf(event.reporterUserId()),
+                        content.title(),
+                        content.body(),
+                        PushActionType.HOME,
+                        Map.of(),
+                        "report-result:%d:%s:%d:%s".formatted(
+                                event.reportId(),
+                                event.finalStatus().name(),
+                                event.reporterUserId(),
+                                targetAppVariant.name().toLowerCase()
+                        ),
+                        SYSTEM_CREATED_BY
+                ));
+            } catch (Exception e) {
+                log.warn(
+                        "report result push failed: reportId={}, reporterUserId={}, finalStatus={}, appVariant={}, error={}",
+                        event.reportId(),
+                        event.reporterUserId(),
+                        event.finalStatus(),
+                        targetAppVariant,
+                        e.getMessage()
+                );
+            }
         }
     }
 
-    private AppVariant targetAppVariant() {
-        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
-        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
+    private List<AppVariant> targetAppVariants() {
+        List<AppVariant> configuredVariants = pushEventFlagService.getTargetAppVariants();
+        return configuredVariants == null || configuredVariants.isEmpty()
+                ? List.of(AppVariant.PRODUCTION)
+                : configuredVariants;
     }
 }

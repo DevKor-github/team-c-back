@@ -70,13 +70,14 @@ public class SurveyPushScheduleWorker {
             return;
         }
 
-        if (!hasActiveTarget(schedule)) {
+        List<AppVariant> activeTargetVariants = activeTargetVariants(schedule);
+        if (activeTargetVariants.isEmpty()) {
             schedule.skip(now);
             return;
         }
 
         try {
-            pushDispatchService.enqueue(command(schedule));
+            activeTargetVariants.forEach(appVariant -> pushDispatchService.enqueue(command(schedule, appVariant)));
             schedule.complete(now);
         } catch (GlobalException e) {
             log.warn(
@@ -128,20 +129,23 @@ public class SurveyPushScheduleWorker {
                 .orElse(false);
     }
 
-    private PushDispatchCommand command(SurveyPushSchedule schedule) {
+    private PushDispatchCommand command(
+            SurveyPushSchedule schedule,
+            AppVariant appVariant
+    ) {
         PushContent content = content(schedule);
 
         return new PushDispatchCommand(
                 NotificationType.GENERAL,
                 PushMode.ACTUAL,
-                targetAppVariant(),
+                appVariant,
                 targetType(schedule),
                 targetValue(schedule),
                 content.title(),
                 content.body(),
                 PushActionType.HOME,
                 Map.of(),
-                schedule.getIdempotencyKey(),
+                "%s:%s".formatted(schedule.getIdempotencyKey(), appVariant.name().toLowerCase()),
                 SYSTEM_CREATED_BY
         );
     }
@@ -169,20 +173,31 @@ public class SurveyPushScheduleWorker {
         return ALL_TARGET_VALUE;
     }
 
-    private boolean hasActiveTarget(SurveyPushSchedule schedule) {
+    private List<AppVariant> activeTargetVariants(SurveyPushSchedule schedule) {
+        return targetAppVariants().stream()
+                .filter(appVariant -> hasActiveTarget(schedule, appVariant))
+                .toList();
+    }
+
+    private boolean hasActiveTarget(
+            SurveyPushSchedule schedule,
+            AppVariant appVariant
+    ) {
         if (SurveyNotificationStage.REMIND_AFTER_LATER.equals(schedule.getNotificationStage())) {
             return schedule.getTargetUserId() != null
                     && pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
                     schedule.getTargetUserId(),
-                    targetAppVariant()
+                    appVariant
             );
         }
 
-        return pushInstallationRepository.existsByAppVariantAndActiveTrue(targetAppVariant());
+        return pushInstallationRepository.existsByAppVariantAndActiveTrue(appVariant);
     }
 
-    private AppVariant targetAppVariant() {
-        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
-        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
+    private List<AppVariant> targetAppVariants() {
+        List<AppVariant> configuredVariants = pushEventFlagService.getTargetAppVariants();
+        return configuredVariants == null || configuredVariants.isEmpty()
+                ? List.of(AppVariant.PRODUCTION)
+                : configuredVariants;
     }
 }

@@ -18,6 +18,7 @@ import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -88,29 +89,40 @@ public class CrowdVacantPushEventListener {
             Long userId,
             PushContent content
     ) {
-        AppVariant targetAppVariant = targetAppVariant();
-        if (userId == null
-                || !pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(userId, targetAppVariant)) {
+        if (userId == null) {
             return;
         }
 
-        pushDispatchService.enqueue(new PushDispatchCommand(
-                NotificationType.GENERAL,
-                PushMode.ACTUAL,
-                targetAppVariant,
-                PushTargetType.USER,
-                String.valueOf(userId),
-                content.title(),
-                content.body(),
-                PushActionType.PLACE_DETAIL,
-                Map.of("placeId", event.placeId()),
-                "crowd-vacant:%d:%d:%d".formatted(event.placeId(), userId, event.bleDataId()),
-                SYSTEM_CREATED_BY
-        ));
+        for (AppVariant targetAppVariant : targetAppVariants()) {
+            if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(userId, targetAppVariant)) {
+                continue;
+            }
+
+            pushDispatchService.enqueue(new PushDispatchCommand(
+                    NotificationType.GENERAL,
+                    PushMode.ACTUAL,
+                    targetAppVariant,
+                    PushTargetType.USER,
+                    String.valueOf(userId),
+                    content.title(),
+                    content.body(),
+                    PushActionType.PLACE_DETAIL,
+                    Map.of("placeId", event.placeId()),
+                    "crowd-vacant:%d:%d:%d:%s".formatted(
+                            event.placeId(),
+                            userId,
+                            event.bleDataId(),
+                            targetAppVariant.name().toLowerCase()
+                    ),
+                    SYSTEM_CREATED_BY
+            ));
+        }
     }
 
-    private AppVariant targetAppVariant() {
-        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
-        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
+    private List<AppVariant> targetAppVariants() {
+        List<AppVariant> configuredVariants = pushEventFlagService.getTargetAppVariants();
+        return configuredVariants == null || configuredVariants.isEmpty()
+                ? List.of(AppVariant.PRODUCTION)
+                : configuredVariants;
     }
 }

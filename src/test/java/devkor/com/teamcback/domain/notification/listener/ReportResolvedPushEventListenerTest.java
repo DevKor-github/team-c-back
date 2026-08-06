@@ -63,7 +63,7 @@ class ReportResolvedPushEventListenerTest {
         assertThat(command.title()).isEqualTo("신고 처리 결과를 확인해주세요.");
         assertThat(command.body()).isEqualTo("접수한 신고의 처리가 완료되었습니다. 고대로에서 결과를 확인해주세요.");
         assertThat(command.body()).doesNotContain("sensitive").doesNotContain("memo");
-        assertThat(command.idempotencyKey()).isEqualTo("report-result:3:REJECTED:7");
+        assertThat(command.idempotencyKey()).isEqualTo("report-result:3:REJECTED:7:production");
     }
 
     @Test

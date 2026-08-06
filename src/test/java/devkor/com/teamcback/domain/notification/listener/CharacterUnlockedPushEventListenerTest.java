@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.notification.entity.type.PushTargetType;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.service.PushDispatchService;
 import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,21 +61,31 @@ class CharacterUnlockedPushEventListenerTest {
         assertThat(command.actionParams()).isEmpty();
         assertThat(command.title()).isEqualTo("새 캐릭터가 기다리고 있어요!");
         assertThat(command.body()).isEqualTo("아기 호랑이을 만나러 가볼까요?");
-        assertThat(command.idempotencyKey()).isEqualTo("character-unlock:7:4:44");
+        assertThat(command.idempotencyKey()).isEqualTo("character-unlock:7:4:44:production");
     }
 
     @Test
-    void usesConfiguredDevVariantForAutomaticDispatch() {
+    void createsSeparateDevAndProductionDispatches() {
         when(pushEventFlagService.isEnabled(PushEventType.CHARACTER)).thenReturn(true);
-        when(pushEventFlagService.getTargetAppVariant()).thenReturn(AppVariant.DEV);
+        when(pushEventFlagService.getTargetAppVariants()).thenReturn(List.of(AppVariant.DEV, AppVariant.PRODUCTION));
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.DEV))
+                .thenReturn(true);
+        when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION))
                 .thenReturn(true);
 
         listener.handle(new CharacterUnlockedEvent(7L, 4L, 44L, "아기 호랑이"));
 
         ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
-        verify(pushDispatchService).enqueue(captor.capture());
-        assertThat(captor.getValue().appVariant()).isEqualTo(AppVariant.DEV);
+        verify(pushDispatchService, org.mockito.Mockito.times(2)).enqueue(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(PushDispatchCommand::appVariant)
+                .containsExactly(AppVariant.DEV, AppVariant.PRODUCTION);
+        assertThat(captor.getAllValues())
+                .extracting(PushDispatchCommand::idempotencyKey)
+                .containsExactly(
+                        "character-unlock:7:4:44:dev",
+                        "character-unlock:7:4:44:production"
+                );
     }
 
     @Test

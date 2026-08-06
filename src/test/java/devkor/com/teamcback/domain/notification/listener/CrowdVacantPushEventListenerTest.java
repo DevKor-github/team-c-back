@@ -89,7 +89,7 @@ class CrowdVacantPushEventListenerTest {
         assertThat(first.title()).isEqualTo("기다리던 자리가 생겼어요!");
         assertThat(first.body()).isEqualTo("신공학관 라운지이 한산해요. 방문하기 전 현황을 확인해보세요.");
         assertThat(first.body()).doesNotContain("null");
-        assertThat(first.idempotencyKey()).isEqualTo("crowd-vacant:10:1:99");
+        assertThat(first.idempotencyKey()).isEqualTo("crowd-vacant:10:1:99:production");
     }
 
     @Test

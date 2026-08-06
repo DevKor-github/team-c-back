@@ -5,6 +5,7 @@ import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,11 +29,19 @@ public class PushEventFlagService {
     @Value("${push.event.survey-enabled:false}")
     private boolean surveyDefaultEnabled;
 
-    @Value("${push.event.target-app-variant:PRODUCTION}")
-    private AppVariant targetAppVariant;
+    @Value("${push.event.target-app-variants:DEV,PRODUCTION}")
+    private String targetAppVariants;
 
-    public AppVariant getTargetAppVariant() {
-        return targetAppVariant;
+    public List<AppVariant> getTargetAppVariants() {
+        List<AppVariant> configuredVariants = Arrays.stream(targetAppVariants.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(value -> AppVariant.valueOf(value.toUpperCase(Locale.ROOT)))
+                .distinct()
+                .toList();
+        return configuredVariants.isEmpty()
+                ? List.of(AppVariant.DEV, AppVariant.PRODUCTION)
+                : configuredVariants;
     }
 
     public boolean isEnabled(PushEventType eventType) {

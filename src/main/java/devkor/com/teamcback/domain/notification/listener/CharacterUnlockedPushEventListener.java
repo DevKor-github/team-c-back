@@ -13,6 +13,7 @@ import devkor.com.teamcback.domain.notification.service.PushDispatchService;
 import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
 import devkor.com.teamcback.domain.notification.template.PushContent;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,46 +41,51 @@ public class CharacterUnlockedPushEventListener {
             return;
         }
 
-        try {
-            AppVariant targetAppVariant = targetAppVariant();
-            if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
-                    event.userId(),
-                    targetAppVariant
-            )) {
-                return;
-            }
+        for (AppVariant targetAppVariant : targetAppVariants()) {
+            try {
+                if (!pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(
+                        event.userId(),
+                        targetAppVariant
+                )) {
+                    continue;
+                }
 
-            PushContent content = DomainPushContentFactory.characterUnlocked(event.characterName());
-            pushDispatchService.enqueue(new PushDispatchCommand(
-                    NotificationType.GENERAL,
-                    PushMode.ACTUAL,
-                    targetAppVariant,
-                    PushTargetType.USER,
-                    String.valueOf(event.userId()),
-                    content.title(),
-                    content.body(),
-                    PushActionType.CHARACTER_STORE,
-                    Map.of(),
-                    "character-unlock:%d:%d:%d".formatted(
-                            event.userId(),
-                            event.characterId(),
-                            event.userCharacterId()
-                    ),
-                    SYSTEM_CREATED_BY
-            ));
-        } catch (Exception e) {
-            log.warn(
-                    "character unlock push failed: userId={}, characterId={}, userCharacterId={}, error={}",
-                    event.userId(),
-                    event.characterId(),
-                    event.userCharacterId(),
-                    e.getMessage()
-            );
+                PushContent content = DomainPushContentFactory.characterUnlocked(event.characterName());
+                pushDispatchService.enqueue(new PushDispatchCommand(
+                        NotificationType.GENERAL,
+                        PushMode.ACTUAL,
+                        targetAppVariant,
+                        PushTargetType.USER,
+                        String.valueOf(event.userId()),
+                        content.title(),
+                        content.body(),
+                        PushActionType.CHARACTER_STORE,
+                        Map.of(),
+                        "character-unlock:%d:%d:%d:%s".formatted(
+                                event.userId(),
+                                event.characterId(),
+                                event.userCharacterId(),
+                                targetAppVariant.name().toLowerCase()
+                        ),
+                        SYSTEM_CREATED_BY
+                ));
+            } catch (Exception e) {
+                log.warn(
+                        "character unlock push failed: userId={}, characterId={}, userCharacterId={}, appVariant={}, error={}",
+                        event.userId(),
+                        event.characterId(),
+                        event.userCharacterId(),
+                        targetAppVariant,
+                        e.getMessage()
+                );
+            }
         }
     }
 
-    private AppVariant targetAppVariant() {
-        AppVariant configuredVariant = pushEventFlagService.getTargetAppVariant();
-        return configuredVariant == null ? AppVariant.PRODUCTION : configuredVariant;
+    private List<AppVariant> targetAppVariants() {
+        List<AppVariant> configuredVariants = pushEventFlagService.getTargetAppVariants();
+        return configuredVariants == null || configuredVariants.isEmpty()
+                ? List.of(AppVariant.PRODUCTION)
+                : configuredVariants;
     }
 }

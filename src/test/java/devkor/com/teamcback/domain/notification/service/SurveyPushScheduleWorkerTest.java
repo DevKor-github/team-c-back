@@ -99,7 +99,7 @@ class SurveyPushScheduleWorkerTest {
         assertThat(command.targetValue()).isEqualTo("ALL");
         assertThat(command.actionType()).isEqualTo(PushActionType.HOME);
         assertThat(command.actionParams()).isEmpty();
-        assertThat(command.idempotencyKey()).isEqualTo("survey:" + SURVEY_KEY + ":STARTED");
+        assertThat(command.idempotencyKey()).isEqualTo("survey:" + SURVEY_KEY + ":STARTED:production");
         assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.COMPLETED);
         assertThat(schedule.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-17T10:00:00"));
     }

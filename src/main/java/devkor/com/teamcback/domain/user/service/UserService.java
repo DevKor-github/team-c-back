@@ -116,7 +116,12 @@ public class UserService {
         String rawCode = UUID.randomUUID().toString();
         user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
+        return new LoginUserRes(
+            jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            rawCode,
+            email
+        );
     }
 
     private String validateToken(Provider provider, String token) {

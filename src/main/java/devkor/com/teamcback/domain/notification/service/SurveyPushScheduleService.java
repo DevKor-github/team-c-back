@@ -125,16 +125,17 @@ public class SurveyPushScheduleService {
 
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime remindAt = now.plusDays(1);
-        SurveyReminderSuppressedBy suppressedBy = suppressionForReminder(surveyKey, remindAt, deadline.getScheduledAt());
-        if (!SurveyReminderSuppressedBy.NONE.equals(suppressedBy)) {
-            return new SurveyReminderRes(surveyKey, false, null, suppressedBy);
-        }
-
         String idempotencyKey = idempotencyKey(
                 surveyKey,
                 SurveyNotificationStage.REMIND_AFTER_LATER,
                 userId
         );
+
+        SurveyReminderSuppressedBy suppressedBy = suppressionForReminder(surveyKey, remindAt, deadline.getScheduledAt());
+        if (!SurveyReminderSuppressedBy.NONE.equals(suppressedBy)) {
+            cancelPendingReminderIfExists(idempotencyKey, now);
+            return new SurveyReminderRes(surveyKey, false, null, suppressedBy);
+        }
 
         return surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey)
                 .map(existing -> updateExistingReminder(surveyKey, remindAt, deadline.getRewardPoint(), existing))
@@ -212,6 +213,15 @@ public class SurveyPushScheduleService {
                 saved.getScheduledAt(),
                 SurveyReminderSuppressedBy.NONE
         );
+    }
+
+    private void cancelPendingReminderIfExists(
+            String idempotencyKey,
+            LocalDateTime now
+    ) {
+        surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey)
+                .filter(SurveyPushSchedule::isPending)
+                .ifPresent(schedule -> schedule.cancel(now));
     }
 
     private SurveyReminderSuppressedBy suppressionForReminder(

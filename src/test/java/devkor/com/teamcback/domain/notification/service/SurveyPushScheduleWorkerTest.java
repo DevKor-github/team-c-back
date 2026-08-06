@@ -12,6 +12,8 @@ import devkor.com.teamcback.domain.notification.entity.type.SurveyNotificationSt
 import devkor.com.teamcback.domain.notification.entity.type.SurveyPushScheduleStatus;
 import devkor.com.teamcback.domain.notification.repository.PushInstallationRepository;
 import devkor.com.teamcback.domain.notification.repository.SurveyPushScheduleRepository;
+import devkor.com.teamcback.global.exception.exception.GlobalException;
+import devkor.com.teamcback.global.response.ResultCode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -28,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -124,7 +127,7 @@ class SurveyPushScheduleWorkerTest {
     }
 
     @Test
-    void noActiveTargetMarksSkippedWithoutEnqueue() {
+    void noActiveTargetMarksSkippedWithProcessedAt() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
         when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
@@ -135,10 +138,43 @@ class SurveyPushScheduleWorkerTest {
 
         verify(pushDispatchService, never()).enqueue(any());
         assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.SKIPPED);
+        assertThat(schedule.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-17T10:00:00"));
     }
 
     @Test
-    void unexpectedExceptionKeepsSchedulePendingForRetry() {
+    void pushDispatchInvalidInputNotCausedByNoTargetKeepsPending() {
+        SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
+        when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+                .thenReturn(List.of(schedule));
+        when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
+        when(pushDispatchService.enqueue(any())).thenThrow(new GlobalException(ResultCode.INVALID_INPUT));
+
+        worker.processDueSchedulesOnce();
+
+        verify(pushDispatchService).enqueue(any());
+        assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.PENDING);
+        assertThat(schedule.getProcessedAt()).isNull();
+    }
+
+    @Test
+    void pushDispatchGlobalExceptionKeepsPending() {
+        SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
+        when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+                .thenReturn(List.of(schedule));
+        when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
+        when(pushDispatchService.enqueue(any())).thenThrow(new GlobalException(ResultCode.UNSUPPORTED_REQUEST));
+
+        worker.processDueSchedulesOnce();
+
+        verify(pushDispatchService).enqueue(any());
+        assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.PENDING);
+        assertThat(schedule.getProcessedAt()).isNull();
+    }
+
+    @Test
+    void pushDispatchRuntimeExceptionKeepsPending() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
         when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
@@ -148,6 +184,7 @@ class SurveyPushScheduleWorkerTest {
 
         worker.processDueSchedulesOnce();
 
+        verify(pushDispatchService).enqueue(any());
         assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.PENDING);
         assertThat(schedule.getProcessedAt()).isNull();
     }
@@ -167,6 +204,57 @@ class SurveyPushScheduleWorkerTest {
 
         verify(pushDispatchService, never()).enqueue(any());
         assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+    }
+
+    @Test
+    void reminderIsCancelledWhenLatestDeadlineDateHasPriority() {
+        SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-17T09:00:00", 100);
+        when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+                .thenReturn(List.of(schedule));
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T10:00:00", 100)));
+
+        worker.processDueSchedulesOnce();
+
+        verify(pushDispatchService, never()).enqueue(any());
+        assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+        assertThat(schedule.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-17T10:00:00"));
+    }
+
+    @Test
+    void reminderIsCancelledWhenNowIsAfterDeadline() {
+        SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-16T09:00:00", 100);
+        when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+                .thenReturn(List.of(schedule));
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:59:59", 100)));
+
+        worker.processDueSchedulesOnce();
+
+        verify(pushDispatchService, never()).enqueue(any());
+        assertThat(schedule.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+        assertThat(schedule.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-17T10:00:00"));
+    }
+
+    @Test
+    void deadlineAndD3SchedulesDoNotRunReminderPriorityCancellation() {
+        SurveyPushSchedule started = schedule(SurveyNotificationStage.STARTED, null, "2026-08-17T09:00:00", 100);
+        SurveyPushSchedule d3 = schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-17T09:00:00", 100);
+        SurveyPushSchedule deadline = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
+        when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+                .thenReturn(List.of(started, d3, deadline));
+        when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
+
+        worker.processDueSchedulesOnce();
+
+        verify(surveyPushScheduleRepository, never()).findBySurveyKeyAndNotificationStage(any(), any());
+        verify(pushDispatchService, times(3)).enqueue(any());
+        assertThat(started.getStatus()).isEqualTo(SurveyPushScheduleStatus.COMPLETED);
+        assertThat(d3.getStatus()).isEqualTo(SurveyPushScheduleStatus.COMPLETED);
+        assertThat(deadline.getStatus()).isEqualTo(SurveyPushScheduleStatus.COMPLETED);
     }
 
     private SurveyPushSchedule schedule(

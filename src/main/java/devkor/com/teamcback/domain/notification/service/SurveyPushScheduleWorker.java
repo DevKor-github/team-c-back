@@ -14,7 +14,6 @@ import devkor.com.teamcback.domain.notification.repository.SurveyPushScheduleRep
 import devkor.com.teamcback.domain.notification.template.DomainPushContentFactory;
 import devkor.com.teamcback.domain.notification.template.PushContent;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
-import devkor.com.teamcback.global.response.ResultCode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -80,10 +79,6 @@ public class SurveyPushScheduleWorker {
             pushDispatchService.enqueue(command(schedule));
             schedule.complete(now);
         } catch (GlobalException e) {
-            if (ResultCode.INVALID_INPUT.equals(e.getResultCode())) {
-                schedule.skip(now);
-                return;
-            }
             log.warn(
                     "Survey push schedule processing failed. scheduleId={}, stage={}, resultCode={}",
                     schedule.getSurveyPushScheduleId(),
@@ -92,10 +87,10 @@ public class SurveyPushScheduleWorker {
             );
         } catch (RuntimeException e) {
             log.warn(
-                    "Unexpected survey push schedule processing failure. scheduleId={}, stage={}",
+                    "Unexpected survey push schedule processing failure. scheduleId={}, stage={}, exception={}",
                     schedule.getSurveyPushScheduleId(),
                     schedule.getNotificationStage(),
-                    e
+                    e.getClass().getSimpleName()
             );
         }
     }

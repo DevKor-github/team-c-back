@@ -27,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -178,10 +180,89 @@ class SurveyPushScheduleServiceTest {
 
         when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T09:59:59", 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.empty());
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
         assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
         assertThat(response.suppressedBy()).isEqualTo(SurveyReminderSuppressedBy.EXPIRED);
+    }
+
+    @Test
+    void remindAfterLaterCancelsExistingPendingReminderWhenSuppressedByD3() {
+        SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
+
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-07T09:00:00", 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.of(existing));
+
+        SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
+
+        assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
+        assertThat(response.suppressedBy()).isEqualTo(SurveyReminderSuppressedBy.D3);
+        assertThat(existing.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+        assertThat(existing.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-06T10:00:00"));
+        verify(repository, never()).save(any(SurveyPushSchedule.class));
+    }
+
+    @Test
+    void remindAfterLaterCancelsExistingPendingReminderWhenSuppressedByDeadline() {
+        SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
+
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T11:00:00", 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.of(existing));
+
+        SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
+
+        assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
+        assertThat(response.suppressedBy()).isEqualTo(SurveyReminderSuppressedBy.DEADLINE);
+        assertThat(existing.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+        assertThat(existing.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-06T10:00:00"));
+        verify(repository, never()).save(any(SurveyPushSchedule.class));
+    }
+
+    @Test
+    void remindAfterLaterCancelsExistingPendingReminderWhenExpired() {
+        SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
+
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T09:59:59", 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.of(existing));
+
+        SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
+
+        assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
+        assertThat(response.suppressedBy()).isEqualTo(SurveyReminderSuppressedBy.EXPIRED);
+        assertThat(existing.getStatus()).isEqualTo(SurveyPushScheduleStatus.CANCELLED);
+        assertThat(existing.getProcessedAt()).isEqualTo(LocalDateTime.parse("2026-08-06T10:00:00"));
+        verify(repository, never()).save(any(SurveyPushSchedule.class));
+    }
+
+    @Test
+    void remindAfterLaterDoesNotCreateCancelledRowWhenSuppressedWithoutExistingReminder() {
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+                .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-07T09:00:00", 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.empty());
+
+        SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
+
+        assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
+        assertThat(response.suppressedBy()).isEqualTo(SurveyReminderSuppressedBy.D3);
+        verify(repository, never()).save(any(SurveyPushSchedule.class));
     }
 
     @Test
@@ -212,10 +293,13 @@ class SurveyPushScheduleServiceTest {
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, deadlineAt, 100)));
         when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, d3At, 100)));
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+                .thenReturn(Optional.empty());
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
 
         assertThat(response.scheduled()).isFalse();
+        assertThat(response.scheduledAt()).isNull();
         assertThat(response.suppressedBy()).isEqualTo(suppressedBy);
     }
 

@@ -1,16 +1,21 @@
 package devkor.com.teamcback.domain.notification.controller;
 
 import devkor.com.teamcback.domain.notification.dto.request.AdminPushDispatchReq;
+import devkor.com.teamcback.domain.notification.dto.request.UpdatePushEventFlagReq;
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushDispatchDetailRes;
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushDispatchPreviewRes;
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushDispatchSummaryRes;
+import devkor.com.teamcback.domain.notification.dto.response.AdminPushEventFlagRes;
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushInstallationRes;
 import devkor.com.teamcback.domain.notification.dto.response.PushDispatchEnqueueRes;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
+import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
 import devkor.com.teamcback.domain.notification.entity.type.PushDispatchStatus;
 import devkor.com.teamcback.domain.notification.service.AdminNotificationService;
+import devkor.com.teamcback.domain.notification.service.PushEventFlagService;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.CommonResponse;
+import devkor.com.teamcback.global.response.ResultCode;
 import devkor.com.teamcback.global.security.UserDetailsImpl;
 import java.util.List;
 
@@ -20,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -38,6 +44,7 @@ public class AdminNotificationController {
     private static final String DEFAULT_SIZE = "20";
 
     private final AdminNotificationService adminNotificationService;
+    private final PushEventFlagService pushEventFlagService;
 
     @Operation(
             summary = "푸시 대상 installation 검색",
@@ -132,5 +139,22 @@ public class AdminNotificationController {
             @PathVariable Long dispatchId
     ) {
         return CommonResponse.success(adminNotificationService.getDispatch(dispatchId));
+    }
+
+    @GetMapping("/event-flags")
+    public CommonResponse<List<AdminPushEventFlagRes>> getEventFlags() {
+        return CommonResponse.success(pushEventFlagService.getFlags());
+    }
+
+    @PatchMapping("/event-flags/{eventType}")
+    public CommonResponse<AdminPushEventFlagRes> updateEventFlag(
+            @PathVariable PushEventType eventType,
+            @RequestBody UpdatePushEventFlagReq request
+    ) {
+        if (request == null || request.enabled() == null) {
+            throw new GlobalException(ResultCode.INVALID_INPUT);
+        }
+
+        return CommonResponse.success(pushEventFlagService.updateFlag(eventType, request.enabled()));
     }
 }

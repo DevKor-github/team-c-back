@@ -16,6 +16,7 @@ import devkor.com.teamcback.domain.character.dto.response.GrantCharacterRes;
 import devkor.com.teamcback.domain.character.dto.response.ModifyCharacterRes;
 import devkor.com.teamcback.domain.character.entity.KoCharacter;
 import devkor.com.teamcback.domain.character.entity.UserCharacter;
+import devkor.com.teamcback.domain.character.event.CharacterUnlockedEvent;
 import devkor.com.teamcback.domain.character.repository.CharacterRepository;
 import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
 import devkor.com.teamcback.domain.user.entity.Level;
@@ -26,6 +27,7 @@ import devkor.com.teamcback.infra.s3.FilePath;
 import devkor.com.teamcback.infra.s3.S3Util;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +39,7 @@ public class AdminStoreService {
     private final UserCharacterRepository userCharacterRepository;
     private final UserRepository userRepository;
     private final S3Util s3Util;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 캐릭터 목록 조회 (비활성 포함)
@@ -119,7 +122,13 @@ public class AdminStoreService {
             throw new GlobalException(ALREADY_OWNED_CHARACTER);
         }
 
-        UserCharacter userCharacter = userCharacterRepository.save(new UserCharacter(user, character));
+        UserCharacter userCharacter = userCharacterRepository.saveAndFlush(new UserCharacter(user, character));
+        eventPublisher.publishEvent(new CharacterUnlockedEvent(
+                user.getUserId(),
+                character.getCharacterId(),
+                userCharacter.getUserCharacterId(),
+                character.getName()
+        ));
 
         return new GrantCharacterRes(userCharacter.getUserCharacterId());
     }

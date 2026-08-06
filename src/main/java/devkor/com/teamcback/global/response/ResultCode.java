@@ -120,7 +120,11 @@ public enum ResultCode {
     NOT_OWNED_CHARACTER(HttpStatus.BAD_REQUEST, 18003, "보유하지 않은 캐릭터입니다."),
     CHARACTER_IN_USE(HttpStatus.CONFLICT, 18004, "사용자가 보유 중인 캐릭터는 삭제할 수 없습니다."),
     INACTIVE_CHARACTER(HttpStatus.BAD_REQUEST, 18005, "비활성화된 캐릭터입니다."),
-    INSUFFICIENT_LEVEL(HttpStatus.BAD_REQUEST, 18006, "레벨이 부족합니다.");
+    INSUFFICIENT_LEVEL(HttpStatus.BAD_REQUEST, 18006, "레벨이 부족합니다."),
+
+    // 사용 성향 조사 19000번대
+    ALREADY_ANSWERED_USAGE_SURVEY(HttpStatus.CONFLICT, 19000, "이미 응답한 조사 문항입니다."),
+    INVALID_USAGE_SURVEY_OPTION(HttpStatus.BAD_REQUEST, 19001, "유효하지 않은 조사 응답입니다.");
 
 
     private final HttpStatus status;

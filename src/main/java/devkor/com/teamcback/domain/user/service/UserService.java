@@ -12,7 +12,9 @@ import devkor.com.teamcback.domain.notification.service.PushInstallationService;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
+import devkor.com.teamcback.domain.user.dto.request.AdminLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.AdminLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
@@ -124,6 +126,30 @@ public class UserService {
             case APPLE -> appleValidator.validateToken(token);
             default -> throw new GlobalException(INVALID_INPUT);
         };
+    }
+
+    /**
+     * 관리자 대시보드용 소셜 로그인.
+     * 일반 로그인과 달리 신규 사용자를 만들지 않으며 기존 ADMIN 계정만 토큰을 발급한다.
+     */
+    @Transactional(readOnly = true)
+    public AdminLoginRes adminLogin(AdminLoginReq adminLoginReq) {
+        Provider provider = adminLoginReq.getProvider();
+        if(provider != Provider.GOOGLE && provider != Provider.KAKAO) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+
+        String email = validateToken(provider, adminLoginReq.getToken());
+        User user = userRepository.findByEmailAndProvider(email, provider);
+        if(user == null || user.getRole() != Role.ADMIN) {
+            throw new GlobalException(FORBIDDEN);
+        }
+
+        return new AdminLoginRes(
+            jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            user
+        );
     }
 
     /**

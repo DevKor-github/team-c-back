@@ -47,6 +47,34 @@ public final class DomainPushContentFactory {
         );
     }
 
+    public static PushContent surveyStarted() {
+        return new PushContent(
+                "고대로를 함께 만들어주세요!",
+                "잠깐의 설문으로 고대로를 더 편리하게 만들어주세요."
+        );
+    }
+
+    public static PushContent surveyDMinus3() {
+        return new PushContent(
+                "단 3초! 고대로의 개선을 위해 도와주세요",
+                "잠깐의 설문으로 고대로를 더 편리하게 만들어주세요."
+        );
+    }
+
+    public static PushContent surveyDeadline(int rewardPoint) {
+        return new PushContent(
+                "설문이 오늘 마감돼요!",
+                "설문에 참여하면 " + rewardPoint + " 포인트를 받을 수 있어요.(5초 소요)"
+        );
+    }
+
+    public static PushContent surveyRemindAfterLater(int rewardPoint) {
+        return new PushContent(
+                "잠깐, 설문을 잊지 않으셨나요?",
+                "지금 투표에 참여하고 " + rewardPoint + "포인트를 받아보세요.(5초 소요)"
+        );
+    }
+
     private static String joinNonBlank(
             String first,
             String second

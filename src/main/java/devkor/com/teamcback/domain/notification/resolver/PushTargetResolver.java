@@ -33,6 +33,7 @@ public class PushTargetResolver {
             case INSTALLATION -> resolveInstallation(targetValue, appVariant);
             case USER -> resolveUser(targetValue, appVariant);
             case USER_GROUP -> throw new GlobalException(UNSUPPORTED_REQUEST);
+            case ALL -> resolveAll(targetValue, appVariant);
         };
 
         List<PushInstallation> distinctInstallations = distinctByInstallation(installations);
@@ -66,6 +67,17 @@ public class PushTargetResolver {
                 userId,
                 appVariant
         );
+    }
+
+    private List<PushInstallation> resolveAll(
+            String targetValue,
+            AppVariant appVariant
+    ) {
+        if (!"ALL".equals(targetValue)) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+
+        return pushInstallationRepository.findAllByAppVariantAndActiveTrue(appVariant);
     }
 
     private List<PushInstallation> distinctByInstallation(List<PushInstallation> installations) {

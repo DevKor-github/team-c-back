@@ -32,6 +32,7 @@ class PushEventFlagServiceTest {
         ReflectionTestUtils.setField(service, "crowdDefaultEnabled", false);
         ReflectionTestUtils.setField(service, "reportDefaultEnabled", true);
         ReflectionTestUtils.setField(service, "characterDefaultEnabled", false);
+        ReflectionTestUtils.setField(service, "surveyDefaultEnabled", false);
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
@@ -40,9 +41,11 @@ class PushEventFlagServiceTest {
     void returnsYamlDefaultWhenRedisValueDoesNotExist() {
         when(valueOperations.get(PushEventType.CROWD.redisKey())).thenReturn(null);
         when(valueOperations.get(PushEventType.REPORT.redisKey())).thenReturn(null);
+        when(valueOperations.get(PushEventType.SURVEY.redisKey())).thenReturn(null);
 
         assertThat(service.isEnabled(PushEventType.CROWD)).isFalse();
         assertThat(service.isEnabled(PushEventType.REPORT)).isTrue();
+        assertThat(service.isEnabled(PushEventType.SURVEY)).isFalse();
     }
 
     @Test

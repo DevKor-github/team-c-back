@@ -40,8 +40,16 @@ public interface PushInstallationRepository extends JpaRepository<PushInstallati
             AppVariant appVariant
     );
 
+    List<PushInstallation> findAllByAppVariantAndActiveTrue(
+            AppVariant appVariant
+    );
+
     boolean existsByUserIdAndAppVariantAndActiveTrue(
             Long userId,
+            AppVariant appVariant
+    );
+
+    boolean existsByAppVariantAndActiveTrue(
             AppVariant appVariant
     );
 

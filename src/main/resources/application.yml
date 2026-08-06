@@ -167,6 +167,9 @@ push:
     crowd-enabled: ${PUSH_EVENT_CROWD_ENABLED:false}
     report-enabled: ${PUSH_EVENT_REPORT_ENABLED:false}
     character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}
+    survey-enabled: ${PUSH_EVENT_SURVEY_ENABLED:false}
+  survey:
+    poll-interval-ms: ${PUSH_SURVEY_POLL_INTERVAL_MS:60000}
   worker:
     enabled: ${PUSH_WORKER_ENABLED:false}
     fixed-delay-ms: ${PUSH_WORKER_FIXED_DELAY_MS:5000}

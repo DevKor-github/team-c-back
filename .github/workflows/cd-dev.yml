@@ -1,6 +1,7 @@
 name: CI/CD using github actions & docker
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop

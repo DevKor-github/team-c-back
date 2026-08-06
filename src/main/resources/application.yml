@@ -83,7 +83,6 @@ jwt:
       iss: ${APPLE_ISS}
       aud: ${APPLE_AUD}
       dev-aud: ${APPLE_DEV_AUD}
-      preview-aud: ${APPLE_PREVIEW_AUD:}
   admin:
     token: ${JWT_ADMIN_TOKEN}
 

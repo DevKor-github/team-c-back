@@ -83,6 +83,7 @@ jwt:
       iss: ${APPLE_ISS}
       aud: ${APPLE_AUD}
       dev-aud: ${APPLE_DEV_AUD}
+      preview-aud: ${APPLE_PREVIEW_AUD:}
   admin:
     token: ${JWT_ADMIN_TOKEN}
 
@@ -165,7 +166,8 @@ push:
     connect-timeout: 3s
     read-timeout: 10s
   event:
-    target-app-variants: ${PUSH_EVENT_TARGET_APP_VARIANTS:DEV,PRODUCTION}
+    # Dev server sets PREVIEW; production safely defaults to PRODUCTION.
+    target-app-variants: ${PUSH_EVENT_TARGET_APP_VARIANTS:PRODUCTION}
     crowd-enabled: ${PUSH_EVENT_CROWD_ENABLED:false}
     report-enabled: ${PUSH_EVENT_REPORT_ENABLED:false}
     character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}

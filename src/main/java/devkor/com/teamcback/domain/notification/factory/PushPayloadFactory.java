@@ -52,6 +52,7 @@ public class PushPayloadFactory {
                 new PushPayload.PushPayloadData(
                         PAYLOAD_VERSION,
                         notificationId,
+                        appVariant.toValue(),
                         new PushPayload.PushPayloadAction(
                                 actionType.name(),
                                 normalizedActionParams

@@ -11,6 +11,7 @@ public record PushPayload(
     public record PushPayloadData(
             int version,
             String notificationId,
+            String appVariant,
             PushPayloadAction action
     ) {
     }

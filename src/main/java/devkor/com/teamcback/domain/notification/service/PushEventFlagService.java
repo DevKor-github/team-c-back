@@ -29,7 +29,7 @@ public class PushEventFlagService {
     @Value("${push.event.survey-enabled:false}")
     private boolean surveyDefaultEnabled;
 
-    @Value("${push.event.target-app-variants:DEV,PRODUCTION}")
+    @Value("${push.event.target-app-variants:PRODUCTION}")
     private String targetAppVariants;
 
     public List<AppVariant> getTargetAppVariants() {
@@ -40,7 +40,7 @@ public class PushEventFlagService {
                 .distinct()
                 .toList();
         return configuredVariants.isEmpty()
-                ? List.of(AppVariant.DEV, AppVariant.PRODUCTION)
+                ? List.of(AppVariant.PRODUCTION)
                 : configuredVariants;
     }
 

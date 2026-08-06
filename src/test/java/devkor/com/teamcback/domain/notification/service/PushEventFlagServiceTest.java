@@ -34,17 +34,17 @@ class PushEventFlagServiceTest {
         ReflectionTestUtils.setField(service, "reportDefaultEnabled", true);
         ReflectionTestUtils.setField(service, "characterDefaultEnabled", false);
         ReflectionTestUtils.setField(service, "surveyDefaultEnabled", false);
-        ReflectionTestUtils.setField(service, "targetAppVariants", "DEV,PRODUCTION");
+        ReflectionTestUtils.setField(service, "targetAppVariants", "PREVIEW");
 
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test
-    void returnsConfiguredDevAndProductionTargetVariants() {
+    void returnsConfiguredPreviewTargetVariant() {
         service.isEnabled(PushEventType.CROWD);
 
         assertThat(service.getTargetAppVariants())
-                .containsExactly(AppVariant.DEV, AppVariant.PRODUCTION);
+                .containsExactly(AppVariant.PREVIEW);
     }
 
     @Test

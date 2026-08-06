@@ -28,6 +28,8 @@ public class AppleValidator {
     private String ISS;
     @Value("${jwt.social.apple.dev-aud}")
     private String DEV_AUD;
+    @Value("${jwt.social.apple.preview-aud:}")
+    private String PREVIEW_AUD;
     @Value("${jwt.social.apple.aud}")
     private String AUD;
 
@@ -38,7 +40,15 @@ public class AppleValidator {
     public String validateToken(String token) {
         try {
             // id_token 정보
-            Header tokenInfo = oidcUtil.getUnsignedTokenClaims(token, new String[] {DEV_AUD, AUD}, ISS).getHeader();
+            Header tokenInfo = oidcUtil.getUnsignedTokenClaims(
+                    token,
+                    new String[] {
+                            DEV_AUD,
+                            PREVIEW_AUD.isBlank() ? DEV_AUD : PREVIEW_AUD,
+                            AUD
+                    },
+                    ISS
+            ).getHeader();
             String kid = (String) tokenInfo.get(KID);
             String alg = (String) tokenInfo.get(ALG);
 

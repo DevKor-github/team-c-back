@@ -106,12 +106,15 @@ class AdminNotificationServiceTest {
                 PushMode.TEST,
                 AppVariant.DEV,
                 PushActionType.TEST,
-                Map.of()
+                Map.of(),
+                null
         )).thenReturn(payload);
 
         AdminPushDispatchPreviewRes response = service(false).preview(testRequest());
 
         assertThat(response.recipientCount()).isEqualTo(1);
+        assertThat(response.recipients()).hasSize(1);
+        assertThat(response.recipients().get(0).installationId()).isEqualTo("install-1");
         assertThat(response.payload()).isSameAs(payload);
         verify(pushDispatchRepository, never()).save(any(PushDispatch.class));
         verify(pushMessageRepository, never()).saveAll(any());
@@ -204,7 +207,8 @@ class AdminNotificationServiceTest {
                 PushMode.ACTUAL,
                 AppVariant.DEV,
                 PushActionType.HOME,
-                Map.of()
+                Map.of(),
+                null
         )).thenReturn(payload());
         when(pushDispatchService.enqueue(any(PushDispatchCommand.class)))
                 .thenReturn(enqueueResponse);
@@ -231,6 +235,84 @@ class AdminNotificationServiceTest {
         assertThat(captor.getValue().targetType()).isEqualTo(PushTargetType.ALL);
         assertThat(captor.getValue().targetValue()).isEqualTo("ALL");
         assertThat(captor.getValue().appVariant()).isEqualTo(AppVariant.DEV);
+    }
+
+    @Test
+    void selectedTargetValuesAreForwardedToTheDispatchCommand() {
+        PushDispatch dispatch = dispatch(PushMode.ACTUAL, AppVariant.DEV, PushTargetType.INSTALLATION);
+        PushDispatchEnqueueRes enqueueResponse = new PushDispatchEnqueueRes(dispatch);
+        when(pushDispatchService.enqueue(any(PushDispatchCommand.class)))
+                .thenReturn(enqueueResponse);
+
+        AdminPushDispatchReq request = new AdminPushDispatchReq(
+                PushMode.ACTUAL,
+                AppVariant.DEV,
+                PushTargetType.INSTALLATION,
+                "SELECTED(2)",
+                List.of("install-1", "install-2"),
+                "title",
+                "body",
+                PushActionType.HOME,
+                Map.of(),
+                false
+        );
+
+        service(false).enqueue(7L, "selected-1", request);
+
+        ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
+        verify(pushDispatchService).enqueue(captor.capture());
+        assertThat(captor.getValue().targetValues()).containsExactly("install-1", "install-2");
+    }
+
+    @Test
+    void imageUrlIsForwardedToTheDispatchCommand() {
+        PushDispatch dispatch = dispatch(PushMode.ACTUAL, AppVariant.DEV, PushTargetType.INSTALLATION);
+        PushDispatchEnqueueRes enqueueResponse = new PushDispatchEnqueueRes(dispatch);
+        when(pushDispatchService.enqueue(any(PushDispatchCommand.class)))
+                .thenReturn(enqueueResponse);
+
+        AdminPushDispatchReq request = new AdminPushDispatchReq(
+                PushMode.ACTUAL,
+                AppVariant.DEV,
+                PushTargetType.INSTALLATION,
+                "install-1",
+                null,
+                "title",
+                "body",
+                "https://cdn.kodaero.store/push/building.png",
+                PushActionType.HOME,
+                Map.of(),
+                false
+        );
+
+        service(false).enqueue(7L, "image-1", request);
+
+        ArgumentCaptor<PushDispatchCommand> captor = ArgumentCaptor.forClass(PushDispatchCommand.class);
+        verify(pushDispatchService).enqueue(captor.capture());
+        assertThat(captor.getValue().imageUrl()).isEqualTo("https://cdn.kodaero.store/push/building.png");
+    }
+
+    @Test
+    void selectedTargetValuesRequireInstallationTargetType() {
+        AdminPushDispatchReq request = new AdminPushDispatchReq(
+                PushMode.ACTUAL,
+                AppVariant.DEV,
+                PushTargetType.ALL,
+                "ALL",
+                List.of("install-1"),
+                "title",
+                "body",
+                PushActionType.HOME,
+                Map.of(),
+                false
+        );
+
+        assertThatThrownBy(() -> service(false).enqueue(7L, "selected-2", request))
+                .isInstanceOf(GlobalException.class)
+                .extracting("resultCode")
+                .isEqualTo(ResultCode.INVALID_INPUT);
+
+        verify(pushDispatchService, never()).enqueue(any(PushDispatchCommand.class));
     }
 
     @Test

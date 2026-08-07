@@ -29,6 +29,7 @@ public class PushDispatchService {
     private static final int MAX_BODY_LENGTH = 1024;
     private static final int MAX_TARGET_VALUE_LENGTH = 128;
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 128;
+    private static final int MAX_SELECTED_TARGETS = 500;
 
     private final PushDispatchRepository pushDispatchRepository;
     private final PushMessageRepository pushMessageRepository;
@@ -46,7 +47,8 @@ public class PushDispatchService {
                 command.mode(),
                 command.appVariant(),
                 command.actionType(),
-                command.actionParams()
+                command.actionParams(),
+                command.imageUrl()
         );
 
         return pushDispatchRepository.findByIdempotencyKey(command.idempotencyKey())
@@ -58,11 +60,16 @@ public class PushDispatchService {
             PushDispatchCommand command,
             PushPayload payload
     ) {
-        List<PushInstallation> installations = pushTargetResolver.resolve(
-                command.targetType(),
-                command.targetValue(),
-                command.appVariant()
-        );
+        List<PushInstallation> installations = hasSelectedTargets(command)
+                ? pushTargetResolver.resolveSelected(
+                        command.targetValues(),
+                        command.appVariant()
+                )
+                : pushTargetResolver.resolve(
+                        command.targetType(),
+                        command.targetValue(),
+                        command.appVariant()
+                );
 
         LocalDateTime now = LocalDateTime.now(clock);
 
@@ -75,6 +82,7 @@ public class PushDispatchService {
                         command.targetValue(),
                         command.title(),
                         command.body(),
+                        payload.image(),
                         command.actionType(),
                         pushPayloadFactory.serializeActionParams(payload.data().action().params()),
                         command.idempotencyKey(),
@@ -112,6 +120,17 @@ public class PushDispatchService {
         validateText(command.title(), MAX_TITLE_LENGTH);
         validateText(command.body(), MAX_BODY_LENGTH);
         validateText(command.idempotencyKey(), MAX_IDEMPOTENCY_KEY_LENGTH);
+
+        if (hasSelectedTargets(command)) {
+            if (command.targetValues().size() > MAX_SELECTED_TARGETS) {
+                throw new GlobalException(INVALID_INPUT);
+            }
+            command.targetValues().forEach(value -> validateText(value, MAX_TARGET_VALUE_LENGTH));
+        }
+    }
+
+    private boolean hasSelectedTargets(PushDispatchCommand command) {
+        return command.targetValues() != null && !command.targetValues().isEmpty();
     }
 
     private void validateText(

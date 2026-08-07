@@ -49,6 +49,8 @@ public class AdminNotificationService {
     private final PushPayloadFactory pushPayloadFactory;
     private final PushDispatchService pushDispatchService;
 
+    private static final int MAX_SELECTED_TARGETS = 500;
+
     @Value("${push.admin.production-enabled:false}")
     private boolean productionEnabled;
 
@@ -80,11 +82,16 @@ public class AdminNotificationService {
     public AdminPushDispatchPreviewRes preview(AdminPushDispatchReq request) {
         validateTargetRules(request);
 
-        List<PushInstallation> installations = pushTargetResolver.resolveForPreview(
-                request.targetType(),
-                request.targetValue(),
-                request.appVariant()
-        );
+        List<PushInstallation> installations = hasSelectedTargets(request)
+                ? pushTargetResolver.resolveSelectedForPreview(
+                        request.targetValues(),
+                        request.appVariant()
+                )
+                : pushTargetResolver.resolveForPreview(
+                        request.targetType(),
+                        request.targetValue(),
+                        request.appVariant()
+                );
 
         PushPayload payload = pushPayloadFactory.createForPreDispatchValidation(
                 request.title(),
@@ -92,11 +99,13 @@ public class AdminNotificationService {
                 request.mode(),
                 request.appVariant(),
                 request.actionType(),
-                request.actionParams()
+                request.actionParams(),
+                request.imageUrl()
         );
 
         return new AdminPushDispatchPreviewRes(
                 installations.size(),
+                installations.stream().map(AdminPushInstallationRes::new).toList(),
                 payload
         );
     }
@@ -116,8 +125,10 @@ public class AdminNotificationService {
                 request.appVariant(),
                 request.targetType(),
                 request.targetValue(),
+                request.targetValues(),
                 request.title(),
                 request.body(),
+                request.imageUrl(),
                 request.actionType(),
                 request.actionParams(),
                 idempotencyKey,
@@ -167,6 +178,13 @@ public class AdminNotificationService {
             throw new GlobalException(UNSUPPORTED_REQUEST);
         }
 
+        if (hasSelectedTargets(request)) {
+            if (!PushTargetType.INSTALLATION.equals(request.targetType())
+                    || request.targetValues().size() > MAX_SELECTED_TARGETS) {
+                throw new GlobalException(INVALID_INPUT);
+            }
+        }
+
         if (PushMode.TEST.equals(request.mode())
                 && !PushTargetType.INSTALLATION.equals(request.targetType())) {
             throw new GlobalException(INVALID_INPUT);
@@ -201,6 +219,10 @@ public class AdminNotificationService {
             statusCounts.put(status, 0L);
         }
         return statusCounts;
+    }
+
+    private boolean hasSelectedTargets(AdminPushDispatchReq request) {
+        return request.targetValues() != null && !request.targetValues().isEmpty();
     }
 
     private boolean hasText(String value) {

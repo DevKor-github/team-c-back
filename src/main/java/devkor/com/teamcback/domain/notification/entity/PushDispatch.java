@@ -65,6 +65,9 @@ public class PushDispatch {
     @Column(name = "body", nullable = false, length = 1024)
     private String body;
 
+    @Column(name = "image_url", length = 1024)
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", nullable = false, length = 40)
     private PushActionType actionType;
@@ -105,6 +108,38 @@ public class PushDispatch {
             Long createdBy,
             LocalDateTime createdAt
     ) {
+        this(
+                notificationType,
+                mode,
+                appVariant,
+                targetType,
+                targetValue,
+                title,
+                body,
+                null,
+                actionType,
+                actionParams,
+                idempotencyKey,
+                createdBy,
+                createdAt
+        );
+    }
+
+    public PushDispatch(
+            NotificationType notificationType,
+            PushMode mode,
+            AppVariant appVariant,
+            PushTargetType targetType,
+            String targetValue,
+            String title,
+            String body,
+            String imageUrl,
+            PushActionType actionType,
+            String actionParams,
+            String idempotencyKey,
+            Long createdBy,
+            LocalDateTime createdAt
+    ) {
         this.notificationType = notificationType;
         this.mode = mode;
         this.appVariant = appVariant;
@@ -112,6 +147,7 @@ public class PushDispatch {
         this.targetValue = targetValue;
         this.title = title;
         this.body = body;
+        this.imageUrl = imageUrl;
         this.actionType = actionType;
         this.actionParams = actionParams;
         this.recipientCount = 0;

@@ -67,7 +67,7 @@ public class AdminNotificationController {
             summary = "관리자 푸시 발송 미리보기",
             description = """
                 푸시를 실제로 생성하지 않고
-                대상 기기 수와 최종 payload를 확인합니다.
+                대상 기기 수, 대상 installation 목록, 최종 payload를 확인합니다.
                 PushDispatch와 PushMessage는 저장하지 않습니다.
                 """
     )

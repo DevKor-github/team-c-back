@@ -186,7 +186,8 @@ public class PushMessageClaimService {
                     dispatch.getMode(),
                     dispatch.getAppVariant(),
                     dispatch.getActionType(),
-                    pushPayloadFactory.deserializeActionParams(dispatch.getActionParams())
+                    pushPayloadFactory.deserializeActionParams(dispatch.getActionParams()),
+                    dispatch.getImageUrl()
             );
 
             return new PushSendItem(
@@ -197,6 +198,7 @@ public class PushMessageClaimService {
                             payload.title(),
                             payload.body(),
                             DEFAULT_SOUND,
+                            ExpoPushRequest.richContentForImage(payload.image()),
                             payload.data()
                     )
             );

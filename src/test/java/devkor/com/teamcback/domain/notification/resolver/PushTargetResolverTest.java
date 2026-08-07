@@ -7,6 +7,7 @@ import devkor.com.teamcback.domain.notification.repository.PushInstallationRepos
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.ResultCode;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,6 +72,42 @@ class PushTargetResolverTest {
                 .thenReturn(List.of());
 
         assertThatThrownBy(() -> resolver.resolve(PushTargetType.ALL, "ALL", AppVariant.PRODUCTION))
+                .isInstanceOf(GlobalException.class)
+                .extracting("resultCode")
+                .isEqualTo(ResultCode.INVALID_INPUT);
+    }
+
+    @Test
+    void selectedTargetsResolveDistinctActiveInstallations() {
+        PushInstallation first = new PushInstallation(1L, "install-1", "ExponentPushToken[first]", AppVariant.DEV);
+        PushInstallation second = new PushInstallation(2L, "install-2", "ExponentPushToken[second]", AppVariant.DEV);
+        when(pushInstallationRepository.findByInstallationIdAndAppVariantAndActiveTrue("install-1", AppVariant.DEV))
+                .thenReturn(Optional.of(first));
+        when(pushInstallationRepository.findByInstallationIdAndAppVariantAndActiveTrue("install-2", AppVariant.DEV))
+                .thenReturn(Optional.of(second));
+
+        List<PushInstallation> resolved = resolver.resolveSelected(
+                List.of("install-1", "install-2", "install-1"),
+                AppVariant.DEV
+        );
+
+        assertThat(resolved).containsExactly(first, second);
+    }
+
+    @Test
+    void selectedTargetsRejectWhenNoInstallationRemainsActive() {
+        when(pushInstallationRepository.findByInstallationIdAndAppVariantAndActiveTrue("install-1", AppVariant.DEV))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> resolver.resolveSelected(List.of("install-1"), AppVariant.DEV))
+                .isInstanceOf(GlobalException.class)
+                .extracting("resultCode")
+                .isEqualTo(ResultCode.INVALID_INPUT);
+    }
+
+    @Test
+    void selectedTargetsRejectBlankInstallationId() {
+        assertThatThrownBy(() -> resolver.resolveSelected(List.of("install-1", " "), AppVariant.DEV))
                 .isInstanceOf(GlobalException.class)
                 .extracting("resultCode")
                 .isEqualTo(ResultCode.INVALID_INPUT);

@@ -36,6 +36,48 @@ public class PushTargetResolver {
         return resolve(targetType, targetValue, appVariant, true);
     }
 
+    public List<PushInstallation> resolveSelected(
+            List<String> installationIds,
+            AppVariant appVariant
+    ) {
+        return resolveSelected(installationIds, appVariant, false);
+    }
+
+    public List<PushInstallation> resolveSelectedForPreview(
+            List<String> installationIds,
+            AppVariant appVariant
+    ) {
+        return resolveSelected(installationIds, appVariant, true);
+    }
+
+    private List<PushInstallation> resolveSelected(
+            List<String> installationIds,
+            AppVariant appVariant,
+            boolean allowEmpty
+    ) {
+        if (installationIds == null || installationIds.isEmpty() || appVariant == null) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+
+        List<PushInstallation> installations = installationIds.stream()
+                .map(installationId -> {
+                    if (installationId == null || installationId.isBlank()) {
+                        throw new GlobalException(INVALID_INPUT);
+                    }
+                    return resolveInstallation(installationId.trim(), appVariant);
+                })
+                .flatMap(List::stream)
+                .toList();
+
+        List<PushInstallation> distinctInstallations = distinctByInstallation(installations);
+
+        if (distinctInstallations.isEmpty() && !allowEmpty) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+
+        return distinctInstallations;
+    }
+
     private List<PushInstallation> resolve(
             PushTargetType targetType,
             String targetValue,

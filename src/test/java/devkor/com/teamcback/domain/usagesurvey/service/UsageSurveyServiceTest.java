@@ -139,4 +139,26 @@ class UsageSurveyServiceTest {
         assertThat(captor.getValue().getDismissReason())
                 .isEqualTo(UsageSurveyDismissReason.LATER);
     }
+
+    @Test
+    void clientCloseAndMoreFeedbackReasonsAreStored() {
+        service.recordDismissal(7L, new RecordUsageSurveyDismissalReq(
+                UsageSurveyQuestion.INSTALL_REASON,
+                UsageSurveyDismissReason.CLOSE
+        ));
+        service.recordDismissal(7L, new RecordUsageSurveyDismissalReq(
+                UsageSurveyQuestion.RECENT_USE_REASON,
+                UsageSurveyDismissReason.MORE_FEEDBACK
+        ));
+
+        ArgumentCaptor<UsageSurveyDismissal> captor =
+                ArgumentCaptor.forClass(UsageSurveyDismissal.class);
+        verify(dismissalRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(UsageSurveyDismissal::getDismissReason)
+                .containsExactly(
+                        UsageSurveyDismissReason.CLOSE,
+                        UsageSurveyDismissReason.MORE_FEEDBACK
+                );
+    }
 }

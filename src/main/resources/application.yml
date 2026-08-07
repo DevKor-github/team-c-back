@@ -75,7 +75,7 @@ jwt:
     kakao:
       iss: ${KAKAO_ISS}
       aud: ${KAKAO_AUD}
-      admin-aud: ${KAKAO_ADMIN_AUD:}
+      admin-aud: ${KAKAO_ADMIN_AUD:1a14d374f8b973d583be9e48d98b0954}
     google:
       iss: ${GOOGLE_ISS}
       aud: ${GOOGLE_AUD}

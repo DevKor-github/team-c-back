@@ -53,6 +53,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         throws ServletException, IOException {
 
         String accessToken = jwtUtil.getAccessTokenFromHeader(request);
+        log.info("Access Token: {}", accessToken);
 
         // access token 비어있으면 인증 미처리
         if (!StringUtils.hasText(accessToken)) {

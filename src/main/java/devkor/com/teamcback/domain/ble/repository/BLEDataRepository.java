@@ -11,6 +11,5 @@ import java.util.Optional;
 
 public interface BLEDataRepository extends JpaRepository<BLEData, Long> {
     Optional<BLEData> findTopByDeviceOrderByLastTimeDesc(BLEDevice device);
-    Optional<BLEData> findTopByDeviceOrderByLastTimeDescIdDesc(BLEDevice device);
     List<BLEData> findAllByDeviceAndLastTimeBetweenOrderByLastTimeAsc(BLEDevice device, LocalDateTime start, LocalDateTime end);
 }

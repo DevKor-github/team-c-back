@@ -12,8 +12,6 @@ import static org.mockito.Mockito.when;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
-import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
-import devkor.com.teamcback.domain.notification.service.PushInstallationService;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.dto.request.AdminLoginReq;
 import devkor.com.teamcback.domain.user.dto.response.AdminLoginRes;
@@ -45,13 +43,11 @@ class UserServiceAdminLoginTest {
     @Mock BookmarkRepository bookmarkRepository;
     @Mock UserBookmarkLogRepository userBookmarkLogRepository;
     @Mock SuggestionRepository suggestionRepository;
-    @Mock UserCharacterRepository userCharacterRepository;
     @Mock JwtUtil jwtUtil;
     @Mock KakaoValidator kakaoValidator;
     @Mock GoogleValidator googleValidator;
     @Mock AppleValidator appleValidator;
     @Mock PasswordEncoder passwordEncoder;
-    @Mock PushInstallationService pushInstallationService;
 
     AdminLoginReq request;
 

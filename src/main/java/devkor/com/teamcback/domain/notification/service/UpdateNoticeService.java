@@ -29,6 +29,6 @@ public class UpdateNoticeService {
                 .map(UpdateNoticeRes::new)
                 .toList();
 
-        return new UpdateNoticeListRes(versionService.getVersion(), notices);
+        return new UpdateNoticeListRes(versionService.getMinimumRequiredVersion(), notices);
     }
 }

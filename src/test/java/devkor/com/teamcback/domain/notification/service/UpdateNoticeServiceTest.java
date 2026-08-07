@@ -40,7 +40,7 @@ class UpdateNoticeServiceTest {
     }
 
     @Test
-    void returnsPublishedNoticeListWithPopupEligibilityAndLatestVersion() {
+    void returnsPublishedNoticeListWithPopupEligibilityAndMinimumRequiredVersion() {
         LocalDateTime now = LocalDateTime.now(CLOCK);
         var popupNotice = new UpdateNotice(
                 "포인트 상점 업데이트",
@@ -61,7 +61,7 @@ class UpdateNoticeServiceTest {
                 false
         );
 
-        when(versionService.getVersion()).thenReturn("2.3.0");
+        when(versionService.getMinimumRequiredVersion()).thenReturn("2.3.0");
         when(updateNoticeRepository
                 .findAllByStatusAndPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(
                         UpdateNoticeStatus.PUBLISHED,
@@ -76,7 +76,7 @@ class UpdateNoticeServiceTest {
                         UpdateNoticeStatus.PUBLISHED,
                         now
                 );
-        assertThat(result.latestVersion()).isEqualTo("2.3.0");
+        assertThat(result.minimumRequiredVersion()).isEqualTo("2.3.0");
         assertThat(result.notices()).hasSize(2);
         assertThat(result.notices().get(0).show()).isTrue();
         assertThat(result.notices().get(0).features())

@@ -11,9 +11,17 @@ import lombok.NoArgsConstructor;
 public class Version {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id = 1L;
 
     @Column(nullable = false)
     private String version;
+
+    public Version(String version) {
+        this.id = 1L;
+        this.version = version;
+    }
+
+    public void update(String version) {
+        this.version = version;
+    }
 }

@@ -4,10 +4,14 @@
 새 앱은 공개 API `GET /api/notifications/notices`를 호출한다. 응답의 `notices`는 공지 페이지에
 표시할 공개 시각이 지난 공지 전체이며, 그중 `show: true`인 항목만 업데이트 팝업 후보로 사용한다.
 
-최신 앱 버전은 DB가 아니라
-`domain/notification/config/AppVersionConfig.java`의 `LATEST_APP_VERSION`으로 관리한다. `develop`
-코드를 검증한 뒤 `main`으로 승격하면 같은 소스 값이 prod 이미지에 자동 포함된다. 앱 바이너리의
-`kodaero/config/appVersion.js`와 함께 변경해야 한다.
+필수 업데이트 기준은 기존 `tb_version`의 `id=1` 단일 행만 원천으로 사용한다. 관리자 콘솔의
+Dev/Prod 환경 선택에 따라 `GET/PUT /api/admin/notifications/required-version`으로 각 환경 DB 값을
+조회·수정한다. 백엔드 코드나 공지의 `app_version`에는 판정용 사본을 두지 않는다.
+
+- `GET /api/notifications/version`은 구버전 앱 호환을 위해 최소 필요 버전 문자열을 그대로 반환한다.
+- `GET /api/notifications/notices`는 같은 DB 값을 `minimumRequiredVersion`으로 반환한다.
+- 설치 버전이 이 값보다 낮을 때만 필수 업데이트 대상이며, 같은 버전은 허용한다.
+- DB 행이 없으면 빈 문자열을 반환해 설정 오류로 전체 앱이 차단되지 않게 한다.
 
 현재 애플리케이션은 `spring.jpa.hibernate.ddl-auto=update`이므로 개발 환경에서는 엔티티 배포 시
 `tb_update_notice`, `tb_update_notice_feature` 테이블과 인덱스가 자동 생성된다. 운영 환경에서는

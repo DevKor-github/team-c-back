@@ -31,7 +31,7 @@ class VersionControllerTest {
 
     @Test
     void legacyVersionEndpointKeepsStringDataContract() throws Exception {
-        when(versionService.getVersion()).thenReturn("2.3.0");
+        when(versionService.getMinimumRequiredVersion()).thenReturn("2.3.0");
 
         mockMvc.perform(get("/api/notifications/version"))
                 .andExpect(status().isOk())

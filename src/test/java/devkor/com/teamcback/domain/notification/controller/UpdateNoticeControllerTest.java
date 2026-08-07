@@ -55,7 +55,7 @@ class UpdateNoticeControllerTest {
         mockMvc.perform(get("/api/notifications/notices"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode").value(0))
-                .andExpect(jsonPath("$.data.latestVersion").value("2.3.0"))
+                .andExpect(jsonPath("$.data.minimumRequiredVersion").value("2.3.0"))
                 .andExpect(jsonPath("$.data.notices[0].id").value(17))
                 .andExpect(jsonPath("$.data.notices[0].show").value(true))
                 .andExpect(jsonPath("$.data.notices[0].linkUrl").value("https://example.com/notice"))

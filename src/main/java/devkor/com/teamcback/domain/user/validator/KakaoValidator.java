@@ -56,12 +56,26 @@ public class KakaoValidator{
 
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
-            return payload.getEmail();
+            return resolveEmail(payload);
         } catch(GlobalException e) {
             redisUtil.deleteCache("kakao::data");
             throw new GlobalException(e.getResultCode());
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }
+    }
+
+    String resolveEmail(OIDCDecodePayload payload) {
+        String email = payload.getEmail();
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+
+        String subject = payload.getSub();
+        if (subject == null || subject.isBlank()) {
+            throw new GlobalException(INVALID_TOKEN);
+        }
+
+        return "kakao_" + subject + "@noemail.kodaero.invalid";
     }
 }

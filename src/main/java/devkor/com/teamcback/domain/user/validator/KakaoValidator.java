@@ -25,15 +25,25 @@ public class KakaoValidator{
     private String ISS;
     @Value("${jwt.social.kakao.aud}")
     private String AUD;
+    @Value("${jwt.social.kakao.admin-aud:}")
+    private String ADMIN_AUD;
 
     public OIDCPublicKeysResponse getCachedData() {
         return kakaoClient.getPublicKeys();
     }
 
     public String validateToken(String token) {
+        return validateToken(token, AUD);
+    }
+
+    public String validateAdminToken(String token) {
+        return validateToken(token, ADMIN_AUD.isBlank() ? AUD : ADMIN_AUD);
+    }
+
+    private String validateToken(String token, String audience) {
         try {
             // 카카오 id_token 정보
-            String kid = oidcUtil.getKidFromUnsignedTokenHeader(token, AUD, ISS);
+            String kid = oidcUtil.getKidFromUnsignedTokenHeader(token, audience, ISS);
 
             // 공개키 가져오기
             OIDCPublicKeysResponse publicKeysResponse = getCachedData();
@@ -46,12 +56,26 @@ public class KakaoValidator{
 
             OIDCDecodePayload payload = oidcUtil.getOIDCTokenBody(token, oidcPublicKeyDto.getN(), oidcPublicKeyDto.getE());
 
-            return payload.getEmail();
+            return resolveEmail(payload);
         } catch(GlobalException e) {
             redisUtil.deleteCache("kakao::data");
             throw new GlobalException(e.getResultCode());
         } catch (Exception e) {
             throw new GlobalException(INVALID_TOKEN);
         }
+    }
+
+    String resolveEmail(OIDCDecodePayload payload) {
+        String email = payload.getEmail();
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+
+        String subject = payload.getSub();
+        if (subject == null || subject.isBlank()) {
+            throw new GlobalException(INVALID_TOKEN);
+        }
+
+        return "kakao_" + subject + "@noemail.kodaero.invalid";
     }
 }

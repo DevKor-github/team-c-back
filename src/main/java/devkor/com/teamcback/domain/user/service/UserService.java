@@ -7,10 +7,14 @@ import devkor.com.teamcback.domain.bookmark.entity.Color;
 import devkor.com.teamcback.domain.bookmark.repository.BookmarkRepository;
 import devkor.com.teamcback.domain.bookmark.repository.CategoryRepository;
 import devkor.com.teamcback.domain.bookmark.repository.UserBookmarkLogRepository;
+import devkor.com.teamcback.domain.character.repository.UserCharacterRepository;
+import devkor.com.teamcback.domain.notification.service.PushInstallationService;
 import devkor.com.teamcback.domain.suggestion.entity.Suggestion;
 import devkor.com.teamcback.domain.suggestion.repository.SuggestionRepository;
 import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
+import devkor.com.teamcback.domain.user.dto.request.AdminLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
+import devkor.com.teamcback.domain.user.dto.response.AdminLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
@@ -36,9 +40,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Comparator;
-
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
 @Slf4j
@@ -50,11 +51,13 @@ public class UserService {
     private final BookmarkRepository bookmarkRepository;
     private final UserBookmarkLogRepository userBookmarkLogRepository;
     private final SuggestionRepository suggestionRepository;
+    private final UserCharacterRepository userCharacterRepository;
     private final JwtUtil jwtUtil;
     private final KakaoValidator kakaoValidator;
     private final GoogleValidator googleValidator;
     private final AppleValidator appleValidator;
     private final PasswordEncoder passwordEncoder;
+    private final PushInstallationService pushInstallationService;
 
     private static final String DEFAULT_NAME = "호랑이";
     private static final String DEFAULT_CATEGORY = "내 장소";
@@ -69,7 +72,11 @@ public class UserService {
     @Transactional
     public GetUserInfoRes getUserInfo(Long userId) {
         User user = findUser(userId);
-        Level level = getLevel(user.getScore());
+        Level level = user.getLevel();
+        if(level == null) { // 백필 전 레거시 행 방어 (백필 완료 후엔 도달하지 않음)
+            user.syncLevel();
+            level = user.getLevel();
+        }
         Level nextLevel = level.getNextLevel();
         Long remainScoreToNextLevel =  nextLevel == null ? 0 : nextLevel.getMinScore() - user.getScore();
         int percent = 100;
@@ -109,7 +116,12 @@ public class UserService {
         String rawCode = UUID.randomUUID().toString();
         user.setCode(passwordEncoder.encode(rawCode));
 
-        return new LoginUserRes(jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()), jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()), rawCode);
+        return new LoginUserRes(
+            jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            rawCode,
+            email
+        );
     }
 
     private String validateToken(Provider provider, String token) {
@@ -119,6 +131,32 @@ public class UserService {
             case APPLE -> appleValidator.validateToken(token);
             default -> throw new GlobalException(INVALID_INPUT);
         };
+    }
+
+    /**
+     * 관리자 대시보드용 소셜 로그인.
+     * 일반 로그인과 달리 신규 사용자를 만들지 않으며 기존 ADMIN 계정만 토큰을 발급한다.
+     */
+    @Transactional(readOnly = true)
+    public AdminLoginRes adminLogin(AdminLoginReq adminLoginReq) {
+        Provider provider = adminLoginReq.getProvider();
+        if(provider != Provider.GOOGLE && provider != Provider.KAKAO) {
+            throw new GlobalException(INVALID_INPUT);
+        }
+
+        String email = provider == Provider.KAKAO
+            ? kakaoValidator.validateAdminToken(adminLoginReq.getToken())
+            : googleValidator.validateToken(adminLoginReq.getToken());
+        User user = userRepository.findByEmailAndProvider(email, provider);
+        if(user == null || user.getRole() != Role.ADMIN) {
+            throw new GlobalException(FORBIDDEN);
+        }
+
+        return new AdminLoginRes(
+            jwtUtil.createAccessToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            jwtUtil.createRefreshToken(user.getUserId().toString(), user.getRole().getAuthority()),
+            user
+        );
     }
 
     /**
@@ -183,7 +221,9 @@ public class UserService {
         }
 
         userBookmarkLogRepository.deleteAll(userBookmarkLogRepository.findByUser(user));
+        pushInstallationService.deactivateAll(user.getUserId());
 //        suggestionRepository.deleteAll(suggestionRepository.findByUser(user));
+        userCharacterRepository.deleteAllByUser(user);
         userRepository.delete(user);
 
         return new DeleteUserRes();
@@ -212,14 +252,6 @@ public class UserService {
         if(userRepository.existsByUsernameAndUserIdNot(username, user.getUserId())) {
             throw new GlobalException(DUPLICATED_USERNAME);
         }
-    }
-
-    private Level getLevel(Long score) {
-        // score >= minScore 인 경우 중 가장 높은 레벨 반환
-        return Arrays.stream(Level.values())
-            .filter(lv -> score >= lv.getMinScore())
-            .max(Comparator.comparingInt(Level::getMinScore))
-            .orElse(Level.LEVEL1);
     }
 
     private User findUser(Long userId) {

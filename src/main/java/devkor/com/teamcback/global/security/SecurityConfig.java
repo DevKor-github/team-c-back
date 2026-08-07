@@ -82,20 +82,24 @@ public class SecurityConfig {
         );
 
         http.authorizeHttpRequests((authorizeHttpRequests) ->
-            authorizeHttpRequests
-                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
-                .requestMatchers(HttpMethod.POST, "/api/search/**").authenticated()
-                .requestMatchers("/api/users/login/**").permitAll() // 로그인은 허용
-                .requestMatchers("/api/users/**").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
-                .requestMatchers("/api/categories/**").authenticated()
-                .requestMatchers("/api/bookmarks/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // 리뷰는 로그인 필요
-                .requestMatchers("/api/reports/status").authenticated() // 신고 상태 확인은 로그인 필요
-                .anyRequest().permitAll()
+                authorizeHttpRequests
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll() // resources 접근 허용 설정
+                        .requestMatchers(HttpMethod.POST, "/api/search/**").authenticated()
+                        .requestMatchers("/api/users/login/**").permitAll() // 로그인은 허용
+                        .requestMatchers("/api/users/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자인 경우에만 허용
+                        .requestMatchers("/api/categories/**").authenticated()
+                        .requestMatchers("/api/bookmarks/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated() // 리뷰는 로그인 필요
+                        .requestMatchers("/api/reports/status").authenticated() // 신고 상태 확인은 로그인 필요
+                        .requestMatchers("/api/notifications/installations/**").authenticated() // 토큰 등록 로그인 필요
+                        .requestMatchers("/api/store/**").authenticated() // 캐릭터 스토어는 로그인 필요
+                        .requestMatchers("/api/usage-surveys/**").authenticated() // 사용 성향 조사는 로그인 필요
+                        .requestMatchers(HttpMethod.POST, "/api/notifications/test").authenticated()
+                        .anyRequest().permitAll()
         ).exceptionHandling(ex -> ex
-            .accessDeniedHandler(customAccessDeniedHandler()) // 인가 실패 시
-            .authenticationEntryPoint(customAuthenticationEntryPoint()) // 인증 실패 시
+                .accessDeniedHandler(customAccessDeniedHandler()) // 인가 실패 시
+                .authenticationEntryPoint(customAuthenticationEntryPoint()) // 인증 실패 시
         );
 
         http.logout(

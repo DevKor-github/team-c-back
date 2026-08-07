@@ -6,7 +6,6 @@ import devkor.com.teamcback.domain.report.dto.response.*;
 import devkor.com.teamcback.domain.report.entity.Report;
 import devkor.com.teamcback.domain.report.entity.ReportStatus;
 import devkor.com.teamcback.domain.report.entity.TargetType;
-import devkor.com.teamcback.domain.report.event.ReportResolvedEvent;
 import devkor.com.teamcback.domain.report.repository.ReportRepository;
 import devkor.com.teamcback.domain.review.entity.Review;
 import devkor.com.teamcback.domain.review.repository.ReviewRepository;
@@ -15,7 +14,6 @@ import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +31,6 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 리뷰에 대한 신고 작성
@@ -101,7 +98,6 @@ public class ReportService {
     public UpdateReportStatusRes updateReportStatus(Long reportId, UpdateReportStatusReq req) {
         // 신고
         Report report = findReport(reportId);
-        ReportStatus previousStatus = report.getStatus();
 
         // 신고 상태 수정
         report.setStatus(req.getStatus());
@@ -119,29 +115,7 @@ public class ReportService {
             }
         }
 
-        if (shouldPublishReportResolved(previousStatus, req.getStatus())) {
-            eventPublisher.publishEvent(new ReportResolvedEvent(
-                    report.getId(),
-                    report.getReporter() == null ? null : report.getReporter().getUserId(),
-                    req.getStatus()
-            ));
-        }
-
         return new UpdateReportStatusRes();
-    }
-
-    private boolean shouldPublishReportResolved(
-            ReportStatus previousStatus,
-            ReportStatus newStatus
-    ) {
-        return PENDING.equals(previousStatus)
-                && isFinalStatus(newStatus);
-    }
-
-    private boolean isFinalStatus(ReportStatus status) {
-        return RESOLVED.equals(status)
-                || REJECTED.equals(status)
-                || EXPIRED.equals(status);
     }
 
     /**

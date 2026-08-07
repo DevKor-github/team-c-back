@@ -1,9 +1,7 @@
 package devkor.com.teamcback.domain.user.controller;
 
 import devkor.com.teamcback.domain.user.dto.request.BypassLoginReq;
-import devkor.com.teamcback.domain.user.dto.request.AdminLoginReq;
 import devkor.com.teamcback.domain.user.dto.request.LoginUserReq;
-import devkor.com.teamcback.domain.user.dto.response.AdminLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.BypassLoginRes;
 import devkor.com.teamcback.domain.user.dto.response.DeleteUserRes;
 import devkor.com.teamcback.domain.user.dto.response.GetUserInfoRes;
@@ -59,15 +57,6 @@ public class UserController {
         @RequestBody LoginUserReq loginUserReq
     ) {
         return CommonResponse.success(userService.releaseLogin(loginUserReq));
-    }
-
-    /**
-     * 관리자 대시보드 소셜 로그인
-     */
-    @Operation(summary = "관리자 소셜 로그인", description = "Google 또는 Kakao ID Token을 검증하고 기존 ADMIN 계정에만 토큰을 발급")
-    @PostMapping("/login/admin")
-    public CommonResponse<AdminLoginRes> adminLogin(@RequestBody AdminLoginReq adminLoginReq) {
-        return CommonResponse.success(userService.adminLogin(adminLoginReq));
     }
 
     /**

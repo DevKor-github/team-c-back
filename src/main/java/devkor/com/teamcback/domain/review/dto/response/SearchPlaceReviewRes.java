@@ -14,12 +14,6 @@ public class SearchPlaceReviewRes {
     @Schema(description = "리뷰 사용자 id")
     private Long userId;
 
-    @Schema(description = "리뷰 작성자 닉네임")
-    private String username;
-
-    @Schema(description = "리뷰 작성자 프로필 이미지 URL")
-    private String profileImageUrl;
-
     @Schema(description = "리뷰 id")
     private Long reviewId;
 
@@ -35,14 +29,8 @@ public class SearchPlaceReviewRes {
     @Schema(description = "리뷰별 사진 목록")
     private List<SearchReviewImageRes> reviewImageRes;
 
-    public SearchPlaceReviewRes(
-        Review review,
-        List<SearchReviewImageRes> reviewImageRes,
-        String profileImageUrl
-    ) {
+    public SearchPlaceReviewRes(Review review, List<SearchReviewImageRes> reviewImageRes) {
         this.userId = review.getUser() != null ? review.getUser().getUserId() : null;
-        this.username = review.getUser() != null ? review.getUser().getUsername() : null;
-        this.profileImageUrl = profileImageUrl;
         this.reviewId = review.getId();
         this.isRevisit = review.isRevisit();
         this.comment = review.getComment();

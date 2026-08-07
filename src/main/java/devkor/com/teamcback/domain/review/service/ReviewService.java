@@ -3,7 +3,6 @@ package devkor.com.teamcback.domain.review.service;
 import devkor.com.teamcback.domain.common.entity.File;
 import devkor.com.teamcback.domain.common.repository.FileRepository;
 import devkor.com.teamcback.domain.common.util.FileUtil;
-import devkor.com.teamcback.domain.character.repository.CharacterRepository;
 import devkor.com.teamcback.domain.place.entity.Place;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.place.repository.PlaceRepository;
@@ -44,7 +43,6 @@ public class ReviewService {
     private final PlaceReviewTagMapRepository placeReviewTagMapRepository;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
-    private final CharacterRepository characterRepository;
     private final FileUtil fileUtil;
 
     /**
@@ -90,17 +88,6 @@ public class ReviewService {
         // 리뷰 최신순 조회
         List<Review> reviewList = reviewRepository.findAllByPlaceAndIsReportedOrderByCreatedAtDesc(place, false);
 
-        List<Long> equippedCharacterIds = reviewList.stream()
-            .map(Review::getUser)
-            .filter(user -> user != null && user.getEquippedCharacterId() != null)
-            .map(User::getEquippedCharacterId)
-            .distinct()
-            .toList();
-        Map<Long, String> equippedCharacterImages = new HashMap<>();
-        characterRepository.findAllById(equippedCharacterIds).forEach(character ->
-            equippedCharacterImages.put(character.getCharacterId(), character.getImageUrl())
-        );
-
         // 리뷰별 이미지 조회(썸네일)
         List<SearchPlaceReviewRes> reviewImageList = new ArrayList<>();
 
@@ -111,13 +98,7 @@ public class ReviewService {
 
             // 썸네일 이미지 추출
             List<SearchReviewImageRes> imageResList = reviewFiles.stream().map(file -> new SearchReviewImageRes(file.getId(), file.getThumbSavedName())).toList();
-            Long equippedCharacterId = review.getUser() != null
-                ? review.getUser().getEquippedCharacterId()
-                : null;
-            String profileImageUrl = equippedCharacterId != null
-                ? equippedCharacterImages.get(equippedCharacterId)
-                : null;
-            reviewImageList.add(new SearchPlaceReviewRes(review, imageResList, profileImageUrl));
+            reviewImageList.add(new SearchPlaceReviewRes(review, imageResList));
         }
 
         // 리뷰 전체 이미지 조회(원본 - 10장까지)
@@ -297,8 +278,7 @@ public class ReviewService {
     private void checkReviewPlaceType(Place place) {
         // 식당, 카페만 조회 가능하도록 제한
         if(place.getType() != PlaceType.CAFETERIA && place.getType() != PlaceType.CAFE
-                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP
-                && place.getType() != PlaceType.CONV_TEMP && place.getType() != PlaceType.PHARMACY) {
+                && place.getType() != PlaceType.CAFE_TEMP && place.getType() != PlaceType.CAFT_TEMP && place.getType() != PlaceType.CONV_TEMP) {
             throw new GlobalException(ResultCode.NOT_SUPPORTED_PLACE_TYPE);
         }
     }

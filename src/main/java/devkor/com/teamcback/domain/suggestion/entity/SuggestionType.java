@@ -16,7 +16,6 @@ public enum SuggestionType {
     FEATURE_SUGGESTION("추천 기능"),
     INCONVENIENCE("불편 사항"),
     QUESTION("질의 사항"),
-    OTHER("기타"),
-    POPUP("팝업 추가 답변");
+    OTHER("기타");
     private final String type;
 }

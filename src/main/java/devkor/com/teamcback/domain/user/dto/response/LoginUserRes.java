@@ -9,5 +9,4 @@ public class LoginUserRes {
     String accessToken;
     String refreshToken;
     String code;
-    String loginKey;
 }

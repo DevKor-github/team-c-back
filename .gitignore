@@ -44,8 +44,3 @@ out/
 ###claude###
 .claude
 .serena
-
-# Local-only config
-/src/main/resources/application-local.yml
-/.env.local
-/docker-compose.local.yml

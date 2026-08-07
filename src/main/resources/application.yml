@@ -75,7 +75,6 @@ jwt:
     kakao:
       iss: ${KAKAO_ISS}
       aud: ${KAKAO_AUD}
-      admin-aud: ${KAKAO_ADMIN_AUD:}
     google:
       iss: ${GOOGLE_ISS}
       aud: ${GOOGLE_AUD}
@@ -120,10 +119,6 @@ profile:
     lv4-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv4.jpg
     lv5-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv5.jpg
 
-character:
-  image: # 캐릭터 이미지 (피그마 확정 이미지를 이 경로 규칙대로 S3에 업로드: {base-url}/{NN_slug}.png)
-    base-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/character
-
 place:
   default-image:
     cafe: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFE.jpg
@@ -157,35 +152,3 @@ management:
 
 staff:
   emails: leeyejin113@gmail.com,pingdoll3110@naver.com,ku.kodaero@gmail.com
-
-push:
-  expo:
-    base-url: https://exp.host/--/api/v2/push
-    access-token: ${EXPO_ACCESS_TOKEN:}
-    connect-timeout: 3s
-    read-timeout: 10s
-  event:
-    # Dev server sets DEV,PREVIEW; production safely defaults to PRODUCTION.
-    target-app-variants: ${PUSH_EVENT_TARGET_APP_VARIANTS:PRODUCTION}
-    crowd-enabled: ${PUSH_EVENT_CROWD_ENABLED:false}
-    report-enabled: ${PUSH_EVENT_REPORT_ENABLED:false}
-    character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}
-    survey-enabled: ${PUSH_EVENT_SURVEY_ENABLED:false}
-  survey:
-    poll-interval-ms: ${PUSH_SURVEY_POLL_INTERVAL_MS:60000}
-  worker:
-    enabled: ${PUSH_WORKER_ENABLED:false}
-    fixed-delay-ms: ${PUSH_WORKER_FIXED_DELAY_MS:5000}
-    batch-size: ${PUSH_WORKER_BATCH_SIZE:100}
-    max-send-attempts: ${PUSH_WORKER_MAX_SEND_ATTEMPTS:3}
-    retry-delay-ms: ${PUSH_WORKER_RETRY_DELAY_MS:30000}
-  receipt-worker:
-    enabled: ${PUSH_RECEIPT_WORKER_ENABLED:false}
-    fixed-delay-ms: ${PUSH_RECEIPT_WORKER_FIXED_DELAY_MS:60000}
-    batch-size: ${PUSH_RECEIPT_WORKER_BATCH_SIZE:1000}
-    max-receipt-attempts: ${PUSH_RECEIPT_WORKER_MAX_RECEIPT_ATTEMPTS:3}
-  recovery-worker:
-    enabled: ${PUSH_RECOVERY_WORKER_ENABLED:false}
-    cron: "${PUSH_RECOVERY_WORKER_CRON:0 0 4 * * *}"
-    stale-threshold-minutes: ${PUSH_RECOVERY_STALE_THRESHOLD_MINUTES:30}
-    batch-size: ${PUSH_RECOVERY_BATCH_SIZE:100}

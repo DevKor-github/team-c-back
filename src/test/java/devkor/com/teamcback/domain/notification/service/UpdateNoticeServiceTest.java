@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import devkor.com.teamcback.domain.notification.entity.UpdateNotice;
+import devkor.com.teamcback.domain.notification.entity.type.UpdateNoticeStatus;
 import devkor.com.teamcback.domain.notification.repository.UpdateNoticeRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -62,13 +63,19 @@ class UpdateNoticeServiceTest {
 
         when(versionService.getVersion()).thenReturn("2.3.0");
         when(updateNoticeRepository
-                .findAllByPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(now))
+                .findAllByStatusAndPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(
+                        UpdateNoticeStatus.PUBLISHED,
+                        now
+                ))
                 .thenReturn(List.of(popupNotice, listOnlyNotice));
 
         var result = service.getPublishedNotices();
 
         verify(updateNoticeRepository)
-                .findAllByPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(now);
+                .findAllByStatusAndPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(
+                        UpdateNoticeStatus.PUBLISHED,
+                        now
+                );
         assertThat(result.latestVersion()).isEqualTo("2.3.0");
         assertThat(result.notices()).hasSize(2);
         assertThat(result.notices().get(0).show()).isTrue();

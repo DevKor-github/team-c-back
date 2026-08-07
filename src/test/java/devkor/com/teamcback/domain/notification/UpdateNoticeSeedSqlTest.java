@@ -41,6 +41,10 @@ class UpdateNoticeSeedSqlTest {
                     "SELECT COUNT(*) FROM tb_update_notice "
                             + "WHERE show_popup = TRUE AND app_version <> '1.1.5'"
             )).isZero();
+            assertThat(queryCount(
+                    connection,
+                    "SELECT COUNT(*) FROM tb_update_notice WHERE status = 'PUBLISHED'"
+            )).isEqualTo(11);
         }
     }
 
@@ -55,7 +59,12 @@ class UpdateNoticeSeedSqlTest {
                         app_version VARCHAR(40) NOT NULL,
                         show_popup BOOLEAN NOT NULL,
                         link_url VARCHAR(1000),
-                        link_label VARCHAR(100)
+                        link_label VARCHAR(100),
+                        status VARCHAR(20) NOT NULL DEFAULT 'PUBLISHED',
+                        created_at DATETIME,
+                        created_by BIGINT,
+                        modified_at DATETIME,
+                        modified_by BIGINT
                     )
                     """);
             statement.execute("""

@@ -2,6 +2,7 @@ package devkor.com.teamcback.domain.notification.service;
 
 import devkor.com.teamcback.domain.notification.dto.response.UpdateNoticeListRes;
 import devkor.com.teamcback.domain.notification.dto.response.UpdateNoticeRes;
+import devkor.com.teamcback.domain.notification.entity.type.UpdateNoticeStatus;
 import devkor.com.teamcback.domain.notification.repository.UpdateNoticeRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -20,7 +21,8 @@ public class UpdateNoticeService {
     @Transactional(readOnly = true)
     public UpdateNoticeListRes getPublishedNotices() {
         var notices = updateNoticeRepository
-                .findAllByPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(
+                .findAllByStatusAndPublishedAtLessThanEqualOrderByPublishedAtDescUpdateNoticeIdDesc(
+                        UpdateNoticeStatus.PUBLISHED,
                         LocalDateTime.now(clock)
                 )
                 .stream()

@@ -112,6 +112,7 @@ public enum ResultCode {
     EXPO_PUSH_RETRYABLE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, 17004, "Expo push request failed with retryable error."),
     EXPO_PUSH_NON_RETRYABLE_ERROR(HttpStatus.BAD_GATEWAY, 17005, "Expo push request failed with non-retryable error."),
     EXPO_PUSH_TICKET_ERROR(HttpStatus.BAD_GATEWAY, 17006, "Expo push ticket returned error status."),
+    NOT_FOUND_UPDATE_NOTICE(HttpStatus.NOT_FOUND, 17007, "업데이트 공지를 찾을 수 없습니다."),
   
     // 캐릭터 18000번대
     NOT_FOUND_CHARACTER(HttpStatus.NOT_FOUND, 18000, "캐릭터를 찾을 수 없습니다."),

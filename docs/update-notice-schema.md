@@ -29,6 +29,22 @@
 - 새 테이블만 추가되므로 롤백 시 구버전 API에는 영향이 없다. 데이터 보존이 필요하면 테이블을
   삭제하지 말고 신규 API 트래픽만 이전 버전으로 되돌린다.
 
+## 관리자 공지 CRUD
+
+관리자 콘솔의 공지 탭은 `/api/admin/notifications/notices`만 사용하며, 푸시 발송 API와 연결하지
+않는다. 공지 저장·수정·보관은 PushDispatch와 PushMessage를 만들지 않는다.
+
+- `DRAFT`: 관리자에게만 보이며 공개 API에는 포함하지 않는다.
+- `PUBLISHED`: `published_at`이 지난 뒤 공지 목록에 포함한다. 이 중 `show_popup=true`만 홈 팝업
+  후보가 된다.
+- `ARCHIVED`: 행을 삭제하지 않고 보관한다. 목록과 홈 팝업에서 모두 제외하며 `show_popup=false`로
+  변경한다.
+- 동일 공지 ID를 이미 본 사용자는 `show_popup`을 다시 켜도 재노출되지 않는다. 다시 보여야 하는
+  내용은 새 공지로 등록한다.
+- `created_at/created_by/modified_at/modified_by`는 Spring Data JPA auditing으로 저장한다.
+- 기존 DB에는 배포 전 `docs/sql/2026-08-07-update-notice-admin.sql`을 백업 후 한 번 적용한다.
+  기존 공지 11건은 모두 `PUBLISHED`로 보존된다.
+
 ## 이관한 과거 기록
 
 과거 업데이트 공지는 Apple App Store의 공개 버전 기록을 기준으로 이관했다. 앱 코드의 전체 Git

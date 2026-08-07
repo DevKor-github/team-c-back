@@ -1,5 +1,7 @@
 package devkor.com.teamcback.domain.notification.entity;
 
+import devkor.com.teamcback.domain.common.entity.BaseEntity;
+import devkor.com.teamcback.domain.notification.entity.type.UpdateNoticeStatus;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -10,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -31,10 +35,14 @@ import lombok.NoArgsConstructor;
                 @Index(
                         name = "idx_update_notice_show_popup_published_at",
                         columnList = "show_popup, published_at"
+                ),
+                @Index(
+                        name = "idx_update_notice_status_published_at",
+                        columnList = "status, published_at"
                 )
         }
 )
-public class UpdateNotice {
+public class UpdateNotice extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,6 +79,15 @@ public class UpdateNotice {
     @Column(name = "link_label", length = 100)
     private String linkLabel;
 
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "status",
+            nullable = false,
+            length = 20,
+            columnDefinition = "varchar(20) default 'PUBLISHED'"
+    )
+    private UpdateNoticeStatus status = UpdateNoticeStatus.PUBLISHED;
+
     public UpdateNotice(
             String title,
             String description,
@@ -100,5 +117,58 @@ public class UpdateNotice {
         this.show = show;
         this.linkUrl = linkUrl;
         this.linkLabel = linkLabel;
+        this.status = UpdateNoticeStatus.PUBLISHED;
+    }
+
+    public UpdateNotice(
+            String title,
+            String description,
+            List<String> features,
+            LocalDateTime publishedAt,
+            String appVersion,
+            boolean show,
+            String linkUrl,
+            String linkLabel,
+            UpdateNoticeStatus status
+    ) {
+        this.title = title;
+        this.description = description;
+        this.features = features == null ? new ArrayList<>() : new ArrayList<>(features);
+        this.publishedAt = publishedAt;
+        this.appVersion = appVersion;
+        this.show = show;
+        this.linkUrl = linkUrl;
+        this.linkLabel = linkLabel;
+        this.status = status == null ? UpdateNoticeStatus.DRAFT : status;
+    }
+
+    public void update(
+            String title,
+            String description,
+            List<String> features,
+            LocalDateTime publishedAt,
+            String appVersion,
+            boolean show,
+            String linkUrl,
+            String linkLabel,
+            UpdateNoticeStatus status
+    ) {
+        this.title = title;
+        this.description = description;
+        this.features.clear();
+        if (features != null) {
+            this.features.addAll(features);
+        }
+        this.publishedAt = publishedAt;
+        this.appVersion = appVersion;
+        this.show = show;
+        this.linkUrl = linkUrl;
+        this.linkLabel = linkLabel;
+        this.status = status;
+    }
+
+    public void archive() {
+        this.status = UpdateNoticeStatus.ARCHIVED;
+        this.show = false;
     }
 }

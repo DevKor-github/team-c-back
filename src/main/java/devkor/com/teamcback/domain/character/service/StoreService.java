@@ -26,6 +26,7 @@ import devkor.com.teamcback.domain.user.entity.User;
 import devkor.com.teamcback.domain.user.repository.UserRepository;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -39,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class StoreService {
+    private static final String DEFAULT_CHARACTER_NAME = "애기호랑이";
+
     private final CharacterRepository characterRepository;
     private final UserCharacterRepository userCharacterRepository;
     private final UserRepository userRepository;
@@ -46,15 +49,17 @@ public class StoreService {
 
     /**
      * 스토어 조회 (보유 포인트 + 캐릭터 목록)
-     * 정렬: 1순위 보유(해금 레벨순→가격순) → 2순위 구매 가능(가격 낮은순)
-     *      → 3순위 미해금·레벨 미달(해금 레벨순) → 4순위 포인트 부족(가격 낮은순)
+     * 정렬: 미보유 캐릭터 → 보유 캐릭터.
+     * 각 그룹 안에서는 레벨 캐릭터(Lv.1→요구 레벨→가격) → 포인트 전용 캐릭터(가격) 순이다.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public GetStoreRes getStore(Long userId) {
         User user = findUser(userId);
         List<KoCharacter> characters = characterRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc();
 
-        Map<Long, UserCharacter> ownedMap = userCharacterRepository.findAllByUser(user).stream()
+        List<UserCharacter> ownedCharacters = ensureDefaultCharacterOwned(
+            user, userCharacterRepository.findAllByUser(user));
+        Map<Long, UserCharacter> ownedMap = ownedCharacters.stream()
             .collect(Collectors.toMap(uc -> uc.getCharacter().getCharacterId(), Function.identity()));
 
         long point = user.getPoint();
@@ -79,11 +84,13 @@ public class StoreService {
     /**
      * 내 보유 캐릭터 목록 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public GetMyCharacterListRes getMyCharacters(Long userId) {
         User user = findUser(userId);
 
-        List<GetMyCharacterRes> characterList = userCharacterRepository.findAllByUser(user).stream()
+        List<UserCharacter> ownedCharacters = ensureDefaultCharacterOwned(
+            user, userCharacterRepository.findAllByUser(user));
+        List<GetMyCharacterRes> characterList = ownedCharacters.stream()
             .map(uc -> new GetMyCharacterRes(uc,
                 uc.getCharacter().getCharacterId().equals(user.getEquippedCharacterId())))
             .toList();
@@ -167,33 +174,46 @@ public class StoreService {
         return point >= character.getPrice() ? PurchaseStatus.PURCHASABLE : PurchaseStatus.NOT_ENOUGH_POINT;
     }
 
+    /**
+     * 애기호랑이는 구매 상품이 아니라 모든 사용자의 기본 보유 캐릭터다.
+     * 신규·기존 사용자를 동일하게 다루기 위해 최초 상점/보유 목록 조회에서 누락분을 보정한다.
+     */
+    private List<UserCharacter> ensureDefaultCharacterOwned(User user, List<UserCharacter> ownedCharacters) {
+        if(ownedCharacters.stream()
+            .anyMatch(owned -> DEFAULT_CHARACTER_NAME.equals(owned.getCharacter().getName()))) {
+            return ownedCharacters;
+        }
+
+        KoCharacter defaultCharacter = characterRepository.findByName(DEFAULT_CHARACTER_NAME)
+            .filter(KoCharacter::isActive)
+            .orElse(null);
+        if(defaultCharacter == null) return ownedCharacters;
+
+        UserCharacter granted = userCharacterRepository.saveAndFlush(
+            new UserCharacter(user, defaultCharacter));
+        List<UserCharacter> normalizedOwnership = new ArrayList<>(ownedCharacters);
+        normalizedOwnership.add(granted);
+        return normalizedOwnership;
+    }
+
     private Comparator<KoCharacter> storeOrder(Map<Long, PurchaseStatus> statusMap) {
         return Comparator
-            .comparingInt((KoCharacter c) -> statusTier(statusMap.get(c.getCharacterId())))
-            .thenComparingInt(c -> primarySortKey(statusMap.get(c.getCharacterId()), c))
-            .thenComparingInt(c -> secondarySortKey(statusMap.get(c.getCharacterId()), c))
+            .comparingInt((KoCharacter character) ->
+                statusMap.get(character.getCharacterId()) == PurchaseStatus.OWNED ? 1 : 0)
+            .thenComparingInt(this::acquisitionTier)
+            .thenComparingInt(this::acquisitionPrimaryKey)
+            .thenComparingInt(KoCharacter::getPrice)
             .thenComparing(KoCharacter::getDisplayOrder)
             .thenComparing(KoCharacter::getCharacterId);
     }
 
-    private int statusTier(PurchaseStatus status) {
-        return switch (status) {
-            case OWNED -> 0;
-            case PURCHASABLE -> 1;
-            case LOCKED -> 2;
-            case NOT_ENOUGH_POINT -> 3;
-        };
+    private int acquisitionTier(KoCharacter character) {
+        if(DEFAULT_CHARACTER_NAME.equals(character.getName()) || character.getRequiredLevel() > 1) return 0;
+        return 1;
     }
 
-    private int primarySortKey(PurchaseStatus status, KoCharacter character) {
-        return switch (status) {
-            case OWNED, LOCKED -> character.getRequiredLevel(); // 레벨순
-            case PURCHASABLE, NOT_ENOUGH_POINT -> character.getPrice(); // 포인트 낮은순
-        };
-    }
-
-    private int secondarySortKey(PurchaseStatus status, KoCharacter character) {
-        return status == PurchaseStatus.OWNED ? character.getPrice() : 0; // 보유는 레벨순 다음 포인트순
+    private int acquisitionPrimaryKey(KoCharacter character) {
+        return acquisitionTier(character) == 0 ? character.getRequiredLevel() : character.getPrice();
     }
 
     private int levelNumberOf(User user) {

@@ -36,7 +36,9 @@ public class KoCharacter extends BaseEntity {
     private String imageUrl;
 
     @Column(nullable = false)
-    private Integer price; // 구매 가격 (포인트)
+    // 기본 캐릭터는 0, 그 외에는 실제 구매 시 차감할 포인트.
+    // requiredLevel과 함께 쓰이면 "레벨 달성 후 포인트 구매" 정책이다.
+    private Integer price;
 
     // 해금 레벨: 사용자 레벨이 이 값 이상이어야 구매 가능 (1이면 제한 없음)
     @ColumnDefault("1")
@@ -75,5 +77,9 @@ public class KoCharacter extends BaseEntity {
         this.requiredLevel = req.getRequiredLevel();
         this.displayOrder = req.getDisplayOrder();
         this.isActive = req.isActive();
+    }
+
+    public void updateDescription(String description) {
+        this.description = description;
     }
 }

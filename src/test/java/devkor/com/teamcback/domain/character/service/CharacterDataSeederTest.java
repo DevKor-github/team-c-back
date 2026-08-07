@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.character.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -55,6 +56,22 @@ class CharacterDataSeederTest {
         seeder.run(null);
 
         verify(characterRepository, never()).save(any(KoCharacter.class));
+    }
+
+    @DisplayName("기존 캐릭터의 모호한 해금 설명을 레벨과 포인트 조건이 모두 보이도록 갱신")
+    @Test
+    void updateLegacyPolicyDescription() {
+        KoCharacter existing = new KoCharacter(
+            "꼬마호랑이", "레벨 2 달성 시 해금", "대사", "url", 15, 2, 2, true);
+        when(characterRepository.findByName(anyString())).thenReturn(Optional.empty());
+        when(characterRepository.findByName("꼬마호랑이")).thenReturn(Optional.of(existing));
+        when(characterRepository.existsByName(anyString())).thenReturn(false);
+        when(characterRepository.existsByName("꼬마호랑이")).thenReturn(true);
+
+        seeder.run(null);
+
+        assertEquals("Lv.2 달성 후 15P로 구매", existing.getDescription());
+        verify(characterRepository).save(existing);
     }
 
     @DisplayName("동시 부팅 레이스: 중복 키 예외가 나도 나머지 시드를 계속 적재")

@@ -226,7 +226,7 @@ class StoreServiceTest {
         assertEquals(PurchaseStatus.NOT_ENOUGH_POINT, statusOf(list, 13L));
     }
 
-    @DisplayName("스토어 정렬: 보유(레벨→포인트) → 구매가능(포인트) → 미해금(레벨) → 포인트부족(포인트)")
+    @DisplayName("스토어 정렬: 미보유 우선, 보유는 하단, 각 그룹은 레벨→포인트 순")
     @Test
     void getStoreSorting() {
         user.updateScore(5L, false); // LEVEL2
@@ -253,10 +253,12 @@ class StoreServiceTest {
         List<Long> orderedIds = list.stream().map(GetStoreCharacterRes::getCharacterId).toList();
 
         assertEquals(List.of(
-            22L, 21L,  // 1순위 보유: 레벨1(가격10) → 레벨2(가격5)
-            24L, 23L,  // 2순위 구매가능: 5p → 20p
-            26L, 25L,  // 3순위 미해금: 레벨3 → 레벨5
-            28L, 27L   // 4순위 포인트부족: 30p → 99p
+            24L, 28L, // 미보유 Lv.2: 5p → 30p
+            26L,      // 미보유 Lv.3
+            25L,      // 미보유 Lv.5
+            23L, 27L, // 미보유 포인트 전용: 20p → 99p
+            21L,      // 보유 Lv.2
+            22L       // 보유 포인트 전용
         ), orderedIds);
     }
 
@@ -274,18 +276,22 @@ class StoreServiceTest {
         assertEquals(ResultCode.ALREADY_OWNED_CHARACTER, e.getResultCode()); // INSUFFICIENT_LEVEL이 아니어야 함
     }
 
-    @DisplayName("가격 0 캐릭터는 포인트 0이어도 구매 가능 상태 (경계값)")
+    @DisplayName("애기호랑이는 포인트 0인 기존 사용자도 기본 보유로 자동 보정")
     @Test
-    void freeCharacterPurchasableWithZeroPoint() {
+    void defaultCharacterOwnedWithZeroPoint() {
         // 신규 사용자: score 0, point 0, LEVEL1
         KoCharacter freeCharacter = newCharacter(CHARACTER_ID, "애기호랑이", 0, 1, 1, true);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(characterRepository.findAllByIsActiveTrueOrderByDisplayOrderAsc()).thenReturn(List.of(freeCharacter));
+        when(characterRepository.findByName("애기호랑이")).thenReturn(Optional.of(freeCharacter));
         when(userCharacterRepository.findAllByUser(user)).thenReturn(List.of());
+        when(userCharacterRepository.saveAndFlush(any(UserCharacter.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
         GetStoreRes res = storeService.getStore(USER_ID);
 
-        assertEquals(PurchaseStatus.PURCHASABLE, res.getCharacterList().get(0).getStatus());
+        assertEquals(PurchaseStatus.OWNED, res.getCharacterList().get(0).getStatus());
+        verify(userCharacterRepository).saveAndFlush(any(UserCharacter.class));
     }
 
     @DisplayName("내 보유 캐릭터: 포인트·대표 캐릭터·장착 플래그·대사 반환")

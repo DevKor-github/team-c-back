@@ -152,9 +152,6 @@ public class ReviewService {
     @Transactional
     @UpdateScore(dynamic = true)
     public CreateReviewRes createReview(Long userId, Long placeId, CreateReviewReq createReviewReq) {
-        // 한줄평 길이 검증 (작성했다면 10글자 이상)
-        validateCommentLength(createReviewReq.getComment());
-
         // 사용자 검색
         User user = findUserById(userId);
 
@@ -205,9 +202,6 @@ public class ReviewService {
     @Transactional
     @UpdateScore(dynamic = true)
     public ModifyReviewRes modifyReview(Long userId, Long reviewId, @Valid ModifyReviewReq modifyReviewReq) {
-        // 한줄평 길이 검증 (작성했다면 10글자 이상)
-        validateCommentLength(modifyReviewReq.getComment());
-
         // 사용자 검색
         User user = findUserById(userId);
 
@@ -324,15 +318,6 @@ public class ReviewService {
         // 권한 검사 (자신이 작성한 리뷰만 수정 가능)
         if(!user.getUserId().equals(review.getUser().getUserId())) {
             throw new GlobalException(ResultCode.UNAUTHORIZED);
-        }
-    }
-
-    /**
-     * 한줄평 길이 검증 (작성했다면 10글자 이상)
-     */
-    private void validateCommentLength(String comment) {
-        if(comment != null && !comment.isBlank() && comment.length() < 10) {
-            throw new GlobalException(ResultCode.COMMENT_TOO_SHORT);
         }
     }
 

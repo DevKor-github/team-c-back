@@ -57,9 +57,10 @@ public class AdminNotificationController {
     @GetMapping("/installations/search")
     public CommonResponse<List<AdminPushInstallationRes>> searchInstallations(
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String installationId
+            @RequestParam(required = false) String installationId,
+            @RequestParam(required = false) AppVariant appVariant
     ) {
-        return CommonResponse.success(adminNotificationService.searchInstallations(userId, installationId));
+        return CommonResponse.success(adminNotificationService.searchInstallations(userId, installationId, appVariant));
     }
 
     @Operation(

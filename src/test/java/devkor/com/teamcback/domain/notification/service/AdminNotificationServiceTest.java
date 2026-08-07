@@ -70,12 +70,27 @@ class AdminNotificationServiceTest {
                 .thenReturn(List.of(installation));
 
         List<AdminPushInstallationRes> response = service(false)
-                .searchInstallations(1L, null);
+                .searchInstallations(1L, null, null);
 
         String json = new ObjectMapper().findAndRegisterModules().writeValueAsString(response);
         assertThat(json).contains("installationId");
         assertThat(json).doesNotContain("expoPushToken");
         assertThat(json).doesNotContain("ExponentPushToken");
+    }
+
+    @Test
+    void searchInstallationsFiltersByAppVariantWithinTheSelectedBackend() {
+        PushInstallation devInstallation = installation(AppVariant.DEV);
+        PushInstallation productionInstallation = installation(AppVariant.PRODUCTION);
+        ReflectionTestUtils.setField(productionInstallation, "pushInstallationId", 101L);
+        when(pushInstallationRepository.findAllByUserIdOrderByModifiedAtDescPushInstallationIdDesc(1L))
+                .thenReturn(List.of(devInstallation, productionInstallation));
+
+        List<AdminPushInstallationRes> response = service(false)
+                .searchInstallations(1L, null, AppVariant.PRODUCTION);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).appVariant()).isEqualTo(AppVariant.PRODUCTION);
     }
 
     @Test

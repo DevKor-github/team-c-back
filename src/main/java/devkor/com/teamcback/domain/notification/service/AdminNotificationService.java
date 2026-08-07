@@ -54,7 +54,8 @@ public class AdminNotificationService {
 
     public List<AdminPushInstallationRes> searchInstallations(
             Long userId,
-            String installationId
+            String installationId,
+            AppVariant appVariant
     ) {
         if ((userId == null && !hasText(installationId))
                 || (userId != null && hasText(installationId))) {
@@ -64,12 +65,14 @@ public class AdminNotificationService {
         if (userId != null) {
             return pushInstallationRepository.findAllByUserIdOrderByModifiedAtDescPushInstallationIdDesc(userId)
                     .stream()
+                    .filter(installation -> appVariant == null || appVariant.equals(installation.getAppVariant()))
                     .map(AdminPushInstallationRes::new)
                     .toList();
         }
 
         return pushInstallationRepository.findByInstallationId(installationId)
                 .stream()
+                .filter(installation -> appVariant == null || appVariant.equals(installation.getAppVariant()))
                 .map(AdminPushInstallationRes::new)
                 .toList();
     }

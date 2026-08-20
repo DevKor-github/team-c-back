@@ -21,6 +21,8 @@ public class GetUserInfoRes {
     private int level;
     @Schema(description = "score", example = "15")
     private Long score;
+    @Schema(description = "보유 포인트 (스토어 재화)", example = "15")
+    private Long point;
     @Schema(description = "remainScoreToNextLevel", example = "10")
     private Long remainScoreToNextLevel;
     @Schema(description = "percent", example = "75")
@@ -38,6 +40,7 @@ public class GetUserInfoRes {
         this.role = user.getRole();
         this.level = level;
         this.score = user.getScore();
+        this.point = user.getPoint();
         this.remainScoreToNextLevel = remainScoreToNextLevel;
         this.percent = percent;
         this.isUpgraded = isUpgraded;

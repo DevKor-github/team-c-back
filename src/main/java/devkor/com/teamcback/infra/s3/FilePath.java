@@ -11,7 +11,8 @@ public enum FilePath { // 파일 경로를 나타내는 상수를 정의
     PLACE("place/"),
     BUILDING_IMAGE("buildingImage/"),
     SUGGESTION("suggestion/"),
-    REVIEW("review/");
+    REVIEW("review/"),
+    CHARACTER("character/");
 
     private final String path; // 경로를 저장하는 final 필드
 }

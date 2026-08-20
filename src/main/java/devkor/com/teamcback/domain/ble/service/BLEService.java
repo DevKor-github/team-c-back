@@ -9,6 +9,7 @@ import devkor.com.teamcback.domain.ble.dto.response.UpdateBLERes;
 import devkor.com.teamcback.domain.ble.entity.BLEData;
 import devkor.com.teamcback.domain.ble.entity.BLEDevice;
 import devkor.com.teamcback.domain.ble.entity.BLEstatus;
+import devkor.com.teamcback.domain.ble.event.PlaceBecameVacantEvent;
 import devkor.com.teamcback.domain.ble.repository.BLEDataRepository;
 import devkor.com.teamcback.domain.ble.repository.BLEDeviceRepository;
 import devkor.com.teamcback.domain.place.entity.Place;
@@ -17,6 +18,7 @@ import devkor.com.teamcback.global.exception.exception.GlobalException;
 import devkor.com.teamcback.global.response.ResultCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class BLEService {
     private final BLEDeviceRepository bledeviceRepository;
     private final BLEDataRepository bleDataRepository;
     private final PlaceRepository placeRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 평균 구해올 시간대 라벨
     private static final int[] TIME_SLOTS = {7, 10, 13, 16, 19, 22};
@@ -46,6 +49,11 @@ public class BLEService {
     @Transactional
     public UpdateBLERes updateBLE(UpdateBLEReq updateBLEReq) {
         BLEDevice bleDevice = bledeviceRepository.findByDeviceName(updateBLEReq.getDeviceName());
+        if (bleDevice == null) {
+            throw new GlobalException(ResultCode.NOT_FOUND_DEVICE_NAME);
+        }
+        BLEData previousData = bleDataRepository.findTopByDeviceOrderByLastTimeDescIdDesc(bleDevice)
+                .orElse(null);
         int capacity = bleDevice.getCapacity();
         int people = getBlEPeople(updateBLEReq.getLastCount(), bleDevice);
         double final_ratio = (double) people / capacity;
@@ -61,7 +69,27 @@ public class BLEService {
         bleData.setLastTime(updateBLEReq.getLastTime());
         bleDataRepository.save(bleData);
 
+        if (becameVacant(previousData, status) && bleDevice.getPlace() != null) {
+            eventPublisher.publishEvent(new PlaceBecameVacantEvent(
+                    bleDevice.getPlace().getId(),
+                    bleData.getId(),
+                    bleData.getLastTime()
+            ));
+        }
+
         return new UpdateBLERes(bleData);
+    }
+
+    private boolean becameVacant(
+            BLEData previousData,
+            BLEstatus newStatus
+    ) {
+        if (!BLEstatus.VACANT.equals(newStatus) || previousData == null) {
+            return false;
+        }
+
+        return BLEstatus.AVAILABLE.equals(previousData.getLastStatus())
+                || BLEstatus.CROWDED.equals(previousData.getLastStatus());
     }
 
     private int getBlEPeople(int lastCount, BLEDevice bleDevice) {

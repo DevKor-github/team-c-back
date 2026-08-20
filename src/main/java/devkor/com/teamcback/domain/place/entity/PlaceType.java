@@ -42,7 +42,7 @@ public enum PlaceType {
     CONV_TEMP("임시용 외부 편의점", new String[] {}),
     CAFT_TEMP("임시용 외부 식당", new String[] {}),
     REUSABLE_CUP_RETURN("다회용컵 반납함", new String[] {"다회용컵반납함", "리필로드"}),
-    PHARMACY("약국", new String[] {}),;
+    PHARMACY("약국", new String[]{}),;
 
     private final String name;
     private final String[] nickname;

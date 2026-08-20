@@ -1,6 +1,7 @@
 name: CI/CD using github actions & docker
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
@@ -53,10 +54,6 @@ jobs:
     needs: push_to_registry
     runs-on: ubuntu-latest
     steps:
-      - name: Get Github action IP
-        id: ip
-        uses: haythem/public-ip@v1.2
-
       - name: Deploy to prod
         if: contains(github.ref, 'develop') || contains(github.ref, 'main')
         uses: appleboy/ssh-action@master

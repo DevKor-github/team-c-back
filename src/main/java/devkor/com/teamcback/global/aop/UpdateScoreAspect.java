@@ -27,8 +27,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Comparator;
 
 import static devkor.com.teamcback.global.response.ResultCode.*;
 
@@ -336,34 +334,30 @@ public class UpdateScoreAspect {
     public void increaseScore(User user, int addScore) {
         long newScore = user.getScore() + addScore;
         // 전후 레벨 계산
-        Level beforeLv = getLevel(user.getScore());
-        Level afterLv = getLevel(newScore);
+        Level beforeLv = Level.fromScore(user.getScore());
+        Level afterLv = Level.fromScore(newScore);
 
         // 변했으면 true
         boolean isChanged = beforeLv != afterLv;
         user.updateScore(newScore, isChanged);
+        user.addPoint(addScore); // 스토어 재화는 score와 같은 양으로 적립
     }
 
     /**
      * 점수 차이만큼 업데이트 (증가 또는 감소)
      */
     private void updateScoreWithDiff(User user, int scoreDiff) {
-        long newScore = Math.max(0, user.getScore() + scoreDiff);  // 최소 0점
+        long oldScore = user.getScore();
+        long newScore = Math.max(0, oldScore + scoreDiff);  // 최소 0점
 
         // 전후 레벨 계산
-        Level beforeLv = getLevel(user.getScore());
-        Level afterLv = getLevel(newScore);
+        Level beforeLv = Level.fromScore(oldScore);
+        Level afterLv = Level.fromScore(newScore);
 
         // 변했으면 true
         boolean isChanged = beforeLv != afterLv;
         user.updateScore(newScore, isChanged);
-    }
-
-    private Level getLevel(Long score) {
-        // score >= minScore 인 경우 중 가장 높은 레벨 반환
-        return Arrays.stream(Level.values())
-            .filter(lv -> score >= lv.getMinScore())
-            .max(Comparator.comparingInt(Level::getMinScore))
-            .orElse(Level.LEVEL1);
+        // 리뷰 삭제 후 재작성으로 포인트를 무한 적립하는 것을 막기 위해 차감도 동일하게 반영 (최소 0)
+        user.addPoint(newScore - oldScore);
     }
 }

@@ -1,4 +1,16 @@
 spring:
+  ai:
+    model:
+      chat: vertexai
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GOOGLE_CLOUD_PROJECT}
+          location: ${GOOGLE_CLOUD_LOCATION:us-central1}
+          chat:
+            options:
+              model: ${chatbot.llm.model}
+              max-output-tokens: ${chatbot.llm.max-output-tokens}
   cache:
     type: redis
   datasource:
@@ -157,6 +169,18 @@ management:
 
 staff:
   emails: leeyejin113@gmail.com,pingdoll3110@naver.com,ku.kodaero@gmail.com
+
+chatbot:
+  enabled: ${CHATBOT_ENABLED:true}
+  llm:
+    provider: ${CHATBOT_LLM_PROVIDER:google}
+    model: ${CHATBOT_LLM_MODEL:gemini-2.5-flash-lite}
+    max-output-tokens: ${CHATBOT_MAX_OUTPUT_TOKENS:500}
+    timeout-seconds: ${CHATBOT_TIMEOUT_SECONDS:8}
+  agent:
+    max-tool-calls-per-message: ${CHATBOT_MAX_TOOL_CALLS:6}
+    history-turns: ${CHATBOT_HISTORY_TURNS:5}
+    session-ttl-minutes: ${CHATBOT_SESSION_TTL_MINUTES:60}
 
 push:
   expo:

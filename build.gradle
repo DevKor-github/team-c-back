@@ -23,6 +23,7 @@ repositories {
 
 ext {
     set('springCloudVersion', "2024.0.0")
+    set('springAiVersion', "1.0.9")
 }
 
 dependencies {
@@ -46,6 +47,9 @@ dependencies {
 
     // web
     implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring AI
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
 
     // h2
     runtimeOnly 'com.h2database:h2'
@@ -131,6 +135,7 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
     }
 }
 

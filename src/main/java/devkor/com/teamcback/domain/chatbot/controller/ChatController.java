@@ -1,0 +1,26 @@
+package devkor.com.teamcback.domain.chatbot.controller;
+
+import devkor.com.teamcback.domain.chatbot.dto.request.ChatMessageReq;
+import devkor.com.teamcback.domain.chatbot.dto.response.ChatMessageRes;
+import devkor.com.teamcback.domain.chatbot.service.ChatService;
+import devkor.com.teamcback.global.response.CommonResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/chatbot")
+@ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
+public class ChatController {
+    private final ChatService chatService;
+
+    @PostMapping("/messages")
+    public CommonResponse<ChatMessageRes> sendMessage(@Valid @RequestBody ChatMessageReq request) {
+        return CommonResponse.success(chatService.sendMessage(request));
+    }
+}

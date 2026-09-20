@@ -124,7 +124,11 @@ public enum ResultCode {
 
     // 사용 성향 조사 19000번대
     ALREADY_ANSWERED_USAGE_SURVEY(HttpStatus.CONFLICT, 19000, "이미 응답한 조사 문항입니다."),
-    INVALID_USAGE_SURVEY_OPTION(HttpStatus.BAD_REQUEST, 19001, "유효하지 않은 조사 응답입니다.");
+    INVALID_USAGE_SURVEY_OPTION(HttpStatus.BAD_REQUEST, 19001, "유효하지 않은 조사 응답입니다."),
+
+    // 챗봇 20000번대
+    CHATBOT_TEMPORARILY_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, 20000,
+            "챗봇 서비스를 일시적으로 사용할 수 없습니다.");
 
 
     private final HttpStatus status;

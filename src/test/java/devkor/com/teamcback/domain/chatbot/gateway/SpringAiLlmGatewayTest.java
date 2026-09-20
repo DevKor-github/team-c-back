@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
+import devkor.com.teamcback.domain.chatbot.tool.CampusChatbotTools;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,8 +33,12 @@ class SpringAiLlmGatewayTest {
                 .thenThrow(new IllegalStateException("provider secret and internal details"));
         ChatbotProperties properties = new ChatbotProperties(true,
                 new ChatbotProperties.Llm("google", "gemini-2.5-flash-lite", 500, 8),
-                new ChatbotProperties.Agent(6, 5, 60));
-        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties, executor);
+                new ChatbotProperties.Agent(6, 5, 60),
+                new ChatbotProperties.Tools(
+                        new ChatbotProperties.Limits(5, 10),
+                        new ChatbotProperties.Limits(10, 20)));
+        CampusChatbotTools tools = mock(CampusChatbotTools.class);
+        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties, executor, tools);
 
         assertThatThrownBy(() -> gateway.generate("system", "hello"))
                 .isInstanceOfSatisfying(GlobalException.class, exception -> {

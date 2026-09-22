@@ -32,6 +32,7 @@ import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchRoomDetailRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
+import devkor.com.teamcback.domain.routes.service.RouteService;
 import java.lang.reflect.RecordComponent;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class CampusToolAdapterTest {
     @Mock
     private SearchService searchService;
+    @Mock
+    private RouteService routeService;
 
     private CampusToolAdapter adapter;
 
@@ -57,7 +60,7 @@ class CampusToolAdapterTest {
                 new ChatbotProperties.Tools(
                         new ChatbotProperties.Limits(5, 10),
                         new ChatbotProperties.Limits(10, 20)));
-        adapter = new CampusToolAdapter(searchService, properties);
+        adapter = new CampusToolAdapter(searchService, routeService, properties);
     }
 
     @Test
@@ -89,6 +92,7 @@ class CampusToolAdapterTest {
         assertThat(result.ambiguous()).isTrue();
         assertThat(result.error().code()).isEqualTo(AMBIGUOUS_LOCATION);
         assertThat(result.candidates()).extracting("locationId").containsExactly(11L);
+        verifyNoInteractions(routeService);
     }
 
     @Test

@@ -2,6 +2,8 @@ package devkor.com.teamcback.domain.chatbot.tool;
 
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
@@ -36,5 +38,11 @@ public class CampusChatbotTools {
     public FindFacilitiesToolResult findFacilities(
             @ToolParam(description = "시설 유형, 건물 ID, 층, 선택적 결과 제한") FindFacilitiesToolRequest request) {
         return adapter.findFacilities(request);
+    }
+
+    @Tool(name = "findRoute", description = "Find a campus route between BUILDING/PLACE IDs or request-scoped COORD coordinates. Use searchCampus first when an ID is unknown and never select an ambiguous candidate. BARRIERFREE only excludes stair nodes and is not a complete accessibility guarantee.")
+    public FindRouteToolResult findRoute(
+            @ToolParam(description = "Start, end, and optional BARRIERFREE/SHUTTLE/STUDENTCARD/OPERATING conditions") FindRouteToolRequest request) {
+        return adapter.findRoute(request);
     }
 }

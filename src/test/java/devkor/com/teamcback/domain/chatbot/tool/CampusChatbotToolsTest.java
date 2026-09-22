@@ -8,10 +8,10 @@ import org.springframework.ai.tool.annotation.Tool;
 
 class CampusChatbotToolsTest {
     @Test
-    void registersExactlyTheThreePhaseTwoTools() {
+    void registersExactlyThePhaseThreeTools() {
         assertThat(Arrays.stream(CampusChatbotTools.class.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Tool.class))
                 .map(method -> method.getAnnotation(Tool.class).name()))
-                .containsExactlyInAnyOrder("searchCampus", "getLocationDetail", "findFacilities");
+                .containsExactlyInAnyOrder("searchCampus", "getLocationDetail", "findFacilities", "findRoute");
     }
 }

@@ -4,8 +4,14 @@ import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.A
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.INVALID_INPUT;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.NOT_FOUND;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.TEMPORARILY_UNAVAILABLE;
+import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.UNSUPPORTED;
+import static devkor.com.teamcback.global.response.ResultCode.COORDINATES_TOO_FAR;
+import static devkor.com.teamcback.global.response.ResultCode.COORDINATES_TOO_NEAR;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_NODE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_ROUTE;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_PROVIDED_ROUTE;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolError;
@@ -13,6 +19,9 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FacilityToolItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.LocationDetailToolData;
@@ -20,7 +29,15 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteCondition;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteEndpoint;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteSectionType;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteStep;
 import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
+import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
+import devkor.com.teamcback.domain.routes.entity.Conditions;
+import devkor.com.teamcback.domain.routes.service.RouteService;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
@@ -28,6 +45,7 @@ import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchRoomDetailRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
+import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Comparator;
 import java.util.List;
@@ -39,10 +57,12 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 public class CampusToolAdapter {
     private final SearchService searchService;
+    private final RouteService routeService;
     private final ChatbotProperties properties;
 
-    public CampusToolAdapter(SearchService searchService, ChatbotProperties properties) {
+    public CampusToolAdapter(SearchService searchService, RouteService routeService, ChatbotProperties properties) {
         this.searchService = searchService;
+        this.routeService = routeService;
         this.properties = properties;
     }
 
@@ -129,6 +149,93 @@ public class CampusToolAdapter {
         } catch (RuntimeException exception) {
             return new FindFacilitiesToolResult(List.of(), error(TEMPORARILY_UNAVAILABLE));
         }
+    }
+
+    public FindRouteToolResult findRoute(FindRouteToolRequest request) {
+        if (!validRouteRequest(request)) {
+            return new FindRouteToolResult(null, error(INVALID_INPUT));
+        }
+
+        try {
+            RouteEndpoint start = request.start();
+            RouteEndpoint end = request.end();
+            List<Conditions> conditions = request.conditions() == null ? List.of()
+                    : request.conditions().stream().map(this::toDomainCondition).toList();
+            List<GetRouteRes> routes = routeService.findRoute(
+                    toDomainType(start), start.locationId(), start.latitude(), start.longitude(),
+                    toDomainType(end), end.locationId(), end.latitude(), end.longitude(), conditions);
+            if (routes == null || routes.isEmpty()) {
+                return new FindRouteToolResult(null, error(NOT_FOUND));
+            }
+            return new FindRouteToolResult(toRouteData(routes.get(0)), null);
+        } catch (AdminException exception) {
+            return new FindRouteToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        } catch (GlobalException exception) {
+            return new FindRouteToolResult(null, mapRouteError(exception));
+        } catch (RuntimeException exception) {
+            return new FindRouteToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    private boolean validRouteRequest(FindRouteToolRequest request) {
+        if (request == null || !validEndpoint(request.start()) || !validEndpoint(request.end())) {
+            return false;
+        }
+        return request.conditions() == null
+                || request.conditions().stream().allMatch(java.util.Objects::nonNull);
+    }
+
+    private boolean validEndpoint(RouteEndpoint endpoint) {
+        if (endpoint == null || endpoint.type() == null) {
+            return false;
+        }
+        return switch (endpoint.type()) {
+            case BUILDING, PLACE -> endpoint.locationId() != null && endpoint.locationId() > 0
+                    && endpoint.latitude() == null && endpoint.longitude() == null;
+            case COORD -> endpoint.locationId() == null && validLatitude(endpoint.latitude())
+                    && validLongitude(endpoint.longitude());
+        };
+    }
+
+    private boolean validLatitude(Double value) {
+        return value != null && Double.isFinite(value) && value >= -90.0 && value <= 90.0;
+    }
+
+    private boolean validLongitude(Double value) {
+        return value != null && Double.isFinite(value) && value >= -180.0 && value <= 180.0;
+    }
+
+    private devkor.com.teamcback.domain.routes.entity.LocationType toDomainType(RouteEndpoint endpoint) {
+        return devkor.com.teamcback.domain.routes.entity.LocationType.valueOf(endpoint.type().name());
+    }
+
+    private Conditions toDomainCondition(RouteCondition condition) {
+        return Conditions.valueOf(condition.name());
+    }
+
+    private FindRouteToolData toRouteData(GetRouteRes route) {
+        List<RouteStep> steps = route.getPath() == null ? List.of()
+                : route.getPath().stream().map(this::toRouteStep).toList();
+        return new FindRouteToolData(route.getDuration(), steps);
+    }
+
+    private RouteStep toRouteStep(PartialRouteRes step) {
+        boolean indoor = step.inOut;
+        return new RouteStep(indoor ? RouteSectionType.INDOOR : RouteSectionType.OUTDOOR,
+                indoor ? step.buildingId : null, indoor ? step.floor : null, normalizeDetail(step.info));
+    }
+
+    private CampusToolError mapRouteError(GlobalException exception) {
+        if (exception.getResultCode() == NOT_FOUND_ROUTE || exception.getResultCode() == NOT_FOUND_NODE
+                || exception.getResultCode() == NOT_FOUND_BUILDING || exception.getResultCode() == NOT_FOUND_PLACE
+                || exception.getResultCode() == COORDINATES_TOO_FAR) {
+            return error(NOT_FOUND);
+        }
+        if (exception.getResultCode() == NOT_PROVIDED_ROUTE
+                || exception.getResultCode() == COORDINATES_TOO_NEAR) {
+            return error(UNSUPPORTED);
+        }
+        return error(TEMPORARILY_UNAVAILABLE);
     }
 
     private boolean validFacilityRequest(FindFacilitiesToolRequest request) {

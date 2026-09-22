@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.chatbot.tool;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.AMBIGUOUS_LOCATION;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.INVALID_INPUT;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.NOT_FOUND;
+import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.NO_DATA;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.TEMPORARILY_UNAVAILABLE;
 import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.UNSUPPORTED;
 import static devkor.com.teamcback.global.response.ResultCode.COORDINATES_TOO_FAR;
@@ -16,6 +17,9 @@ import static devkor.com.teamcback.global.response.ResultCode.NOT_PROVIDED_ROUTE
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolError;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CampusStatusToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CafeteriaMealToolItem;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CafeteriaMenuDay;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FacilityToolItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolResult;
@@ -24,6 +28,12 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.LocationDetailToolData;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
@@ -33,7 +43,14 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.RouteCondition;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RouteEndpoint;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RouteSectionType;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RouteStep;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RoomCourseToolItem;
 import devkor.com.teamcback.domain.common.LocationType;
+import devkor.com.teamcback.domain.common.entity.Weekday;
+import devkor.com.teamcback.domain.course.dto.response.GetCourseListRes;
+import devkor.com.teamcback.domain.course.dto.response.GetCourseRes;
+import devkor.com.teamcback.domain.course.service.CourseService;
+import devkor.com.teamcback.domain.place.dto.response.GetCafeteriaMenuListRes;
+import devkor.com.teamcback.domain.place.service.CafeteriaMenuService;
 import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.Conditions;
@@ -45,11 +62,17 @@ import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchRoomDetailRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
+import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.Comparator;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -58,11 +81,19 @@ import org.springframework.stereotype.Component;
 public class CampusToolAdapter {
     private final SearchService searchService;
     private final RouteService routeService;
+    private final CafeteriaMenuService cafeteriaMenuService;
+    private final CourseService courseService;
+    private final SchoolCalendarService schoolCalendarService;
     private final ChatbotProperties properties;
 
-    public CampusToolAdapter(SearchService searchService, RouteService routeService, ChatbotProperties properties) {
+    public CampusToolAdapter(SearchService searchService, RouteService routeService,
+                             CafeteriaMenuService cafeteriaMenuService, CourseService courseService,
+                             SchoolCalendarService schoolCalendarService, ChatbotProperties properties) {
         this.searchService = searchService;
         this.routeService = routeService;
+        this.cafeteriaMenuService = cafeteriaMenuService;
+        this.courseService = courseService;
+        this.schoolCalendarService = schoolCalendarService;
         this.properties = properties;
     }
 
@@ -236,6 +267,133 @@ public class CampusToolAdapter {
             return error(UNSUPPORTED);
         }
         return error(TEMPORARILY_UNAVAILABLE);
+    }
+
+    public GetCafeteriaMenuToolResult getCafeteriaMenu(GetCafeteriaMenuToolRequest request) {
+        if (request == null || request.placeId() == null || request.placeId() <= 0
+                || request.startDate() == null) {
+            return new GetCafeteriaMenuToolResult(null, error(INVALID_INPUT));
+        }
+        LocalDate endDate = request.endDate() == null ? request.startDate() : request.endDate();
+        long inclusiveDays = ChronoUnit.DAYS.between(request.startDate(), endDate) + 1;
+        if (inclusiveDays <= 0 || inclusiveDays > properties.tools().menuMaxDays()) {
+            return new GetCafeteriaMenuToolResult(null, error(INVALID_INPUT));
+        }
+
+        try {
+            GetCafeteriaMenuListRes response = cafeteriaMenuService.getCafeteriaMenu(
+                    request.placeId(), request.startDate(), endDate.plusDays(1));
+            List<CafeteriaMenuDay> days = response.getMenus().entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(entry -> new CafeteriaMenuDay(entry.getKey(), toMeals(entry.getValue())))
+                    .toList();
+            if (days.stream().allMatch(day -> day.meals().isEmpty())) {
+                return new GetCafeteriaMenuToolResult(null, error(NO_DATA));
+            }
+            return new GetCafeteriaMenuToolResult(
+                    new GetCafeteriaMenuToolData(response.getPlaceId(), response.getPlaceName(), days), null);
+        } catch (DateTimeException exception) {
+            return new GetCafeteriaMenuToolResult(null, error(INVALID_INPUT));
+        } catch (GlobalException exception) {
+            return new GetCafeteriaMenuToolResult(null, mapDomainError(exception));
+        } catch (RuntimeException exception) {
+            return new GetCafeteriaMenuToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    public GetRoomCoursesToolResult getRoomCourses(GetRoomCoursesToolRequest request) {
+        if (request == null || request.placeId() == null || request.placeId() <= 0) {
+            return new GetRoomCoursesToolResult(null, error(INVALID_INPUT));
+        }
+        try {
+            GetCourseListRes response = courseService.getCourseList(request.placeId());
+            List<GetCourseRes> allRows = response.getCourses().values().stream().flatMap(List::stream).toList();
+            List<GetCourseRes> selectedRows = response.getCourses().entrySet().stream()
+                    .filter(entry -> request.weekday() == null || entry.getKey() == request.weekday())
+                    .sorted(Map.Entry.comparingByKey())
+                    .flatMap(entry -> entry.getValue().stream())
+                    .toList();
+            if (selectedRows.isEmpty()) {
+                return new GetRoomCoursesToolResult(null, error(NO_DATA));
+            }
+            GetCourseRes metadata = allRows.isEmpty() ? selectedRows.get(0) : allRows.get(0);
+            return new GetRoomCoursesToolResult(new GetRoomCoursesToolData(
+                    response.getPlaceName(), metadata.getYear(), metadata.getTerm(), mergeCoursePeriods(selectedRows)), null);
+        } catch (GlobalException exception) {
+            return new GetRoomCoursesToolResult(null, mapDomainError(exception));
+        } catch (RuntimeException exception) {
+            return new GetRoomCoursesToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    public CampusStatusToolResult getCampusStatus() {
+        try {
+            return new CampusStatusToolResult(
+                    schoolCalendarService.getTerm().getTerm(),
+                    schoolCalendarService.isVacation().isActive(),
+                    schoolCalendarService.isKoyeon().isActive(),
+                    null);
+        } catch (RuntimeException exception) {
+            return new CampusStatusToolResult(null, false, false, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    private List<CafeteriaMealToolItem> toMeals(Map<String, String> menuByType) {
+        if (menuByType == null || menuByType.isEmpty()) {
+            return List.of();
+        }
+        return menuByType.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new CafeteriaMealToolItem(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private List<RoomCourseToolItem> mergeCoursePeriods(List<GetCourseRes> rows) {
+        List<MergedCourse> merged = new ArrayList<>();
+        for (GetCourseRes row : rows) {
+            Weekday weekday;
+            try {
+                weekday = Weekday.valueOf(row.getWeekday());
+            } catch (IllegalArgumentException | NullPointerException exception) {
+                throw new IllegalStateException("Invalid course weekday");
+            }
+            MergedCourse current = MergedCourse.from(row, weekday);
+            if (!merged.isEmpty() && merged.get(merged.size() - 1).canMerge(current)) {
+                MergedCourse previous = merged.get(merged.size() - 1);
+                merged.set(merged.size() - 1, previous.extendTo(current.endPeriod()));
+            } else {
+                merged.add(current);
+            }
+        }
+        return merged.stream().map(MergedCourse::toToolItem).toList();
+    }
+
+    private record MergedCourse(Long courseId, String subject, String professor, String courseCode,
+                                String section, Weekday weekday, int startPeriod, int endPeriod) {
+        static MergedCourse from(GetCourseRes row, Weekday weekday) {
+            return new MergedCourse(row.getCourseId(), row.getSubject(), row.getProfessor(), row.getCode(),
+                    row.getSection(), weekday, row.getClassTime(), row.getClassTime());
+        }
+
+        boolean canMerge(MergedCourse next) {
+            return Objects.equals(courseId, next.courseId)
+                    && Objects.equals(subject, next.subject)
+                    && Objects.equals(professor, next.professor)
+                    && Objects.equals(courseCode, next.courseCode)
+                    && Objects.equals(section, next.section)
+                    && weekday == next.weekday
+                    && next.startPeriod == endPeriod + 1;
+        }
+
+        MergedCourse extendTo(int period) {
+            return new MergedCourse(courseId, subject, professor, courseCode, section,
+                    weekday, startPeriod, period);
+        }
+
+        RoomCourseToolItem toToolItem() {
+            return new RoomCourseToolItem(subject, professor, courseCode, section,
+                    weekday, startPeriod, endPeriod);
+        }
     }
 
     private boolean validFacilityRequest(FindFacilitiesToolRequest request) {

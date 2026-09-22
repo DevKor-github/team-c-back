@@ -14,7 +14,7 @@ public record ChatbotProperties(boolean enabled, Llm llm, Agent agent, Tools too
     public record Agent(int maxToolCallsPerMessage, int historyTurns, int sessionTtlMinutes) {
     }
 
-    public record Tools(Limits search, Limits facilities) {
+    public record Tools(Limits search, Limits facilities, int menuMaxDays) {
     }
 
     public record Limits(int defaultLimit, int maxLimit) {

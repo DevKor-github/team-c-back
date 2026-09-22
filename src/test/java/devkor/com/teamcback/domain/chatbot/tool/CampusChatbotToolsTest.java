@@ -12,6 +12,12 @@ class CampusChatbotToolsTest {
         assertThat(Arrays.stream(CampusChatbotTools.class.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Tool.class))
                 .map(method -> method.getAnnotation(Tool.class).name()))
-                .containsExactlyInAnyOrder("searchCampus", "getLocationDetail", "findFacilities", "findRoute");
+                .containsExactlyInAnyOrder("searchCampus", "getLocationDetail", "findFacilities", "findRoute",
+                        "getCafeteriaMenu", "getRoomCourses", "getCampusStatus");
+    }
+
+    @Test
+    void campusStatusHasNoToolInput() throws NoSuchMethodException {
+        assertThat(CampusChatbotTools.class.getDeclaredMethod("getCampusStatus").getParameterCount()).isZero();
     }
 }

@@ -59,8 +59,8 @@ class CampusToolAdapterTest {
                 new ChatbotProperties.Agent(6, 5, 60),
                 new ChatbotProperties.Tools(
                         new ChatbotProperties.Limits(5, 10),
-                        new ChatbotProperties.Limits(10, 20)));
-        adapter = new CampusToolAdapter(searchService, routeService, properties);
+                        new ChatbotProperties.Limits(10, 20), 7));
+        adapter = new CampusToolAdapter(searchService, routeService, null, null, null, properties);
     }
 
     @Test

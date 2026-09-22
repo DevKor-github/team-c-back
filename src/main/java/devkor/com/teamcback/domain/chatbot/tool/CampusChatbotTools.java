@@ -4,8 +4,13 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CampusStatusToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import org.springframework.ai.tool.annotation.Tool;
@@ -44,5 +49,22 @@ public class CampusChatbotTools {
     public FindRouteToolResult findRoute(
             @ToolParam(description = "Start, end, and optional BARRIERFREE/SHUTTLE/STUDENTCARD/OPERATING conditions") FindRouteToolRequest request) {
         return adapter.findRoute(request);
+    }
+
+    @Tool(name = "getCafeteriaMenu", description = "교내 식당의 지정 날짜 또는 최대 7일 메뉴를 조회합니다. 일반 카페 상품 메뉴 조회에는 사용하지 않습니다.")
+    public GetCafeteriaMenuToolResult getCafeteriaMenu(
+            @ToolParam(description = "식당 PLACE ID와 조회 시작일, 선택적 종료일") GetCafeteriaMenuToolRequest request) {
+        return adapter.getCafeteriaMenu(request);
+    }
+
+    @Tool(name = "getRoomCourses", description = "특정 강의실의 현재 학기 수업 일정을 조회합니다. 개인 시간표나 사용자 수강정보에는 사용하지 않습니다.")
+    public GetRoomCoursesToolResult getRoomCourses(
+            @ToolParam(description = "강의실 PLACE ID와 선택적 요일") GetRoomCoursesToolRequest request) {
+        return adapter.getRoomCourses(request);
+    }
+
+    @Tool(name = "getCampusStatus", description = "현재 학기, 방학 여부, 고연전 기간 여부를 조회합니다. 건물 운영시간이나 과거·미래 일정 조회에는 사용하지 않습니다.")
+    public CampusStatusToolResult getCampusStatus() {
+        return adapter.getCampusStatus();
     }
 }

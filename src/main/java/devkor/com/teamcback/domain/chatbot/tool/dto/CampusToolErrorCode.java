@@ -5,5 +5,6 @@ public enum CampusToolErrorCode {
     AMBIGUOUS_LOCATION,
     INVALID_INPUT,
     UNSUPPORTED,
+    NO_DATA,
     TEMPORARILY_UNAVAILABLE
 }

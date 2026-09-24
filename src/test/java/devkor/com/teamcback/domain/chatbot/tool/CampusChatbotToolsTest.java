@@ -13,7 +13,8 @@ class CampusChatbotToolsTest {
                 .filter(method -> method.isAnnotationPresent(Tool.class))
                 .map(method -> method.getAnnotation(Tool.class).name()))
                 .containsExactlyInAnyOrder("searchCampus", "getLocationDetail", "findFacilities", "findRoute",
-                        "getCafeteriaMenu", "getRoomCourses", "getCampusStatus");
+                        "getCafeteriaMenu", "getRoomCourses", "getCampusStatus", "getCrowdStatus",
+                        "getPlaceReviews");
     }
 
     @Test

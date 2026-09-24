@@ -189,6 +189,9 @@ chatbot:
       default-limit: ${CHATBOT_FACILITIES_DEFAULT_LIMIT:10}
       max-limit: ${CHATBOT_FACILITIES_MAX_LIMIT:20}
     menu-max-days: ${CHATBOT_MENU_MAX_DAYS:7}
+    reviews:
+      default-limit: ${CHATBOT_REVIEWS_DEFAULT_LIMIT:5}
+      max-limit: ${CHATBOT_REVIEWS_MAX_LIMIT:10}
 
 push:
   expo:

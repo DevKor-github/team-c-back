@@ -36,7 +36,8 @@ class SpringAiLlmGatewayTest {
                 new ChatbotProperties.Agent(6, 5, 60),
                 new ChatbotProperties.Tools(
                         new ChatbotProperties.Limits(5, 10),
-                        new ChatbotProperties.Limits(10, 20), 7));
+                        new ChatbotProperties.Limits(10, 20), 7,
+                        new ChatbotProperties.Limits(5, 10)));
         CampusChatbotTools tools = mock(CampusChatbotTools.class);
         SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties, executor, tools);
 

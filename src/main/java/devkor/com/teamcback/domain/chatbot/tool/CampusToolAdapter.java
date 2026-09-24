@@ -9,15 +9,22 @@ import static devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.U
 import static devkor.com.teamcback.global.response.ResultCode.COORDINATES_TOO_FAR;
 import static devkor.com.teamcback.global.response.ResultCode.COORDINATES_TOO_NEAR;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_BUILDING;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_DEVICE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_NODE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_PLACE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_FOUND_ROUTE;
 import static devkor.com.teamcback.global.response.ResultCode.NOT_PROVIDED_ROUTE;
+import static devkor.com.teamcback.global.response.ResultCode.NOT_SUPPORTED_PLACE_TYPE;
+import static devkor.com.teamcback.global.response.ResultCode.NO_DATA_FOR_DEVICE;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolError;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusStatusToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CrowdLevel;
+import devkor.com.teamcback.domain.chatbot.tool.dto.CrowdStatusToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCrowdStatusToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCrowdStatusToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CafeteriaMealToolItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CafeteriaMenuDay;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FacilityToolItem;
@@ -34,6 +41,8 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolData;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.LocationDetailToolData;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusItem;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
@@ -44,6 +53,14 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.RouteEndpoint;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RouteSectionType;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RouteStep;
 import devkor.com.teamcback.domain.chatbot.tool.dto.RoomCourseToolItem;
+import devkor.com.teamcback.domain.chatbot.tool.dto.PlaceReviewsToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.ReviewSummary;
+import devkor.com.teamcback.domain.chatbot.tool.dto.ReviewTagSummary;
+import devkor.com.teamcback.domain.chatbot.tool.dto.TypicalCrowdPattern;
+import devkor.com.teamcback.domain.ble.dto.response.BLETimePatternRes;
+import devkor.com.teamcback.domain.ble.dto.response.GetBLERes;
+import devkor.com.teamcback.domain.ble.entity.BLEstatus;
+import devkor.com.teamcback.domain.ble.service.BLEService;
 import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.common.entity.Weekday;
 import devkor.com.teamcback.domain.course.dto.response.GetCourseListRes;
@@ -55,6 +72,9 @@ import devkor.com.teamcback.domain.routes.dto.response.GetRouteRes;
 import devkor.com.teamcback.domain.routes.dto.response.PartialRouteRes;
 import devkor.com.teamcback.domain.routes.entity.Conditions;
 import devkor.com.teamcback.domain.routes.service.RouteService;
+import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
+import devkor.com.teamcback.domain.review.dto.response.SearchPlaceReviewRes;
+import devkor.com.teamcback.domain.review.service.ReviewService;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
@@ -84,16 +104,21 @@ public class CampusToolAdapter {
     private final CafeteriaMenuService cafeteriaMenuService;
     private final CourseService courseService;
     private final SchoolCalendarService schoolCalendarService;
+    private final BLEService bleService;
+    private final ReviewService reviewService;
     private final ChatbotProperties properties;
 
     public CampusToolAdapter(SearchService searchService, RouteService routeService,
                              CafeteriaMenuService cafeteriaMenuService, CourseService courseService,
-                             SchoolCalendarService schoolCalendarService, ChatbotProperties properties) {
+                             SchoolCalendarService schoolCalendarService, BLEService bleService,
+                             ReviewService reviewService, ChatbotProperties properties) {
         this.searchService = searchService;
         this.routeService = routeService;
         this.cafeteriaMenuService = cafeteriaMenuService;
         this.courseService = courseService;
         this.schoolCalendarService = schoolCalendarService;
+        this.bleService = bleService;
+        this.reviewService = reviewService;
         this.properties = properties;
     }
 
@@ -393,6 +418,111 @@ public class CampusToolAdapter {
         RoomCourseToolItem toToolItem() {
             return new RoomCourseToolItem(subject, professor, courseCode, section,
                     weekday, startPeriod, endPeriod);
+        }
+    }
+
+    public GetCrowdStatusToolResult getCrowdStatus(GetCrowdStatusToolRequest request) {
+        if (request == null || request.placeId() == null || request.placeId() <= 0) {
+            return new GetCrowdStatusToolResult(null, error(INVALID_INPUT));
+        }
+        try {
+            GetBLERes response = bleService.getBLE(request.placeId());
+            boolean stale = response.getLastStatus() == BLEstatus.FAILURE.getCode();
+            List<TypicalCrowdPattern> pattern = Boolean.TRUE.equals(request.includeTypicalPattern())
+                    ? toTypicalPattern(bleService.getBLETimePattern(request.placeId())) : null;
+            return new GetCrowdStatusToolResult(new CrowdStatusToolData(
+                    response.getPlaceId(), response.getLastCount(), response.getCapacity(),
+                    toCrowdLevel(response.getLastStatus()), response.getLastTime(), stale, pattern), null);
+        } catch (GlobalException exception) {
+            return new GetCrowdStatusToolResult(null, mapCrowdError(exception));
+        } catch (RuntimeException exception) {
+            return new GetCrowdStatusToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    public GetPlaceReviewsToolResult getPlaceReviews(GetPlaceReviewsToolRequest request) {
+        if (request == null || request.placeId() == null || request.placeId() <= 0) {
+            return new GetPlaceReviewsToolResult(null, error(INVALID_INPUT));
+        }
+        Integer limit = resolveLimit(request.limit(), properties.tools().reviews());
+        if (limit == null) {
+            return new GetPlaceReviewsToolResult(null, error(INVALID_INPUT));
+        }
+        try {
+            GetReviewPlaceDetailRes response = reviewService.getReviewPlaceDetail(request.placeId());
+            List<SearchPlaceReviewRes> sourceReviews = response.getReviewList();
+            if (sourceReviews == null || sourceReviews.isEmpty()) {
+                return new GetPlaceReviewsToolResult(null, error(NO_DATA));
+            }
+            List<ReviewSummary> reviews = sourceReviews.stream().limit(limit)
+                    .map(item -> new ReviewSummary(item.getComment(), item.isRevisit(), item.getCreatedAt()))
+                    .toList();
+            List<ReviewTagSummary> tags = response.getTagList() == null ? List.of()
+                    : response.getTagList().stream()
+                    .map(item -> new ReviewTagSummary(item.getTag(), item.getNum())).toList();
+            return new GetPlaceReviewsToolResult(new PlaceReviewsToolData(
+                    response.getPlaceId(), response.getName(), parseRating(response.getStarAverage()), tags,
+                    reviews, sourceReviews.size() > limit), null);
+        } catch (GlobalException exception) {
+            return new GetPlaceReviewsToolResult(null, mapReviewError(exception));
+        } catch (RuntimeException exception) {
+            return new GetPlaceReviewsToolResult(null, error(TEMPORARILY_UNAVAILABLE));
+        }
+    }
+
+    private CrowdLevel toCrowdLevel(int status) {
+        return switch (status) {
+            case 0 -> CrowdLevel.VACANT;
+            case 1 -> CrowdLevel.AVAILABLE;
+            case 2 -> CrowdLevel.CROWDED;
+            default -> CrowdLevel.UNKNOWN;
+        };
+    }
+
+    private List<TypicalCrowdPattern> toTypicalPattern(BLETimePatternRes pattern) {
+        if (pattern == null || pattern.getHours() == null || pattern.getDayOfWeeks() == null
+                || pattern.getAverages() == null) {
+            return List.of();
+        }
+        List<TypicalCrowdPattern> result = new ArrayList<>();
+        int dayCount = Math.min(pattern.getDayOfWeeks().length, pattern.getAverages().length);
+        for (int dayIndex = 0; dayIndex < dayCount; dayIndex++) {
+            int[] averages = pattern.getAverages()[dayIndex];
+            if (averages == null) {
+                continue;
+            }
+            int hourCount = Math.min(pattern.getHours().length, averages.length);
+            for (int hourIndex = 0; hourIndex < hourCount; hourIndex++) {
+                result.add(new TypicalCrowdPattern(pattern.getDayOfWeeks()[dayIndex],
+                        pattern.getHours()[hourIndex], averages[hourIndex]));
+            }
+        }
+        return result;
+    }
+
+    private CampusToolError mapCrowdError(GlobalException exception) {
+        if (exception.getResultCode() == NOT_FOUND_DEVICE || exception.getResultCode() == NO_DATA_FOR_DEVICE) {
+            return error(NO_DATA);
+        }
+        return mapDomainError(exception);
+    }
+
+    private CampusToolError mapReviewError(GlobalException exception) {
+        if (exception.getResultCode() == NOT_SUPPORTED_PLACE_TYPE) {
+            return error(UNSUPPORTED);
+        }
+        return mapDomainError(exception);
+    }
+
+    private Double parseRating(String rating) {
+        if (rating == null) {
+            return null;
+        }
+        try {
+            double value = Double.parseDouble(rating);
+            return Double.isFinite(value) ? value : null;
+        } catch (NumberFormatException exception) {
+            return null;
         }
     }
 

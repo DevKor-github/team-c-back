@@ -54,9 +54,10 @@ class CampusLifeToolAdapterTest {
                 new ChatbotProperties.Llm("google", "gemini-2.5-flash-lite", 500, 8),
                 new ChatbotProperties.Agent(6, 5, 60),
                 new ChatbotProperties.Tools(new ChatbotProperties.Limits(5, 10),
-                        new ChatbotProperties.Limits(10, 20), 7));
+                        new ChatbotProperties.Limits(10, 20), 7,
+                        new ChatbotProperties.Limits(5, 10)));
         adapter = new CampusToolAdapter(searchService, routeService, cafeteriaMenuService,
-                courseService, schoolCalendarService, properties);
+                courseService, schoolCalendarService, null, null, properties);
     }
 
     @Test

@@ -5,12 +5,16 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.FindFacilitiesToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.CampusStatusToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCrowdStatusToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetCrowdStatusToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetCafeteriaMenuToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetLocationDetailToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetRoomCoursesToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import org.springframework.ai.tool.annotation.Tool;
@@ -66,5 +70,17 @@ public class CampusChatbotTools {
     @Tool(name = "getCampusStatus", description = "현재 학기, 방학 여부, 고연전 기간 여부를 조회합니다. 건물 운영시간이나 과거·미래 일정 조회에는 사용하지 않습니다.")
     public CampusStatusToolResult getCampusStatus() {
         return adapter.getCampusStatus();
+    }
+
+    @Tool(name = "getCrowdStatus", description = "BLE 센서가 설치된 장소의 추정 혼잡도를 조회합니다. 센서가 없거나 데이터가 오래되면 추정하지 않습니다.")
+    public GetCrowdStatusToolResult getCrowdStatus(
+            @ToolParam(description = "PLACE ID와 선택적 최근 한 달 시간대별 패턴 포함 여부") GetCrowdStatusToolRequest request) {
+        return adapter.getCrowdStatus(request);
+    }
+
+    @Tool(name = "getPlaceReviews", description = "리뷰가 지원되는 장소의 평점, 대표 태그, 최근 텍스트 리뷰를 조회합니다. 작성자 정보나 리뷰 이미지는 제공하지 않습니다.")
+    public GetPlaceReviewsToolResult getPlaceReviews(
+            @ToolParam(description = "리뷰 지원 PLACE ID와 선택적 리뷰 개수") GetPlaceReviewsToolRequest request) {
+        return adapter.getPlaceReviews(request);
     }
 }

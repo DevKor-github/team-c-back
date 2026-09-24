@@ -17,6 +17,7 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
+import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,61 +27,72 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 public class CampusChatbotTools {
     private final CampusToolAdapter adapter;
+    private final ChatbotToolCallLimiter toolCallLimiter;
 
-    public CampusChatbotTools(CampusToolAdapter adapter) {
+    public CampusChatbotTools(CampusToolAdapter adapter, ChatbotToolCallLimiter toolCallLimiter) {
         this.adapter = adapter;
+        this.toolCallLimiter = toolCallLimiter;
     }
 
     @Tool(name = "searchCampus", description = "장소 ID를 모를 때 가장 먼저 사용해 고려대학교 건물 또는 장소 이름 후보를 찾습니다.")
     public SearchCampusToolResult searchCampus(
             @ToolParam(description = "검색어와 선택적 결과 제한") SearchCampusToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.searchCampus(request);
     }
 
     @Tool(name = "getLocationDetail", description = "searchCampus로 확인한 BUILDING 또는 PLACE ID의 상세와 운영 정보를 조회합니다.")
     public GetLocationDetailToolResult getLocationDetail(
             @ToolParam(description = "BUILDING 또는 PLACE 유형과 위치 ID") GetLocationDetailToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.getLocationDetail(request);
     }
 
     @Tool(name = "findFacilities", description = "시설 유형이나 건물/층 조건으로 고려대학교 시설을 찾습니다. 층은 건물 ID와 함께 사용해야 합니다.")
     public FindFacilitiesToolResult findFacilities(
             @ToolParam(description = "시설 유형, 건물 ID, 층, 선택적 결과 제한") FindFacilitiesToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.findFacilities(request);
     }
 
     @Tool(name = "findRoute", description = "Find a campus route between BUILDING/PLACE IDs or request-scoped COORD coordinates. Use searchCampus first when an ID is unknown and never select an ambiguous candidate. BARRIERFREE only excludes stair nodes and is not a complete accessibility guarantee.")
     public FindRouteToolResult findRoute(
             @ToolParam(description = "Start, end, and optional BARRIERFREE/SHUTTLE/STUDENTCARD/OPERATING conditions") FindRouteToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.findRoute(request);
     }
 
     @Tool(name = "getCafeteriaMenu", description = "교내 식당의 지정 날짜 또는 최대 7일 메뉴를 조회합니다. 일반 카페 상품 메뉴 조회에는 사용하지 않습니다.")
     public GetCafeteriaMenuToolResult getCafeteriaMenu(
             @ToolParam(description = "식당 PLACE ID와 조회 시작일, 선택적 종료일") GetCafeteriaMenuToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.getCafeteriaMenu(request);
     }
 
     @Tool(name = "getRoomCourses", description = "특정 강의실의 현재 학기 수업 일정을 조회합니다. 개인 시간표나 사용자 수강정보에는 사용하지 않습니다.")
     public GetRoomCoursesToolResult getRoomCourses(
             @ToolParam(description = "강의실 PLACE ID와 선택적 요일") GetRoomCoursesToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.getRoomCourses(request);
     }
 
     @Tool(name = "getCampusStatus", description = "현재 학기, 방학 여부, 고연전 기간 여부를 조회합니다. 건물 운영시간이나 과거·미래 일정 조회에는 사용하지 않습니다.")
     public CampusStatusToolResult getCampusStatus() {
+        toolCallLimiter.beforeToolCall();
         return adapter.getCampusStatus();
     }
 
     @Tool(name = "getCrowdStatus", description = "BLE 센서가 설치된 장소의 추정 혼잡도를 조회합니다. 센서가 없거나 데이터가 오래되면 추정하지 않습니다.")
     public GetCrowdStatusToolResult getCrowdStatus(
             @ToolParam(description = "PLACE ID와 선택적 최근 한 달 시간대별 패턴 포함 여부") GetCrowdStatusToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.getCrowdStatus(request);
     }
 
     @Tool(name = "getPlaceReviews", description = "리뷰가 지원되는 장소의 평점, 대표 태그, 최근 텍스트 리뷰를 조회합니다. 작성자 정보나 리뷰 이미지는 제공하지 않습니다.")
     public GetPlaceReviewsToolResult getPlaceReviews(
             @ToolParam(description = "리뷰 지원 PLACE ID와 선택적 리뷰 개수") GetPlaceReviewsToolRequest request) {
+        toolCallLimiter.beforeToolCall();
         return adapter.getPlaceReviews(request);
     }
 }

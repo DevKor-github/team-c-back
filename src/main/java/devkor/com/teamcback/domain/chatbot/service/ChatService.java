@@ -5,12 +5,10 @@ import devkor.com.teamcback.domain.chatbot.dto.request.CurrentLocationReq;
 import devkor.com.teamcback.domain.chatbot.dto.response.ChatMessageRes;
 import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 public class ChatService {
     static final String SYSTEM_PROMPT = """
@@ -27,19 +25,42 @@ public class ChatService {
             """;
 
     private final LlmGateway llmGateway;
+    private final ChatSessionMemoryService memoryService;
+    private final ChatRateLimiter rateLimiter;
 
-    public ChatMessageRes sendMessage(ChatMessageReq request) {
-        UUID sessionId = request.sessionId() == null ? UUID.randomUUID() : request.sessionId();
-        return new ChatMessageRes(sessionId, llmGateway.generate(SYSTEM_PROMPT, messageWithRequestContext(request)));
+    public ChatService(LlmGateway llmGateway, ChatSessionMemoryService memoryService, ChatRateLimiter rateLimiter) {
+        this.llmGateway = llmGateway;
+        this.memoryService = memoryService;
+        this.rateLimiter = rateLimiter;
     }
 
-    private String messageWithRequestContext(ChatMessageReq request) {
+    public ChatMessageRes sendMessage(ChatMessageReq request, ChatCaller caller) {
+        UUID sessionId = request.sessionId() == null ? UUID.randomUUID() : request.sessionId();
+        rateLimiter.check(caller);
+        var history = memoryService.load(sessionId, caller);
+        String reply = llmGateway.generate(SYSTEM_PROMPT, messageWithHistoryAndRequestContext(request, history));
+        memoryService.save(sessionId, caller, request.message(), reply);
+        return new ChatMessageRes(sessionId, reply);
+    }
+
+    private String messageWithHistoryAndRequestContext(ChatMessageReq request,
+                                                        java.util.List<ChatSessionMemoryService.ChatTurn> history) {
+        String message = history.isEmpty() ? request.message() : historyPrefix(history) + request.message();
         if (request.context() == null || request.context().currentLocation() == null) {
-            return request.message();
+            return message;
         }
         CurrentLocationReq location = request.context().currentLocation();
-        return request.message() + "\n\n[REQUEST_CONTEXT: currentLocation is available only for this request; "
+        return message + "\n\n[REQUEST_CONTEXT: currentLocation is available only for this request; "
                 + "use start/end type COORD when needed; latitude=" + location.latitude()
                 + ", longitude=" + location.longitude() + "; never reveal these raw coordinates]";
+    }
+
+    private String historyPrefix(java.util.List<ChatSessionMemoryService.ChatTurn> history) {
+        StringBuilder prompt = new StringBuilder("[RECENT_CONVERSATION]\n");
+        for (ChatSessionMemoryService.ChatTurn turn : history) {
+            prompt.append("User: ").append(turn.userMessage()).append("\nAssistant: ")
+                    .append(turn.assistantReply()).append("\n");
+        }
+        return prompt.append("[/RECENT_CONVERSATION]\n").toString();
     }
 }

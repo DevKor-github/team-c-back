@@ -128,8 +128,11 @@ public enum ResultCode {
 
     // 챗봇 20000번대
     CHATBOT_TEMPORARILY_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, 20000,
-            "챗봇 서비스를 일시적으로 사용할 수 없습니다.");
-
+            "챗봇 서비스를 일시적으로 사용할 수 없습니다."),
+    CHATBOT_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, 20001,
+            "Chatbot request limit exceeded. Please try again shortly."),
+    CHATBOT_SESSION_FORBIDDEN(HttpStatus.FORBIDDEN, 20002,
+            "This chatbot session is not available to the current requester.");
 
     private final HttpStatus status;
     private final int code;

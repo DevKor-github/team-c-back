@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "chatbot")
-public record ChatbotProperties(boolean enabled, Llm llm, Agent agent, Tools tools) {
+public record ChatbotProperties(boolean enabled, Llm llm, Agent agent, Tools tools, RateLimit rateLimit) {
     public record Llm(String provider, String model, int maxOutputTokens, int timeoutSeconds) {
         public Duration timeout() {
             return Duration.ofSeconds(timeoutSeconds);
@@ -18,5 +18,9 @@ public record ChatbotProperties(boolean enabled, Llm llm, Agent agent, Tools too
     }
 
     public record Limits(int defaultLimit, int maxLimit) {
+    }
+
+    public record RateLimit(int authenticatedDailyLimit, int anonymousDailyLimit, int burstPerMinute,
+                            String dailyResetZone) {
     }
 }

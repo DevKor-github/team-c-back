@@ -52,7 +52,8 @@ class CampusRouteToolAdapterTest {
                 new ChatbotProperties.Agent(6, 5, 60),
                 new ChatbotProperties.Tools(new ChatbotProperties.Limits(5, 10),
                         new ChatbotProperties.Limits(10, 20), 7,
-                        new ChatbotProperties.Limits(5, 10)));
+                        new ChatbotProperties.Limits(5, 10)),
+                new ChatbotProperties.RateLimit(30, 10, 5, "Asia/Seoul"));
         adapter = new CampusToolAdapter(searchService, routeService, null, null, null, null, null, properties);
     }
 

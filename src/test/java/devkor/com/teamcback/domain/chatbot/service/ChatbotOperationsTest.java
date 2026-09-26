@@ -22,7 +22,7 @@ import org.springframework.data.redis.core.ValueOperations;
 class ChatbotOperationsTest {
     private final ChatbotProperties properties = new ChatbotProperties(true,
             new ChatbotProperties.Llm("google", "model", 500, 8),
-            new ChatbotProperties.Agent(6, 5, 60),
+            new ChatbotProperties.Agent(6, 5, 60, 15),
             new ChatbotProperties.Tools(new ChatbotProperties.Limits(5, 10),
                     new ChatbotProperties.Limits(10, 20), 7, new ChatbotProperties.Limits(5, 10)),
             new ChatbotProperties.RateLimit(30, 10, 5, "Asia/Seoul"));
@@ -90,10 +90,10 @@ class ChatbotOperationsTest {
         ChatbotToolCallLimiter limiter = new ChatbotToolCallLimiter(properties);
         try (ChatbotToolCallLimiter.Scope scope = limiter.open()) {
             for (int index = 0; index < 6; index++) {
-                limiter.beforeToolCall();
+                scope.beforeToolCall();
             }
             assertThat(scope.callCount()).isEqualTo(6);
-            assertThatThrownBy(limiter::beforeToolCall).isInstanceOf(ToolCallLimitExceededException.class);
+            assertThatThrownBy(scope::beforeToolCall).isInstanceOf(ToolCallLimitExceededException.class);
         }
     }
 }

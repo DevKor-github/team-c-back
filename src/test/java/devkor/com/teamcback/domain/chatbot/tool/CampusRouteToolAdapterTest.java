@@ -49,7 +49,7 @@ class CampusRouteToolAdapterTest {
     void setUp() {
         ChatbotProperties properties = new ChatbotProperties(true,
                 new ChatbotProperties.Llm("google", "gemini-2.5-flash-lite", 500, 8),
-                new ChatbotProperties.Agent(6, 5, 60),
+                new ChatbotProperties.Agent(6, 5, 60, 15),
                 new ChatbotProperties.Tools(new ChatbotProperties.Limits(5, 10),
                         new ChatbotProperties.Limits(10, 20), 7,
                         new ChatbotProperties.Limits(5, 10)),

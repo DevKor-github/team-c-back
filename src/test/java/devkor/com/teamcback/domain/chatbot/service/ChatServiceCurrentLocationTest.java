@@ -1,6 +1,7 @@
 package devkor.com.teamcback.domain.chatbot.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,23 +26,45 @@ class ChatServiceCurrentLocationTest {
 
     @Test
     void passesCurrentLocationOnlyInCurrentProviderRequestAndNeverSavesIt() {
-        when(llmGateway.generate(anyString(), anyString())).thenReturn("경로 안내");
+        when(llmGateway.generate(anyString(), anyList(), anyString()))
+                .thenReturn(new LlmGateway.LlmResult("route answer", List.of()));
         ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
 
-        service.sendMessage(new ChatMessageReq(sessionId, "현재 위치에서 중도까지 가줘",
+        service.sendMessage(new ChatMessageReq(sessionId, "route from current location",
                 new ChatContextReq(new CurrentLocationReq(37.5861, 127.0290))), caller);
-        service.sendMessage(new ChatMessageReq(sessionId, "다시 알려줘", null), caller);
+        service.sendMessage(new ChatMessageReq(sessionId, "tell me again", null), caller);
 
         ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
-        verify(llmGateway, org.mockito.Mockito.times(2)).generate(anyString(), messages.capture());
-        assertThat(messages.getAllValues().get(0))
-                .contains("현재 위치에서 중도까지 가줘", "latitude=37.5861", "longitude=127.029");
-        assertThat(messages.getAllValues().get(1)).isEqualTo("다시 알려줘")
+        verify(llmGateway, org.mockito.Mockito.times(2)).generate(anyString(), anyList(), messages.capture());
+        assertThat(messages.getAllValues().get(0)).contains("latitude=37.5861", "longitude=127.029");
+        assertThat(messages.getAllValues().get(1)).isEqualTo("tell me again")
                 .doesNotContain("37.5861", "127.029", "currentLocation");
-        verify(memoryService).save(sessionId, caller, "현재 위치에서 중도까지 가줘", "경로 안내");
-        verify(memoryService).save(sessionId, caller, "다시 알려줘", "경로 안내");
+        verify(memoryService).save(sessionId, caller, "route from current location", "route answer");
+        verify(memoryService).save(sessionId, caller, "tell me again", "route answer");
+    }
+
+    @Test
+    void preservesRecentRolesAndKeepsCurrentCorrectionAsLatestUserMessage() {
+        when(llmGateway.generate(anyString(), anyList(), anyString()))
+                .thenReturn(new LlmGateway.LlmResult("answer", List.of()));
+        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
+        UUID sessionId = UUID.randomUUID();
+        ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
+        when(memoryService.load(sessionId, caller)).thenReturn(List.of(
+                new ChatSessionMemoryService.ChatTurn("old user", "old assistant")));
+
+        service.sendMessage(new ChatMessageReq(sessionId, "current correction", null), caller);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<LlmGateway.ConversationMessage>> history = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<String> currentMessage = ArgumentCaptor.forClass(String.class);
+        verify(llmGateway).generate(anyString(), history.capture(), currentMessage.capture());
+        assertThat(history.getValue()).containsExactly(
+                new LlmGateway.ConversationMessage(LlmGateway.Role.USER, "old user"),
+                new LlmGateway.ConversationMessage(LlmGateway.Role.ASSISTANT, "old assistant"));
+        assertThat(currentMessage.getValue()).isEqualTo("current correction");
     }
 }

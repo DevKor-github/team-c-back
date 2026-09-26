@@ -5,11 +5,12 @@ import static devkor.com.teamcback.global.response.ResultCode.CHATBOT_TEMPORARIL
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,8 +43,7 @@ class ChatControllerTest {
         ChatService chatService = new ChatService(llmGateway, memoryService, rateLimiter);
         lenient().when(memoryService.load(any(), any())).thenReturn(List.of());
         mockMvc = MockMvcBuilders.standaloneSetup(new ChatController(chatService))
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 
     @Test
@@ -64,29 +64,31 @@ class ChatControllerTest {
 
     @Test
     void rejectsInvalidCoordinatesBeforeLlmCall() throws Exception {
-        mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON).content("""
-                {"message":"길을 알려줘","context":{"currentLocation":{"latitude":91.0,"longitude":-181.0}}}
-                """))
+        mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"route\",\"context\":{\"currentLocation\":{"
+                                + "\"latitude\":91.0,\"longitude\":-181.0}}}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(llmGateway);
     }
 
     @Test
-    void generatesSessionIdAndReturnsGatewayReply() throws Exception {
-        when(llmGateway.generate(anyString(), anyString())).thenReturn("안녕하세요.");
+    void generatesSessionIdAndReturnsGatewayReplyWithoutAction() throws Exception {
+        when(llmGateway.generate(anyString(), anyList(), anyString()))
+                .thenReturn(new LlmGateway.LlmResult("hello", List.of()));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\" 안녕 \"}"))
+                        .content("{\"message\":\"hello\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode").value(0))
                 .andExpect(jsonPath("$.data.sessionId", not(blankOrNullString())))
-                .andExpect(jsonPath("$.data.reply").value("안녕하세요."));
+                .andExpect(jsonPath("$.data.reply").value("hello"))
+                .andExpect(jsonPath("$.data.action").doesNotExist());
     }
 
     @Test
     void returns429BeforeProviderCallWhenRateLimited() throws Exception {
         doThrow(new GlobalException(CHATBOT_RATE_LIMITED)).when(rateLimiter).check(any());
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\"안녕\"}"))
+                        .content("{\"message\":\"hello\"}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.statusCode").value(20001));
         verifyNoInteractions(llmGateway);
@@ -94,10 +96,10 @@ class ChatControllerTest {
 
     @Test
     void hidesProviderFailureDetails() throws Exception {
-        when(llmGateway.generate(anyString(), anyString()))
+        when(llmGateway.generate(anyString(), anyList(), anyString()))
                 .thenThrow(new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"message\":\"안녕\"}"))
+                        .content("{\"message\":\"hello\"}"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.statusCode").value(20000))
                 .andExpect(jsonPath("$.data").doesNotExist());

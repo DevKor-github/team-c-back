@@ -8,46 +8,32 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 public class ChatbotToolCallLimiter {
     private final ChatbotProperties properties;
-    private final ThreadLocal<ScopeState> current = new ThreadLocal<>();
 
     public ChatbotToolCallLimiter(ChatbotProperties properties) {
         this.properties = properties;
     }
 
     public Scope open() {
-        ScopeState previous = current.get();
-        ScopeState scope = new ScopeState(properties.agent().maxToolCallsPerMessage());
-        current.set(scope);
-        return new Scope(scope, previous);
-    }
-
-    public void beforeToolCall() {
-        ScopeState scope = current.get();
-        if (scope != null) {
-            scope.increment();
-        }
+        return new Scope(new ScopeState(properties.agent().maxToolCallsPerMessage()));
     }
 
     public final class Scope implements AutoCloseable {
         private final ScopeState scope;
-        private final ScopeState previous;
 
-        private Scope(ScopeState scope, ScopeState previous) {
+        private Scope(ScopeState scope) {
             this.scope = scope;
-            this.previous = previous;
         }
 
         public int callCount() {
             return scope.callCount;
         }
 
+        public void beforeToolCall() {
+            scope.increment();
+        }
+
         @Override
         public void close() {
-            if (previous == null) {
-                current.remove();
-            } else {
-                current.set(previous);
-            }
         }
     }
 

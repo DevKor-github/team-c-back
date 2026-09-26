@@ -8,6 +8,7 @@ import static devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType.BUIL
 import static devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType.PLACE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,6 +24,7 @@ import devkor.com.teamcback.domain.common.LocationType;
 import devkor.com.teamcback.domain.place.entity.PlaceType;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchListRes;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
+import devkor.com.teamcback.domain.search.dto.response.ChatbotSearchCandidate;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingFacilityListRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityListRes;
@@ -56,7 +58,7 @@ class CampusToolAdapterTest {
     void setUp() {
         ChatbotProperties properties = new ChatbotProperties(true,
                 new ChatbotProperties.Llm("google", "gemini-2.5-flash-lite", 500, 8),
-                new ChatbotProperties.Agent(6, 5, 60),
+                new ChatbotProperties.Agent(6, 5, 60, 15),
                 new ChatbotProperties.Tools(
                         new ChatbotProperties.Limits(5, 10),
                         new ChatbotProperties.Limits(10, 20), 7,
@@ -68,7 +70,8 @@ class CampusToolAdapterTest {
     @Test
     void centralLibraryNicknameSearchReturnsBuildingCandidateWithoutPersonalization() {
         GlobalSearchRes building = searchResult(11L, "중앙도서관", LocationType.BUILDING, null);
-        when(searchService.globalSearch("중도", null)).thenReturn(new GlobalSearchListRes(List.of(building)));
+        when(searchService.chatbotSearch("중도", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "중앙도서관", 11L, null, null)));
 
         var result = adapter.searchCampus(new SearchCampusToolRequest("  중도  ", null));
 
@@ -79,22 +82,109 @@ class CampusToolAdapterTest {
             assertThat(item.locationType()).isEqualTo(BUILDING);
             assertThat(item.name()).isEqualTo("중앙도서관");
         });
-        verify(searchService).globalSearch("중도", null);
+        verify(searchService).chatbotSearch("중도", 5);
     }
 
     @Test
-    void multipleSearchCandidatesRemainAmbiguousInsteadOfBeingSelected() {
-        GlobalSearchRes first = searchResult(11L, "중앙도서관", LocationType.BUILDING, null);
-        GlobalSearchRes second = searchResult(12L, "중앙도서관 신관", LocationType.BUILDING, null);
-        when(searchService.globalSearch("중앙도서관", null))
-                .thenReturn(new GlobalSearchListRes(List.of(first, second)));
+    void uniqueExactMatchWinsOverPartialMatches() {
+        when(searchService.chatbotSearch("중앙도서관", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "중앙도서관", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.BUILDING, "중앙도서관 신관", 12L, null, null)));
 
         var result = adapter.searchCampus(new SearchCampusToolRequest("중앙도서관", 1));
 
+        assertThat(result.ambiguous()).isFalse();
+        assertThat(result.error()).isNull();
+        assertThat(result.candidates()).extracting("locationId").containsExactly(11L);
+        assertThat(result.candidates()).allMatch(item -> item.matchType()
+                == devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType.EXACT);
+        verifyNoInteractions(routeService);
+    }
+
+    @Test
+    void multipleExactMatchesRemainAmbiguous() {
+        when(searchService.chatbotSearch("학생회관", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "학생 회관", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.PLACE, "학생회관", 12L, 12.0, PlaceType.LOUNGE)));
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("학생회관", null));
+
         assertThat(result.ambiguous()).isTrue();
         assertThat(result.error().code()).isEqualTo(AMBIGUOUS_LOCATION);
-        assertThat(result.candidates()).extracting("locationId").containsExactly(11L);
-        verifyNoInteractions(routeService);
+        assertThat(result.candidates()).hasSize(2).allMatch(item -> item.matchType()
+                == devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType.EXACT);
+    }
+
+    @Test
+    void multiplePartialMatchesRemainAmbiguous() {
+        when(searchService.chatbotSearch("학생회관", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "학생회관 신관", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.PLACE, "학생회관 학생식당", 12L, 12.0, PlaceType.CAFETERIA)));
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("학생회관", null));
+
+        assertThat(result.ambiguous()).isTrue();
+        assertThat(result.error().code()).isEqualTo(AMBIGUOUS_LOCATION);
+        assertThat(result.candidates()).hasSize(2).noneMatch(item -> item.matchType()
+                == devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType.EXACT);
+    }
+
+    @Test
+    void ignoresModelLimitForAmbiguityAndUsesAtMostFiveCandidates() {
+        List<ChatbotSearchCandidate> candidates = IntStream.rangeClosed(1, 50)
+                .mapToObj(id -> chatbotSearchResult((long) id, LocationType.BUILDING,
+                        "장소" + id, (long) id, null, null))
+                .toList();
+        when(searchService.chatbotSearch("장소", 5)).thenReturn(candidates);
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("장소", 1));
+
+        assertThat(result.candidates()).hasSize(5);
+        assertThat(result.ambiguous()).isTrue();
+        verify(searchService).chatbotSearch("장소", 5);
+    }
+
+    @Test
+    void deduplicatesSameLocationBeforeRanking() {
+        when(searchService.chatbotSearch("중도", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "중앙도서관", 11L, null, null),
+                chatbotSearchResult(11L, LocationType.BUILDING, "중앙도서관", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.BUILDING, "중앙도서관 신관", 12L, null, null)));
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("중도", null));
+
+        assertThat(result.candidates()).extracting("locationId").containsExactly(11L, 12L);
+        assertThat(result.ambiguous()).isTrue();
+    }
+
+    @Test
+    void uniqueStrongMatchWinsOverUnrelatedPartialMatches() {
+        when(searchService.chatbotSearch("송현스퀘어 학생회관", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "송현스퀘어", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.BUILDING, "한투스퀘어", 12L, null, null)));
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("송현스퀘어 학생회관", 1));
+
+        assertThat(result.candidates()).singleElement().satisfies(item -> {
+            assertThat(item.locationId()).isEqualTo(11L);
+            assertThat(item.matchType()).isEqualTo(
+                    devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType.STRONG);
+        });
+        assertThat(result.ambiguous()).isFalse();
+    }
+
+    @Test
+    void twoStrongMatchesRemainAmbiguous() {
+        when(searchService.chatbotSearch("송현스퀘어 학생회관", 5)).thenReturn(List.of(
+                chatbotSearchResult(11L, LocationType.BUILDING, "송현스퀘어", 11L, null, null),
+                chatbotSearchResult(12L, LocationType.BUILDING, "학생회관", 12L, null, null)));
+
+        var result = adapter.searchCampus(new SearchCampusToolRequest("송현스퀘어 학생회관", null));
+
+        assertThat(result.candidates()).hasSize(2)
+                .allMatch(item -> item.matchType()
+                        == devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType.STRONG);
+        assertThat(result.ambiguous()).isTrue();
     }
 
     @Test
@@ -106,11 +196,14 @@ class CampusToolAdapterTest {
         List<GlobalSearchRes> mixed = new java.util.ArrayList<>();
         mixed.add(virtualFacility);
         mixed.addAll(places);
-        when(searchService.globalSearch("시설", null)).thenReturn(new GlobalSearchListRes(mixed));
+        doReturn(places.stream()
+                .map(item -> chatbotSearchResult(item.getId(), LocationType.PLACE, item.getName(),
+                        item.getBuildingId(), item.getFloor(), item.getPlaceType()))
+                .toList()).when(searchService).chatbotSearch("시설", 5);
 
         var result = adapter.searchCampus(new SearchCampusToolRequest("시설", 100));
 
-        assertThat(result.candidates()).hasSize(10)
+        assertThat(result.candidates()).hasSize(5)
                 .allMatch(item -> item.locationId() != null && item.locationType() == PLACE);
     }
 
@@ -120,7 +213,7 @@ class CampusToolAdapterTest {
                 .isEqualTo(INVALID_INPUT);
         verifyNoInteractions(searchService);
 
-        when(searchService.globalSearch("없는 곳", null)).thenReturn(new GlobalSearchListRes(List.of()));
+        when(searchService.chatbotSearch("없는 곳", 5)).thenReturn(List.of());
         assertThat(adapter.searchCampus(new SearchCampusToolRequest("없는 곳", null)).error().code())
                 .isEqualTo(NOT_FOUND);
     }
@@ -250,6 +343,11 @@ class CampusToolAdapterTest {
         lenient().when(result.getLocationType()).thenReturn(type);
         lenient().when(result.getPlaceType()).thenReturn(placeType);
         return result;
+    }
+
+    private ChatbotSearchCandidate chatbotSearchResult(Long id, LocationType type, String name,
+                                                       Long buildingId, Double floor, PlaceType placeType) {
+        return new ChatbotSearchCandidate(id, type, name, buildingId, floor, placeType, null);
     }
 
     private List<String> recordFieldNames(Class<?> type) {

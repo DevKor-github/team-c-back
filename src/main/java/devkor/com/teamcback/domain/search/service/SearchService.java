@@ -142,6 +142,91 @@ public class SearchService {
     }
 
     /**
+     * Chatbot-only candidate lookup. Unlike globalSearch, this never touches a
+     * building/place Node and only fetches the associations needed to name a
+     * candidate. The public search API remains unchanged.
+     */
+    @Transactional(readOnly = true)
+    public List<ChatbotSearchCandidate> chatbotSearch(String word, int limit) {
+        int fetchLimit = Math.max(10, limit * 2);
+        Pageable pageable = PageRequest.of(0, fetchLimit, Sort.by("id").ascending());
+        LinkedHashMap<String, ChatbotSearchCandidate> candidates = new LinkedHashMap<>();
+        List<String> queries = new ArrayList<>();
+        String trimmed = word == null ? "" : word.trim();
+        if (!trimmed.isEmpty()) {
+            queries.add(trimmed);
+            if (trimmed.contains(" ")) {
+                queries.addAll(Arrays.stream(trimmed.split("\\s+"))
+                        .filter(token -> !token.isBlank())
+                        .toList());
+            }
+        }
+
+        for (String query : queries) {
+            addChatbotBuildingCandidates(candidates, query);
+            addChatbotPlaceCandidates(candidates, query, pageable);
+        }
+        return candidates.values().stream().limit(fetchLimit).toList();
+    }
+
+    private void addChatbotBuildingCandidates(Map<String, ChatbotSearchCandidate> candidates, String query) {
+        String jaso = decomposeHangulString(query.replace(" ", ""));
+        addChatbotBuildings(candidates,
+                buildingNicknameRepository.findAllByJasoDecomposeContainingOrderByNickname(jaso,
+                        PageRequest.of(0, 10)));
+        if (isConsonantOnly(query.replace(" ", ""))) {
+            addChatbotBuildings(candidates,
+                    buildingNicknameRepository.findAllByChosungContainingOrderByNickname(
+                            extractChosung(query.replace(" ", "")), PageRequest.of(0, 10)));
+        }
+    }
+
+    private void addChatbotBuildings(Map<String, ChatbotSearchCandidate> candidates,
+                                     List<BuildingNickname> nicknames) {
+        for (BuildingNickname nickname : nicknames) {
+            Building building = nickname.getBuilding();
+            if (building == null || building.getId() == null) {
+                continue;
+            }
+            ChatbotSearchCandidate candidate = new ChatbotSearchCandidate(building.getId(), LocationType.BUILDING,
+                    building.getName(), building.getId(), building.getFloor(), null, building.getDetail());
+            candidates.putIfAbsent(candidateKey(candidate), candidate);
+        }
+    }
+
+    private void addChatbotPlaceCandidates(Map<String, ChatbotSearchCandidate> candidates, String query,
+                                            Pageable pageable) {
+        String normalized = query.replace(" ", "");
+        String jaso = decomposeHangulString(normalized);
+        addChatbotPlaces(candidates, placeNicknameRepository
+                .findAllByJasoDecomposeContainingOrderByNickname(jaso, pageable));
+        if (isConsonantOnly(normalized)) {
+            addChatbotPlaces(candidates, placeNicknameRepository
+                    .findAllByChosungContainingOrderByNickname(extractChosung(normalized), pageable));
+        }
+    }
+
+    private void addChatbotPlaces(Map<String, ChatbotSearchCandidate> candidates,
+                                   List<PlaceNickname> nicknames) {
+        for (PlaceNickname nickname : nicknames) {
+            Place place = nickname.getPlace();
+            if (place == null || place.getId() == null || place.getBuilding() == null
+                    || place.getBuilding().getId() == null) {
+                continue;
+            }
+            Building building = place.getBuilding();
+            ChatbotSearchCandidate candidate = new ChatbotSearchCandidate(place.getId(), LocationType.PLACE,
+                    building.getName() + " " + place.getName(), building.getId(), place.getFloor(),
+                    place.getType(), place.getDetail());
+            candidates.putIfAbsent(candidateKey(candidate), candidate);
+        }
+    }
+
+    private String candidateKey(ChatbotSearchCandidate candidate) {
+        return candidate.locationType() + ":" + candidate.locationId();
+    }
+
+    /**
      * 모든 or 편의시설에 해당하는 건물 검색
      */
     @Transactional(readOnly = true)

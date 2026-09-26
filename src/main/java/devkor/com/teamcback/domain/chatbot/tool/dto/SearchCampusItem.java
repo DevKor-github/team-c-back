@@ -12,6 +12,7 @@ public record SearchCampusItem(
         String buildingName,
         Double floor,
         PlaceType placeType,
-        String detail
+        String detail,
+        SearchCampusMatchType matchType
 ) {
 }

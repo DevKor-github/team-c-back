@@ -45,6 +45,7 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.GetPlaceReviewsToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.LocationDetailToolData;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusItem;
+import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusMatchType;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType;
@@ -76,6 +77,7 @@ import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchPlaceReviewRes;
 import devkor.com.teamcback.domain.review.service.ReviewService;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
+import devkor.com.teamcback.domain.search.dto.response.ChatbotSearchCandidate;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
@@ -89,16 +91,22 @@ import java.util.Comparator;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
 public class CampusToolAdapter {
+    private static final int CHATBOT_SEARCH_RESULT_LIMIT = 5;
     private final SearchService searchService;
     private final RouteService routeService;
     private final CafeteriaMenuService cafeteriaMenuService;
@@ -126,33 +134,61 @@ public class CampusToolAdapter {
         if (request == null || request.query() == null || request.query().trim().isEmpty()) {
             return new SearchCampusToolResult(List.of(), false, error(INVALID_INPUT));
         }
-        Integer limit = resolveLimit(request.limit(), properties.tools().search());
-        if (limit == null) {
-            return new SearchCampusToolResult(List.of(), false, error(INVALID_INPUT));
-        }
-
+        long startedAt = System.nanoTime();
+        int limit = Math.min(CHATBOT_SEARCH_RESULT_LIMIT, properties.tools().search().maxLimit());
         try {
-            List<GlobalSearchRes> actualLocations = searchService.globalSearch(request.query().trim(), null).getList()
-                    .stream()
-                    .filter(item -> item.getId() != null)
-                    .filter(item -> item.getLocationType() == LocationType.BUILDING
-                            || item.getLocationType() == LocationType.PLACE)
+            String query = request.query().trim();
+            List<ChatbotSearchCandidate> actualLocations = deduplicate(
+                    searchService.chatbotSearch(query, limit));
+            String normalizedQuery = normalizeSearchName(query);
+            List<RankedSearchCandidate> ranked = actualLocations.stream()
+                    .map(item -> new RankedSearchCandidate(item, matchType(normalizedQuery, item.name())))
+                    .sorted(Comparator.comparingInt(item -> item.matchType().ordinal()))
                     .toList();
-            List<SearchCampusItem> candidates = actualLocations.stream()
+            List<RankedSearchCandidate> exactMatches = ranked.stream()
+                    .filter(item -> item.matchType() == SearchCampusMatchType.EXACT).toList();
+            List<RankedSearchCandidate> strongMatches = ranked.stream()
+                    .filter(item -> item.matchType() == SearchCampusMatchType.STRONG).toList();
+            List<RankedSearchCandidate> resolvedLocations = !exactMatches.isEmpty()
+                    ? exactMatches : !strongMatches.isEmpty() ? strongMatches : ranked;
+            List<SearchCampusItem> candidates = resolvedLocations.stream()
                     .limit(limit)
-                    .map(this::toSearchItem)
+                    .map(item -> toSearchItem(item.candidate(), item.matchType()))
                     .toList();
             if (candidates.isEmpty()) {
+                log.info("chatbot_search query={} limit={} durationMs={} candidateCount=0 ambiguous=false candidates=[]",
+                        query, limit, elapsedMillis(startedAt));
                 return new SearchCampusToolResult(List.of(), false, error(NOT_FOUND));
             }
-            boolean ambiguous = actualLocations.size() > 1;
+            boolean ambiguous = resolvedLocations.size() > 1;
+            log.info("chatbot_search query={} limit={} durationMs={} candidateCount={} ambiguous={} candidates={}",
+                    query, limit, elapsedMillis(startedAt), candidates.size(), ambiguous,
+                    candidates.stream().map(item -> item.name() + ":" + item.locationType() + ":" + item.matchType()).toList());
             return new SearchCampusToolResult(candidates, ambiguous,
                     ambiguous ? error(AMBIGUOUS_LOCATION) : null);
         } catch (GlobalException exception) {
+            log.info("chatbot_search query={} limit={} durationMs={} candidateCount=0 ambiguous=false outcome={}",
+                    request.query().trim(), limit, elapsedMillis(startedAt), mapDomainError(exception).code());
             return new SearchCampusToolResult(List.of(), false, mapDomainError(exception));
         } catch (RuntimeException exception) {
+            log.info("chatbot_search query={} limit={} durationMs={} outcome=TEMPORARILY_UNAVAILABLE",
+                    request.query().trim(), limit, elapsedMillis(startedAt));
             return new SearchCampusToolResult(List.of(), false, error(TEMPORARILY_UNAVAILABLE));
         }
+    }
+
+    private List<ChatbotSearchCandidate> deduplicate(List<ChatbotSearchCandidate> candidates) {
+        if (candidates == null || candidates.isEmpty()) {
+            return List.of();
+        }
+        Map<String, ChatbotSearchCandidate> unique = new LinkedHashMap<>();
+        for (ChatbotSearchCandidate candidate : candidates) {
+            if (candidate == null || candidate.locationType() == null || candidate.locationId() == null) {
+                continue;
+            }
+            unique.putIfAbsent(candidate.locationType() + ":" + candidate.locationId(), candidate);
+        }
+        return unique.values().stream().toList();
     }
 
     public GetLocationDetailToolResult getLocationDetail(GetLocationDetailToolRequest request) {
@@ -554,13 +590,40 @@ public class CampusToolAdapter {
                 .toList();
     }
 
-    private SearchCampusItem toSearchItem(GlobalSearchRes item) {
-        ToolLocationType type = item.getLocationType() == LocationType.BUILDING
+    private SearchCampusItem toSearchItem(ChatbotSearchCandidate item, SearchCampusMatchType matchType) {
+        ToolLocationType type = item.locationType() == LocationType.BUILDING
                 ? ToolLocationType.BUILDING : ToolLocationType.PLACE;
-        Long buildingId = type == ToolLocationType.BUILDING ? item.getId() : item.getBuildingId();
-        String buildingName = type == ToolLocationType.BUILDING ? item.getName() : null;
-        return new SearchCampusItem(item.getId(), type, item.getName(), buildingId, buildingName,
-                item.getFloor(), item.getPlaceType(), normalizeDetail(item.getDetail()));
+        Long buildingId = type == ToolLocationType.BUILDING ? item.locationId() : item.buildingId();
+        String buildingName = type == ToolLocationType.BUILDING ? item.name() : null;
+        return new SearchCampusItem(item.locationId(), type, item.name(), buildingId, buildingName,
+                item.floor(), item.placeType(), normalizeDetail(item.detail()), matchType);
+    }
+
+    private SearchCampusMatchType matchType(String normalizedQuery, String candidateName) {
+        String normalizedCandidate = normalizeSearchName(candidateName);
+        if (normalizedQuery.equals(normalizedCandidate)) {
+            return SearchCampusMatchType.EXACT;
+        }
+        if (!normalizedCandidate.isEmpty() && normalizedQuery.contains(normalizedCandidate)) {
+            return SearchCampusMatchType.STRONG;
+        }
+        return SearchCampusMatchType.PARTIAL;
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
+    }
+
+    private record RankedSearchCandidate(ChatbotSearchCandidate candidate, SearchCampusMatchType matchType) {
+    }
+
+    private String normalizeSearchName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFC)
+                .replaceAll("\\s+", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private LocationDetailToolData toBuildingDetail(SearchBuildingDetailRes detail) {

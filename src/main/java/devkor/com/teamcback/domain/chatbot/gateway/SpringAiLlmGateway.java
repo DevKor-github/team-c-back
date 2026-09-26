@@ -21,6 +21,7 @@ import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -72,11 +73,12 @@ public class SpringAiLlmGateway implements LlmGateway {
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
         } catch (TimeoutException exception) {
             response.cancel(true);
-            if (collector.hasNavigateIntent()) {
-                logFailure("NAVIGATE_ROUTE_FAIL_SAFE", "ASYNC_WAIT_AFTER_TOOL_EXECUTION", exception, true);
+            if (collector.hasNavigateIntent() || collector.hasRouteExecution()) {
+                logFailure(collector.hasNavigateIntent() ? "NAVIGATE_ROUTE_FAIL_SAFE" : "TEXT_ROUTE_FAIL_SAFE",
+                        "ASYNC_WAIT_AFTER_TOOL_EXECUTION", exception, true);
                 return new LlmResult(null, collector.snapshot(),
                         LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
-                        collector.searchResolutionSnapshot());
+                        collector.searchResolutionSnapshot(), collector.routeExecution());
             }
             logFailure("TEMPORARILY_UNAVAILABLE", "ASYNC_WAIT", exception, true);
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
@@ -96,22 +98,26 @@ public class SpringAiLlmGateway implements LlmGateway {
                                  ResolvedLocationCollector collector) {
         long startedAt = System.nanoTime();
         try (ChatbotToolCallLimiter.Scope scope = toolCallLimiter.open()) {
+            CampusChatbotTools requestTools = campusChatbotTools.forRequest(collector, scope);
             try {
-                CampusChatbotTools requestTools = campusChatbotTools.forRequest(collector, scope);
+                List<Message> springMessages = toSpringMessages(history, userMessage);
+                logRequestMessageDiagnostics(springMessages);
                 ChatClient.CallResponseSpec callResponse = chatClient.prompt()
                         .system(systemPrompt)
-                        .messages(toSpringMessages(history, userMessage))
+                        .messages(springMessages)
                         .tools(requestTools)
                         .call();
                 ChatClientResponse clientResponse = callResponse == null ? null : callResponse.chatClientResponse();
                 ChatResponse chatResponse = clientResponse == null ? null : clientResponse.chatResponse();
+                ensureTextRouteExecution(requestTools, collector);
                 String content = extractContent(chatResponse);
                 if (content == null || content.isBlank()) {
                     logEmptyCompletionDiagnostics(chatResponse, scope, collector);
                     throw new EmptyLlmCompletionException();
                 }
                 return new GatewayResult(new LlmGateway.LlmResult(content, collector.snapshot(),
-                        LlmGateway.CompletionStatus.COMPLETE, collector.searchResolutionSnapshot()), "SUCCESS",
+                        LlmGateway.CompletionStatus.COMPLETE, collector.searchResolutionSnapshot(),
+                        collector.routeExecution()), "SUCCESS",
                         elapsedMillis(startedAt), scope.callCount());
             } catch (RuntimeException exception) {
                 if (hasCause(exception, ToolCallLimitExceededException.class)) {
@@ -119,17 +125,36 @@ public class SpringAiLlmGateway implements LlmGateway {
                             "TOOL_LIMIT", elapsedMillis(startedAt),
                             scope.callCount());
                 }
+                if (collector.hasTextRouteIntent() && !collector.hasRouteExecution()) {
+                    try {
+                        ensureTextRouteExecution(requestTools, collector);
+                    } catch (RuntimeException ignored) {
+                        // Preserve the original provider/tool failure and its stable mapping.
+                    }
+                }
                 List<ResolvedLocation> resolvedLocations = collector.snapshot();
                 String stage = resolvedLocations.isEmpty() ? "MODEL_TOOL_LOOP" : "POST_TOOL_EXECUTION";
-                if (collector.hasNavigateIntent()) {
-                    logFailure("NAVIGATE_ROUTE_FAIL_SAFE", stage, exception, false);
+                if (collector.hasNavigateIntent() || collector.hasRouteExecution()) {
+                    logFailure(collector.hasNavigateIntent() ? "NAVIGATE_ROUTE_FAIL_SAFE" : "TEXT_ROUTE_FAIL_SAFE",
+                            stage, exception, false);
                     return new GatewayResult(new LlmGateway.LlmResult(null, resolvedLocations,
                             LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
-                            collector.searchResolutionSnapshot()),
+                            collector.searchResolutionSnapshot(), collector.routeExecution()),
                             "NAVIGATE_ROUTE_FAIL_SAFE", elapsedMillis(startedAt), scope.callCount());
                 }
                 throw new StagedLlmInvocationException(stage, exception);
             }
+        }
+    }
+
+    private void ensureTextRouteExecution(CampusChatbotTools requestTools,
+                                           ResolvedLocationCollector collector) {
+        if (!collector.hasTextRouteIntent() || collector.hasRouteExecution()) {
+            return;
+        }
+        var routeRequest = collector.currentTextRouteRequest();
+        if (routeRequest != null) {
+            requestTools.findRoute(routeRequest);
         }
     }
 
@@ -415,6 +440,55 @@ public class SpringAiLlmGateway implements LlmGateway {
         }
         messages.add(new UserMessage(userMessage));
         return List.copyOf(messages);
+    }
+
+    private void logRequestMessageDiagnostics(List<Message> messages) {
+        if (!diagnosticsEnabled) {
+            return;
+        }
+        for (int index = 0; index < messages.size(); index++) {
+            final int messageIndex = index;
+            Message message = messages.get(index);
+            String toolNames = "[]";
+            boolean toolResponse = message instanceof ToolResponseMessage;
+            if (message instanceof AssistantMessage assistant && assistant.getToolCalls() != null) {
+                toolNames = assistant.getToolCalls().stream().filter(java.util.Objects::nonNull)
+                        .map(AssistantMessage.ToolCall::name).filter(java.util.Objects::nonNull).toList().toString();
+            }
+            String content = message.getText();
+            log.debug("chatbot_llm request_message index={} class={} messageType={} toolResponse={} "
+                            + "toolNames={} contentLength={} contentPrefix={}", index,
+                    message.getClass().getName(), message.getMessageType(), toolResponse, toolNames,
+                    content == null ? 0 : content.length(), safePrefix(content));
+            if (message instanceof ToolResponseMessage responseMessage) {
+                responseMessage.getResponses().forEach(response -> {
+                    String data = response.responseData();
+                    log.debug("chatbot_llm tool_response index={} toolName={} responseDataLength={} "
+                                    + "responseDataJson={} responseDataPrefix={}", messageIndex, response.name(),
+                            data == null ? 0 : data.length(), isJson(data), safePrefix(data));
+                });
+            }
+        }
+    }
+
+    private boolean isJson(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        try {
+            new com.fasterxml.jackson.databind.ObjectMapper().readTree(value);
+            return true;
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            return false;
+        }
+    }
+
+    private String safePrefix(String value) {
+        if (value == null || value.isBlank()) {
+            return "<blank>";
+        }
+        String compact = value.replaceAll("[\\r\\n\\t]", " ");
+        return compact.length() <= 40 ? compact : compact.substring(0, 40) + "...";
     }
 
     private boolean hasCause(Throwable exception, Class<? extends Throwable> type) {

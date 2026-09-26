@@ -21,6 +21,11 @@ import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusRole;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolData;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteStep;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteEndpointType;
+import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -143,6 +148,51 @@ class SpringAiLlmGatewayTest {
         assertThat(result.resolvedLocations()).hasSize(2);
         assertThat(result.resolvedLocations()).extracting(location -> location.id())
                 .containsExactly(11L, 22L);
+    }
+
+    @Test
+    void executesTextRouteWhenModelStopsAfterResolvingBothEndpoints() {
+        ChatClient chatClient = mock(ChatClient.class);
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        ChatClient.CallResponseSpec responseSpec = mock(ChatClient.CallResponseSpec.class);
+        CampusToolAdapter adapter = mock(CampusToolAdapter.class);
+        ChatbotProperties properties = properties();
+        ChatbotToolCallLimiter limiter = new ChatbotToolCallLimiter(properties);
+        CampusChatbotTools baseTools = new CampusChatbotTools(adapter, limiter);
+        AtomicReference<CampusChatbotTools> requestTools = new AtomicReference<>();
+        SearchCampusToolRequest startRequest = new SearchCampusToolRequest("start", 1,
+                SearchCampusRole.START, SearchCampusIntent.TEXT_ROUTE, List.of());
+        SearchCampusToolRequest endRequest = new SearchCampusToolRequest("end", 1,
+                SearchCampusRole.END, SearchCampusIntent.TEXT_ROUTE, List.of());
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt()).thenReturn(requestSpec);
+        when(requestSpec.system("system")).thenReturn(requestSpec);
+        when(requestSpec.messages(anyList())).thenReturn(requestSpec);
+        when(requestSpec.tools(any(CampusChatbotTools.class))).thenAnswer(invocation -> {
+            requestTools.set(invocation.getArgument(0));
+            return requestSpec;
+        });
+        when(requestSpec.call()).thenReturn(responseSpec);
+        when(adapter.searchCampus(startRequest)).thenReturn(resolved(11L, "start"));
+        when(adapter.searchCampus(endRequest)).thenReturn(resolved(22L, "end"));
+        when(adapter.findRoute(any())).thenReturn(new FindRouteToolResult(
+                new FindRouteToolData(120L, List.of()), null));
+        when(responseSpec.chatClientResponse()).thenAnswer(invocation -> {
+            requestTools.get().searchCampus(startRequest);
+            requestTools.get().searchCampus(endRequest);
+            return new ChatClientResponse(
+                    new ChatResponse(List.of(new Generation(new AssistantMessage("")))), java.util.Map.of());
+        });
+        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties, executor, baseTools, limiter);
+
+        LlmGateway.LlmResult result = gateway.generate("system", List.of(), "text route");
+
+        assertThat(result.completionStatus()).isEqualTo(LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION);
+        assertThat(result.routeExecution()).isNotNull();
+        assertThat(result.routeExecution().successful()).isTrue();
+        assertThat(result.routeExecution().route().estimatedDurationSeconds()).isEqualTo(120L);
+        verify(adapter).findRoute(any());
     }
 
     private SearchCampusToolResult resolved(long id, String name) {

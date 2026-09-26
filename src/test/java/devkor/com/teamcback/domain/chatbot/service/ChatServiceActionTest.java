@@ -12,6 +12,8 @@ import devkor.com.teamcback.domain.chatbot.dto.PendingLocationRef;
 import devkor.com.teamcback.domain.chatbot.dto.PendingRouteState;
 import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation;
 import devkor.com.teamcback.domain.chatbot.dto.SearchResolutionTrace;
+import devkor.com.teamcback.domain.chatbot.dto.RouteExecutionTrace;
+import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolData;
 import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.EndpointRole;
 import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.RouteIntent;
 import devkor.com.teamcback.domain.chatbot.dto.request.ChatMessageReq;
@@ -246,5 +248,27 @@ class ChatServiceActionTest {
 
         assertThatThrownBy(() -> service.sendMessage(new ChatMessageReq(sessionId, "text route", null), caller))
                 .isInstanceOf(devkor.com.teamcback.global.exception.exception.GlobalException.class);
+    }
+
+    @Test
+    void returnsDeterministicTextRouteReplyWhenFinalCompletionIsBlank() {
+        ResolvedLocation start = new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L,
+                "start", RouteIntent.TEXT_ROUTE, List.of());
+        ResolvedLocation end = new ResolvedLocation(EndpointRole.END, RouteEndpointType.PLACE, 456L,
+                "end", RouteIntent.TEXT_ROUTE, List.of());
+        RouteExecutionTrace execution = new RouteExecutionTrace(start, end, List.of(),
+                new FindRouteToolData(120L, List.of()), true);
+        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+                null, List.of(start, end), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
+                List.of(), execution));
+        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        UUID sessionId = UUID.randomUUID();
+        ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
+        when(memoryService.load(sessionId, caller)).thenReturn(List.of());
+
+        var response = service.sendMessage(new ChatMessageReq(sessionId, "몇 분 걸려?", null), caller);
+
+        assertThat(response.action()).isNull();
+        assertThat(response.reply()).isEqualTo("start에서 end까지 경로를 찾았습니다. 예상 소요 시간은 120초입니다.");
     }
 }

@@ -109,7 +109,11 @@ public class CampusChatbotTools {
                     devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolError.of(
                             devkor.com.teamcback.domain.chatbot.tool.dto.CampusToolErrorCode.UNSUPPORTED));
         }
-        return adapter.findRoute(request);
+        FindRouteToolResult result = adapter.findRoute(request);
+        if (resolvedLocationCollector != null) {
+            resolvedLocationCollector.recordRouteExecution(request, result);
+        }
+        return result;
     }
 
     @Tool(name = "getCafeteriaMenu", description = "Get a cafeteria meal menu for a resolved PLACE ID and date range. "

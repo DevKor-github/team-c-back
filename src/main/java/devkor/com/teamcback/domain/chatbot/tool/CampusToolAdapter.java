@@ -77,7 +77,8 @@ import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchPlaceReviewRes;
 import devkor.com.teamcback.domain.review.service.ReviewService;
 import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
-import devkor.com.teamcback.domain.search.dto.response.ChatbotSearchCandidate;
+import devkor.com.teamcback.domain.search.dto.response.GlobalSearchListRes;
+import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
@@ -138,29 +139,20 @@ public class CampusToolAdapter {
         int limit = Math.min(CHATBOT_SEARCH_RESULT_LIMIT, properties.tools().search().maxLimit());
         try {
             String query = request.query().trim();
-            List<ChatbotSearchCandidate> actualLocations = deduplicate(
-                    searchService.chatbotSearch(query, limit));
+            GlobalSearchListRes searchResult = searchService.globalSearch(query, null);
+            List<GlobalSearchRes> actualLocations = deduplicate(searchResult == null
+                    ? List.of() : searchResult.getList());
             String normalizedQuery = normalizeSearchName(query);
-            List<RankedSearchCandidate> ranked = actualLocations.stream()
-                    .map(item -> new RankedSearchCandidate(item, matchType(normalizedQuery, item.name())))
-                    .sorted(Comparator.comparingInt(item -> item.matchType().ordinal()))
-                    .toList();
-            List<RankedSearchCandidate> exactMatches = ranked.stream()
-                    .filter(item -> item.matchType() == SearchCampusMatchType.EXACT).toList();
-            List<RankedSearchCandidate> strongMatches = ranked.stream()
-                    .filter(item -> item.matchType() == SearchCampusMatchType.STRONG).toList();
-            List<RankedSearchCandidate> resolvedLocations = !exactMatches.isEmpty()
-                    ? exactMatches : !strongMatches.isEmpty() ? strongMatches : ranked;
-            List<SearchCampusItem> candidates = resolvedLocations.stream()
+            List<SearchCampusItem> candidates = actualLocations.stream()
                     .limit(limit)
-                    .map(item -> toSearchItem(item.candidate(), item.matchType()))
+                    .map(item -> toSearchItem(item, matchType(normalizedQuery, item.getName())))
                     .toList();
             if (candidates.isEmpty()) {
                 log.info("chatbot_search query={} limit={} durationMs={} candidateCount=0 ambiguous=false candidates=[]",
                         query, limit, elapsedMillis(startedAt));
                 return new SearchCampusToolResult(List.of(), false, error(NOT_FOUND));
             }
-            boolean ambiguous = resolvedLocations.size() > 1;
+            boolean ambiguous = actualLocations.size() > 1;
             log.info("chatbot_search query={} limit={} durationMs={} candidateCount={} ambiguous={} candidates={}",
                     query, limit, elapsedMillis(startedAt), candidates.size(), ambiguous,
                     candidates.stream().map(item -> item.name() + ":" + item.locationType() + ":" + item.matchType()).toList());
@@ -177,16 +169,18 @@ public class CampusToolAdapter {
         }
     }
 
-    private List<ChatbotSearchCandidate> deduplicate(List<ChatbotSearchCandidate> candidates) {
+    private List<GlobalSearchRes> deduplicate(List<GlobalSearchRes> candidates) {
         if (candidates == null || candidates.isEmpty()) {
             return List.of();
         }
-        Map<String, ChatbotSearchCandidate> unique = new LinkedHashMap<>();
-        for (ChatbotSearchCandidate candidate : candidates) {
-            if (candidate == null || candidate.locationType() == null || candidate.locationId() == null) {
+        Map<String, GlobalSearchRes> unique = new LinkedHashMap<>();
+        for (GlobalSearchRes candidate : candidates) {
+            if (candidate == null || candidate.getLocationType() == null || candidate.getId() == null
+                    || (candidate.getLocationType() != LocationType.BUILDING
+                    && candidate.getLocationType() != LocationType.PLACE)) {
                 continue;
             }
-            unique.putIfAbsent(candidate.locationType() + ":" + candidate.locationId(), candidate);
+            unique.putIfAbsent(candidate.getLocationType() + ":" + candidate.getId(), candidate);
         }
         return unique.values().stream().toList();
     }
@@ -590,13 +584,13 @@ public class CampusToolAdapter {
                 .toList();
     }
 
-    private SearchCampusItem toSearchItem(ChatbotSearchCandidate item, SearchCampusMatchType matchType) {
-        ToolLocationType type = item.locationType() == LocationType.BUILDING
+    private SearchCampusItem toSearchItem(GlobalSearchRes item, SearchCampusMatchType matchType) {
+        ToolLocationType type = item.getLocationType() == LocationType.BUILDING
                 ? ToolLocationType.BUILDING : ToolLocationType.PLACE;
-        Long buildingId = type == ToolLocationType.BUILDING ? item.locationId() : item.buildingId();
-        String buildingName = type == ToolLocationType.BUILDING ? item.name() : null;
-        return new SearchCampusItem(item.locationId(), type, item.name(), buildingId, buildingName,
-                item.floor(), item.placeType(), normalizeDetail(item.detail()), matchType);
+        Long buildingId = type == ToolLocationType.BUILDING ? item.getId() : item.getBuildingId();
+        String buildingName = type == ToolLocationType.BUILDING ? item.getName() : null;
+        return new SearchCampusItem(item.getId(), type, item.getName(), buildingId, buildingName,
+                item.getFloor(), item.getPlaceType(), normalizeDetail(item.getDetail()), matchType);
     }
 
     private SearchCampusMatchType matchType(String normalizedQuery, String candidateName) {
@@ -614,15 +608,16 @@ public class CampusToolAdapter {
         return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 
-    private record RankedSearchCandidate(ChatbotSearchCandidate candidate, SearchCampusMatchType matchType) {
-    }
-
     private String normalizeSearchName(String value) {
         if (value == null) {
             return "";
         }
         return Normalizer.normalize(value, Normalizer.Form.NFC)
                 .replaceAll("\\s+", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace("[", "")
+                .replace("]", "")
                 .toLowerCase(Locale.ROOT);
     }
 

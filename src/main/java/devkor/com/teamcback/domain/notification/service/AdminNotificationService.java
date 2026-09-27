@@ -93,6 +93,10 @@ public class AdminNotificationService {
                         request.appVariant()
                 );
 
+        if (Boolean.TRUE.equals(request.adminOnly())) {
+            installations = pushTargetResolver.restrictToAdmins(installations, true);
+        }
+
         PushPayload payload = pushPayloadFactory.createForPreDispatchValidation(
                 request.title(),
                 request.body(),
@@ -106,7 +110,8 @@ public class AdminNotificationService {
         return new AdminPushDispatchPreviewRes(
                 installations.size(),
                 installations.stream().map(AdminPushInstallationRes::new).toList(),
-                payload
+                payload,
+                Boolean.TRUE.equals(request.adminOnly())
         );
     }
 
@@ -132,7 +137,8 @@ public class AdminNotificationService {
                 request.actionType(),
                 request.actionParams(),
                 idempotencyKey,
-                adminUserId
+                adminUserId,
+                request.adminOnly()
         ));
     }
 

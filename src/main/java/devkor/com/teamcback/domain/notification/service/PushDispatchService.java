@@ -71,6 +71,11 @@ public class PushDispatchService {
                         command.appVariant()
                 );
 
+        if (Boolean.TRUE.equals(command.adminOnly())) {
+            installations = pushTargetResolver.restrictToAdmins(installations, true);
+        }
+        if (installations.isEmpty()) throw new GlobalException(INVALID_INPUT);
+
         LocalDateTime now = LocalDateTime.now(clock);
 
         PushDispatch dispatch = pushDispatchRepository.save(

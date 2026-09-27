@@ -139,6 +139,13 @@ public class PushTargetResolver {
         return pushInstallationRepository.findAllByAppVariantAndActiveTrue(appVariant);
     }
 
+    public List<PushInstallation> restrictToAdmins(List<PushInstallation> installations, boolean adminOnly) {
+        if (!adminOnly || installations.isEmpty()) return installations;
+        var adminIds = pushInstallationRepository.findAdminUserIds(
+                installations.stream().map(PushInstallation::getUserId).distinct().toList());
+        return installations.stream().filter(installation -> adminIds.contains(installation.getUserId())).toList();
+    }
+
     private List<PushInstallation> distinctByInstallation(List<PushInstallation> installations) {
         Map<String, PushInstallation> distinct = new LinkedHashMap<>();
 

@@ -18,8 +18,13 @@ public record AdminPushDispatchReq(
         String imageUrl,
         PushActionType actionType,
         Map<String, Object> actionParams,
-        Boolean confirm
+        Boolean confirm,
+        Boolean adminOnly
 ) {
+
+    public AdminPushDispatchReq(PushMode mode, AppVariant appVariant, PushTargetType targetType, String targetValue, List<String> targetValues, String title, String body, String imageUrl, PushActionType actionType, Map<String, Object> actionParams, Boolean confirm) {
+        this(mode, appVariant, targetType, targetValue, targetValues, title, body, imageUrl, actionType, actionParams, confirm, false);
+    }
 
     public AdminPushDispatchReq(
             PushMode mode,

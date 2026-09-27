@@ -3,11 +3,19 @@ package devkor.com.teamcback.domain.notification.repository;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.Collection;
+import java.util.Set;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface PushInstallationRepository extends JpaRepository<PushInstallation, Long> {
+
+    @Query("select u.userId from User u where u.userId in :userIds and u.role = devkor.com.teamcback.domain.user.entity.Role.ADMIN")
+    Set<Long> findAdminUserIds(@Param("userIds") Collection<Long> userIds);
+
 
     Optional<PushInstallation> findByInstallationId(
             String installationId

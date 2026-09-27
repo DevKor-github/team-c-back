@@ -21,8 +21,13 @@ public record PushDispatchCommand(
         PushActionType actionType,
         Map<String, Object> actionParams,
         String idempotencyKey,
-        Long createdBy
+        Long createdBy,
+        Boolean adminOnly
 ) {
+
+    public PushDispatchCommand(NotificationType notificationType, PushMode mode, AppVariant appVariant, PushTargetType targetType, String targetValue, List<String> targetValues, String title, String body, String imageUrl, PushActionType actionType, Map<String, Object> actionParams, String idempotencyKey, Long createdBy) {
+        this(notificationType, mode, appVariant, targetType, targetValue, targetValues, title, body, imageUrl, actionType, actionParams, idempotencyKey, createdBy, false);
+    }
 
     public PushDispatchCommand(
             NotificationType notificationType,

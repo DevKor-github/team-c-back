@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Offline cutover copy. Defaults to read-only inventory. Never logs row/token contents."""
 import argparse
+import hashlib
+import json
+import datetime
 import os
 import re
 from urllib.parse import urlparse, unquote
@@ -30,12 +33,16 @@ def convert_row(table, row, target_columns, pending_scope=None):
             raise ValueError(f'{table}: source missing required target column {column}')
     for column in ('active', 'admin_only'):
         if column in result and result[column] is not None:
-            result[column] = bool(result[column])
+            result[column] = bool(int.from_bytes(result[column], 'big')) if isinstance(result[column], bytes) else bool(result[column])
     if table == 'tb_survey_push_schedule' and result.get('status') == 'PENDING' and result.get('audience') == 'LEGACY_UNKNOWN':
         if not pending_scope:
             raise ValueError('Pending legacy schedules need an explicitly verified --pending-schedule-audience')
         result['audience'] = pending_scope
     return result
+
+def row_bytes(values):
+    return (json.dumps(values, default=lambda value: value.isoformat() if isinstance(value, (datetime.datetime, datetime.date)) else str(value),
+        ensure_ascii=False, separators=(',', ':')) + '\n').encode('utf-8')
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -77,15 +84,25 @@ def main():
                     columns = [item[0] for item in target.fetchall()]
                     cursor.execute(f'SELECT * FROM `{table}` ORDER BY `{identity}`')
                     copied = 0
+                    source_digest = hashlib.sha256()
                     statement = sql.SQL('INSERT INTO {} ({}) VALUES ({})').format(sql.Identifier(table),
                         sql.SQL(',').join(map(sql.Identifier, columns)), sql.SQL(',').join(sql.Placeholder() for _ in columns))
                     while rows := cursor.fetchmany(500):
                         values = [convert_row(table, row, columns, args.pending_schedule_audience) for row in rows]
-                        target.executemany(statement, [[row[column] for column in columns] for row in values])
+                        ordered = [[row[column] for column in columns] for row in values]
+                        for values_row in ordered: source_digest.update(row_bytes(values_row))
+                        target.executemany(statement, ordered)
                         copied += len(rows)
                     target.execute(sql.SQL('SELECT COUNT(*) FROM {}').format(sql.Identifier(table)))
                     if target.fetchone()[0] != source_count or copied != source_count:
                         raise ValueError(f'{table}: count mismatch; rolling back')
+                    target.execute(sql.SQL('SELECT {} FROM {} ORDER BY {}').format(sql.SQL(',').join(map(sql.Identifier, columns)), sql.Identifier(table), sql.Identifier(identity)))
+                    target_digest = hashlib.sha256()
+                    while imported := target.fetchmany(500):
+                        for values_row in imported: target_digest.update(row_bytes(values_row))
+                    if source_digest.digest() != target_digest.digest():
+                        raise ValueError(f'{table}: row-content mismatch; rolling back')
+                    print(f'{table}: verified {copied} rows including state and token content')
                     target.execute(sql.SQL("SELECT setval(pg_get_serial_sequence(%s,%s), COALESCE(MAX({}),1), COUNT(*)>0) FROM {}").format(sql.Identifier(identity),sql.Identifier(table)), (table,identity))
                 if not args.apply:
                     pg.rollback()

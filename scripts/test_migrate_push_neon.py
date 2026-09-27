@@ -13,6 +13,9 @@ class MigrationTest(unittest.TestCase):
             migration.convert_row('tb_survey_push_schedule',{'status':'PENDING'},['status','audience'])
         row=migration.convert_row('tb_survey_push_schedule',{'status':'PENDING'},['status','audience'],'LIVE')
         self.assertEqual(row['audience'],'LIVE')
+    def test_mysql_bit_zero_does_not_activate_a_device(self):
+        for raw, expected in [(b'\x00',False),(b'\x01',True),(0,False),(1,True)]:
+            self.assertIs(migration.convert_row('tb_push_installation',{'active':raw},['active'])['active'],expected)
     def test_existing_receipts_and_status_are_never_requeued(self):
         row={'status':'DELIVERED','expo_ticket_id':'ticket','send_attempts':2}
         self.assertEqual(migration.convert_row('tb_push_message',row,list(row)),row)

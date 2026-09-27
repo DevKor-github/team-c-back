@@ -76,15 +76,14 @@ import devkor.com.teamcback.domain.routes.service.RouteService;
 import devkor.com.teamcback.domain.review.dto.response.GetReviewPlaceDetailRes;
 import devkor.com.teamcback.domain.review.dto.response.SearchPlaceReviewRes;
 import devkor.com.teamcback.domain.review.service.ReviewService;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchListRes;
-import devkor.com.teamcback.domain.search.dto.response.GlobalSearchRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchBuildingDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchFacilityRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceDetailRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchPlaceRes;
 import devkor.com.teamcback.domain.search.dto.response.SearchRoomDetailRes;
 import devkor.com.teamcback.domain.search.service.SearchService;
+import devkor.com.teamcback.domain.chatbot.search.ChatbotCampusSearchService;
+import devkor.com.teamcback.domain.chatbot.search.ChatbotSearchCandidate;
 import devkor.com.teamcback.domain.schoolcalendar.service.SchoolCalendarService;
 import devkor.com.teamcback.global.exception.exception.AdminException;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
@@ -100,6 +99,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -109,6 +109,7 @@ import org.springframework.stereotype.Component;
 public class CampusToolAdapter {
     private static final int CHATBOT_SEARCH_RESULT_LIMIT = 5;
     private final SearchService searchService;
+    private final ChatbotCampusSearchService chatbotCampusSearchService;
     private final RouteService routeService;
     private final CafeteriaMenuService cafeteriaMenuService;
     private final CourseService courseService;
@@ -117,11 +118,14 @@ public class CampusToolAdapter {
     private final ReviewService reviewService;
     private final ChatbotProperties properties;
 
-    public CampusToolAdapter(SearchService searchService, RouteService routeService,
+    @Autowired
+    public CampusToolAdapter(SearchService searchService, ChatbotCampusSearchService chatbotCampusSearchService,
+                             RouteService routeService,
                              CafeteriaMenuService cafeteriaMenuService, CourseService courseService,
                              SchoolCalendarService schoolCalendarService, BLEService bleService,
                              ReviewService reviewService, ChatbotProperties properties) {
         this.searchService = searchService;
+        this.chatbotCampusSearchService = chatbotCampusSearchService;
         this.routeService = routeService;
         this.cafeteriaMenuService = cafeteriaMenuService;
         this.courseService = courseService;
@@ -129,6 +133,15 @@ public class CampusToolAdapter {
         this.bleService = bleService;
         this.reviewService = reviewService;
         this.properties = properties;
+    }
+
+    /** Compatibility constructor for non-search focused unit tests. */
+    public CampusToolAdapter(SearchService searchService, RouteService routeService,
+                             CafeteriaMenuService cafeteriaMenuService, CourseService courseService,
+                             SchoolCalendarService schoolCalendarService, BLEService bleService,
+                             ReviewService reviewService, ChatbotProperties properties) {
+        this(searchService, null, routeService, cafeteriaMenuService, courseService,
+                schoolCalendarService, bleService, reviewService, properties);
     }
 
     public SearchCampusToolResult searchCampus(SearchCampusToolRequest request) {
@@ -139,13 +152,11 @@ public class CampusToolAdapter {
         int limit = Math.min(CHATBOT_SEARCH_RESULT_LIMIT, properties.tools().search().maxLimit());
         try {
             String query = request.query().trim();
-            GlobalSearchListRes searchResult = searchService.globalSearch(query, null);
-            List<GlobalSearchRes> actualLocations = deduplicate(searchResult == null
-                    ? List.of() : searchResult.getList());
+            List<ChatbotSearchCandidate> actualLocations = chatbotCampusSearchService.search(query);
             String normalizedQuery = normalizeSearchName(query);
             List<SearchCampusItem> candidates = actualLocations.stream()
                     .limit(limit)
-                    .map(item -> toSearchItem(item, matchType(normalizedQuery, item.getName())))
+                    .map(item -> toSearchItem(item, matchType(normalizedQuery, item.name())))
                     .toList();
             if (candidates.isEmpty()) {
                 log.info("chatbot_search query={} limit={} durationMs={} candidateCount=0 ambiguous=false candidates=[]",
@@ -169,20 +180,9 @@ public class CampusToolAdapter {
         }
     }
 
-    private List<GlobalSearchRes> deduplicate(List<GlobalSearchRes> candidates) {
-        if (candidates == null || candidates.isEmpty()) {
-            return List.of();
-        }
-        Map<String, GlobalSearchRes> unique = new LinkedHashMap<>();
-        for (GlobalSearchRes candidate : candidates) {
-            if (candidate == null || candidate.getLocationType() == null || candidate.getId() == null
-                    || (candidate.getLocationType() != LocationType.BUILDING
-                    && candidate.getLocationType() != LocationType.PLACE)) {
-                continue;
-            }
-            unique.putIfAbsent(candidate.getLocationType() + ":" + candidate.getId(), candidate);
-        }
-        return unique.values().stream().toList();
+    private SearchCampusItem toSearchItem(ChatbotSearchCandidate item, SearchCampusMatchType matchType) {
+        return new SearchCampusItem(item.locationId(), item.locationType(), item.name(), item.buildingId(),
+                item.buildingName(), item.floor(), item.placeType(), normalizeDetail(item.detail()), matchType);
     }
 
     public GetLocationDetailToolResult getLocationDetail(GetLocationDetailToolRequest request) {
@@ -582,15 +582,6 @@ public class CampusToolAdapter {
                 .flatMap(entry -> entry.getValue().stream())
                 .map(this::toBuildingFacilityItem)
                 .toList();
-    }
-
-    private SearchCampusItem toSearchItem(GlobalSearchRes item, SearchCampusMatchType matchType) {
-        ToolLocationType type = item.getLocationType() == LocationType.BUILDING
-                ? ToolLocationType.BUILDING : ToolLocationType.PLACE;
-        Long buildingId = type == ToolLocationType.BUILDING ? item.getId() : item.getBuildingId();
-        String buildingName = type == ToolLocationType.BUILDING ? item.getName() : null;
-        return new SearchCampusItem(item.getId(), type, item.getName(), buildingId, buildingName,
-                item.getFloor(), item.getPlaceType(), normalizeDetail(item.getDetail()), matchType);
     }
 
     private SearchCampusMatchType matchType(String normalizedQuery, String candidateName) {

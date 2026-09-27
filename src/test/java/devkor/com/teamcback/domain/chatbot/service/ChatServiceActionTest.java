@@ -31,20 +31,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ChatServiceActionTest {
-    @Mock LlmGateway llmGateway;
+    @Mock ChatOrchestrator chatOrchestrator;
     @Mock ChatSessionMemoryService memoryService;
     @Mock ChatRateLimiter rateLimiter;
     @Mock PendingRouteStateService pendingRouteStateService;
 
     @Test
     void assemblesNavigateRouteOnlyFromResolvedToolReferences() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 "model invented id 999999", List.of(
                 new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L,
                         "송현스퀘어", RouteIntent.NAVIGATE_ROUTE, List.of(RouteCondition.BARRIERFREE)),
                 new ResolvedLocation(EndpointRole.END, RouteEndpointType.PLACE, 456L,
                         "중앙도서관", RouteIntent.NAVIGATE_ROUTE, List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -60,10 +60,10 @@ class ChatServiceActionTest {
 
     @Test
     void doesNotAssembleActionForAmbiguousOrTextRouteTrace() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 "text route", List.of(new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L,
                         "학생회관", RouteIntent.TEXT_ROUTE, List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -76,14 +76,14 @@ class ChatServiceActionTest {
 
     @Test
     void returnsValidatedActionWhenFinalModelFollowUpFailed() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 null, List.of(
                 new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L,
                         "start", RouteIntent.NAVIGATE_ROUTE, List.of()),
                 new ResolvedLocation(EndpointRole.END, RouteEndpointType.PLACE, 456L,
                         "end", RouteIntent.NAVIGATE_ROUTE, List.of())),
                 LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -98,11 +98,11 @@ class ChatServiceActionTest {
 
     @Test
     void keepsProviderFailureWhenFailedFollowUpHasOnlyOneEndpoint() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 null, List.of(new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L,
                         "start", RouteIntent.NAVIGATE_ROUTE, List.of())),
                 LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -116,7 +116,7 @@ class ChatServiceActionTest {
 
     @Test
     void storesAmbiguousEndpointAsPendingRouteState() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 "어느 문과대학 서관인지 알려주세요", List.of(
                 new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L, "송현스퀘어",
                         RouteIntent.NAVIGATE_ROUTE, List.of())), LlmGateway.CompletionStatus.COMPLETE,
@@ -127,7 +127,7 @@ class ChatServiceActionTest {
                                 "문과대학 서관", true,
                                 List.of(new PendingLocationRef(RouteEndpointType.BUILDING, 201L, "문과대학 서관"),
                                         new PendingLocationRef(RouteEndpointType.PLACE, 202L, "문과대학 서관 1층 라운지")), List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -150,13 +150,13 @@ class ChatServiceActionTest {
                 SearchCampusRole.END, List.of(), List.of(new PendingLocationRef(RouteEndpointType.BUILDING, 201L, "old end")));
         when(pendingRouteStateService.load(org.mockito.ArgumentMatchers.any(UUID.class), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.of(pending));
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 "완료", List.of(
                 new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L, "new start",
                         RouteIntent.NAVIGATE_ROUTE, List.of()),
                 new ResolvedLocation(EndpointRole.END, RouteEndpointType.PLACE, 456L, "new end",
                         RouteIntent.NAVIGATE_ROUTE, List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -168,21 +168,21 @@ class ChatServiceActionTest {
         assertThat(response.action().payload().endId()).isEqualTo(456L);
         verify(pendingRouteStateService).delete(sessionId, caller);
         org.mockito.ArgumentCaptor<String> prompt = org.mockito.ArgumentCaptor.forClass(String.class);
-        verify(llmGateway).generate(prompt.capture(), anyList(), eq("1층 라운지로 해줘"));
+        verify(chatOrchestrator).execute(prompt.capture(), anyList(), eq("1층 라운지로 해줘"));
         assertThat(prompt.getValue()).contains("PENDING_ROUTE_CONTINUATION", "interaction=NAVIGATE_ROUTE",
                 "unresolvedRole=END", "re-search both endpoints", "never reuse an old ID");
     }
 
     @Test
     void returnsDeterministicClarificationWhenEndIsAmbiguousAndCompletionIsBlank() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 null, List.of(new ResolvedLocation(EndpointRole.START, RouteEndpointType.BUILDING, 123L, "송현스퀘어",
                         RouteIntent.NAVIGATE_ROUTE, List.of())), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
                 List.of(new SearchResolutionTrace(SearchCampusRole.END, SearchCampusIntent.NAVIGATE_ROUTE,
                         "중앙도서관", true,
                         List.of(new PendingLocationRef(RouteEndpointType.BUILDING, 201L, "중앙도서관(신관)"),
                                 new PendingLocationRef(RouteEndpointType.PLACE, 202L, "중앙도서관(대학원)")), List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -198,13 +198,13 @@ class ChatServiceActionTest {
 
     @Test
     void returnsDeterministicClarificationWhenStartIsAmbiguousAndCompletionIsBlank() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 "", List.of(new ResolvedLocation(EndpointRole.END, RouteEndpointType.BUILDING, 456L, "중앙도서관",
                         RouteIntent.NAVIGATE_ROUTE, List.of())), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
                 List.of(new SearchResolutionTrace(SearchCampusRole.START, SearchCampusIntent.NAVIGATE_ROUTE,
                         "학생회관", true,
                         List.of(new PendingLocationRef(RouteEndpointType.BUILDING, 101L, "학생회관 본관")), List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -218,14 +218,14 @@ class ChatServiceActionTest {
 
     @Test
     void deduplicatesSameActualCandidateInDeterministicClarification() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 null, List.of(), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
                 List.of(new SearchResolutionTrace(SearchCampusRole.START, SearchCampusIntent.NAVIGATE_ROUTE,
                         "중앙도서관", true,
                         List.of(new PendingLocationRef(RouteEndpointType.PLACE, 300L, "야외 중앙도서관 장애인주차장"),
                                 new PendingLocationRef(RouteEndpointType.PLACE, 300L, "야외 중앙도서관 장애인주차장"),
                                 new PendingLocationRef(RouteEndpointType.PLACE, 301L, "야외 중앙도서관 장애인주차장")), List.of()))));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -238,9 +238,9 @@ class ChatServiceActionTest {
 
     @Test
     void keepsTextRouteCompletionFailureAsError() {
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
                 null, List.of(), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
@@ -258,10 +258,11 @@ class ChatServiceActionTest {
                 "end", RouteIntent.TEXT_ROUTE, List.of());
         RouteExecutionTrace execution = new RouteExecutionTrace(start, end, List.of(),
                 new FindRouteToolData(120L, List.of()), true);
-        when(llmGateway.generate(anyString(), anyList(), anyString())).thenReturn(new LlmGateway.LlmResult(
-                null, List.of(start, end), LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
+                "start에서 end까지 경로를 찾았습니다. 예상 소요 시간은 120초입니다.", List.of(start, end),
+                LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
                 List.of(), execution));
-        ChatService service = new ChatService(llmGateway, memoryService, rateLimiter, pendingRouteStateService);
+        ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());

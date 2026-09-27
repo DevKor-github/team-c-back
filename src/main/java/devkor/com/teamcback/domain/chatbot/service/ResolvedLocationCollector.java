@@ -21,7 +21,7 @@ import java.util.Map;
 public final class ResolvedLocationCollector {
     private final Map<String, ResolvedLocation> locations = Collections.synchronizedMap(new LinkedHashMap<>());
     private final List<SearchResolutionTrace> searchResolutions = Collections.synchronizedList(new ArrayList<>());
-    private RouteExecutionTrace routeExecution;
+    private volatile RouteExecutionTrace routeExecution;
 
     public void record(SearchCampusToolRequest request, SearchCampusToolResult result) {
         if (request == null || request.role() == null || request.intent() == null || result == null) {
@@ -89,6 +89,12 @@ public final class ResolvedLocationCollector {
 
     public RouteExecutionTrace routeExecution() {
         return routeExecution;
+    }
+
+    public boolean hasRecordedToolActivity() {
+        synchronized (searchResolutions) {
+            return !searchResolutions.isEmpty() || routeExecution != null;
+        }
     }
 
     /** Builds a route request only from unique current-request search results. */

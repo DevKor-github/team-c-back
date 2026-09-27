@@ -8,7 +8,6 @@ import devkor.com.teamcback.domain.chatbot.dto.NavigateRouteAction;
 import devkor.com.teamcback.domain.chatbot.dto.PendingLocationRef;
 import devkor.com.teamcback.domain.chatbot.dto.PendingRouteState;
 import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation;
-import devkor.com.teamcback.domain.chatbot.dto.RouteExecutionTrace;
 import devkor.com.teamcback.domain.chatbot.dto.SearchResolutionTrace;
 import devkor.com.teamcback.domain.chatbot.dto.request.ChatMessageReq;
 import devkor.com.teamcback.domain.chatbot.dto.request.CurrentLocationReq;
@@ -63,20 +62,22 @@ public class ChatService {
             findRoute; pending END clarification -> re-search both endpoints; ambiguous END -> ask which candidate.
             """;
 
-    private final LlmGateway llmGateway;
+    private final ChatOrchestrator chatOrchestrator;
     private final ChatSessionMemoryService memoryService;
     private final ChatRateLimiter rateLimiter;
     private final PendingRouteStateService pendingRouteStateService;
 
     /** Compatibility constructor for focused unit tests that do not exercise pending state. */
-    public ChatService(LlmGateway llmGateway, ChatSessionMemoryService memoryService, ChatRateLimiter rateLimiter) {
-        this(llmGateway, memoryService, rateLimiter, null);
+    public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
+                       ChatRateLimiter rateLimiter) {
+        this(chatOrchestrator, memoryService, rateLimiter, null);
     }
 
     @Autowired
-    public ChatService(LlmGateway llmGateway, ChatSessionMemoryService memoryService, ChatRateLimiter rateLimiter,
+    public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
+                       ChatRateLimiter rateLimiter,
                        PendingRouteStateService pendingRouteStateService) {
-        this.llmGateway = llmGateway;
+        this.chatOrchestrator = chatOrchestrator;
         this.memoryService = memoryService;
         this.rateLimiter = rateLimiter;
         this.pendingRouteStateService = pendingRouteStateService;
@@ -87,22 +88,16 @@ public class ChatService {
         rateLimiter.check(caller);
         var history = memoryService.load(sessionId, caller);
         PendingRouteState pending = loadPending(sessionId, caller);
-        LlmGateway.LlmResult result = llmGateway.generate(promptWithPendingState(pending), toGatewayHistory(history),
-                messageWithRequestContext(request));
+        ChatOrchestrationResult result = chatOrchestrator.execute(promptWithPendingState(pending),
+                toGatewayHistory(history), messageWithRequestContext(request));
         ClientAction action = assembleRouteAction(result.resolvedLocations());
         if (action != null) {
             deletePending(sessionId, caller);
         } else {
             savePendingIfRouteIsIncomplete(sessionId, caller, pending, result.searchResolutions());
         }
-        boolean completionFailed = result.completionStatus() == LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION
-                || result.reply() == null || result.reply().isBlank();
+        boolean completionFailed = result.reply() == null || result.reply().isBlank();
         if (completionFailed && action == null) {
-            String routeFallback = deterministicTextRouteReply(result);
-            if (routeFallback != null) {
-                memoryService.save(sessionId, caller, request.message(), routeFallback);
-                return new ChatMessageRes(sessionId, routeFallback, null);
-            }
             String clarification = deterministicClarification(result.searchResolutions());
             if (clarification != null) {
                 memoryService.save(sessionId, caller, request.message(), clarification);
@@ -113,21 +108,6 @@ public class ChatService {
         String reply = action == null ? result.reply() : routeActionReply(action);
         memoryService.save(sessionId, caller, request.message(), reply);
         return new ChatMessageRes(sessionId, reply, action);
-    }
-
-    private String deterministicTextRouteReply(LlmGateway.LlmResult result) {
-        RouteExecutionTrace trace = result.routeExecution();
-        if (trace == null || !trace.successful() || trace.start() == null || trace.end() == null
-                || trace.route() == null || trace.start().intent() != ResolvedLocation.RouteIntent.TEXT_ROUTE
-                || trace.end().intent() != ResolvedLocation.RouteIntent.TEXT_ROUTE) {
-            return null;
-        }
-        StringBuilder reply = new StringBuilder(trace.start().name()).append("에서 ")
-                .append(trace.end().name()).append("까지 경로를 찾았습니다.");
-        if (trace.route().estimatedDurationSeconds() != null) {
-            reply.append(" 예상 소요 시간은 ").append(trace.route().estimatedDurationSeconds()).append("초입니다.");
-        }
-        return reply.toString();
     }
 
     private PendingRouteState loadPending(UUID sessionId, ChatCaller caller) {

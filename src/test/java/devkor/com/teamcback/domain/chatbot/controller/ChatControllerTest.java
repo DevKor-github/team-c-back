@@ -15,7 +15,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
+import devkor.com.teamcback.domain.chatbot.service.ChatOrchestrationResult;
+import devkor.com.teamcback.domain.chatbot.service.ChatOrchestrator;
 import devkor.com.teamcback.domain.chatbot.service.ChatRateLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ChatService;
 import devkor.com.teamcback.domain.chatbot.service.ChatSessionMemoryService;
@@ -33,14 +34,14 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
 class ChatControllerTest {
-    @Mock private LlmGateway llmGateway;
+    @Mock private ChatOrchestrator chatOrchestrator;
     @Mock private ChatSessionMemoryService memoryService;
     @Mock private ChatRateLimiter rateLimiter;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        ChatService chatService = new ChatService(llmGateway, memoryService, rateLimiter);
+        ChatService chatService = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         lenient().when(memoryService.load(any(), any())).thenReturn(List.of());
         mockMvc = MockMvcBuilders.standaloneSetup(new ChatController(chatService))
                 .setControllerAdvice(new GlobalExceptionHandler()).build();
@@ -51,7 +52,7 @@ class ChatControllerTest {
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"   \"}"))
                 .andExpect(status().isBadRequest());
-        verifyNoInteractions(llmGateway);
+        verifyNoInteractions(chatOrchestrator);
     }
 
     @Test
@@ -59,7 +60,7 @@ class ChatControllerTest {
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"" + "a".repeat(1001) + "\"}"))
                 .andExpect(status().isBadRequest());
-        verifyNoInteractions(llmGateway);
+        verifyNoInteractions(chatOrchestrator);
     }
 
     @Test
@@ -68,13 +69,13 @@ class ChatControllerTest {
                         .content("{\"message\":\"route\",\"context\":{\"currentLocation\":{"
                                 + "\"latitude\":91.0,\"longitude\":-181.0}}}"))
                 .andExpect(status().isBadRequest());
-        verifyNoInteractions(llmGateway);
+        verifyNoInteractions(chatOrchestrator);
     }
 
     @Test
     void generatesSessionIdAndReturnsGatewayReplyWithoutAction() throws Exception {
-        when(llmGateway.generate(anyString(), anyList(), anyString()))
-                .thenReturn(new LlmGateway.LlmResult("hello", List.of()));
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
+                .thenReturn(new ChatOrchestrationResult("hello", List.of()));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"hello\"}"))
                 .andExpect(status().isOk())
@@ -91,12 +92,12 @@ class ChatControllerTest {
                         .content("{\"message\":\"hello\"}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.statusCode").value(20001));
-        verifyNoInteractions(llmGateway);
+        verifyNoInteractions(chatOrchestrator);
     }
 
     @Test
     void hidesProviderFailureDetails() throws Exception {
-        when(llmGateway.generate(anyString(), anyList(), anyString()))
+        when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
                 .thenThrow(new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"hello\"}"))

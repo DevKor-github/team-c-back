@@ -3,7 +3,6 @@ package devkor.com.teamcback.domain.chatbot.gateway;
 import static devkor.com.teamcback.global.response.ResultCode.CHATBOT_TEMPORARILY_UNAVAILABLE;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
-import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -56,10 +55,10 @@ public class SpringAiLlmGateway implements LlmGateway {
     }
 
     @Override
-    public LlmResult generate(String systemPrompt, List<ConversationMessage> history, String userMessage) {
-        ResolvedLocationCollector collector = new ResolvedLocationCollector();
+    public LlmResult generate(String systemPrompt, List<ConversationMessage> history, String userMessage,
+                              ResolvedLocationCollector executionState) {
         Future<GatewayResult> response = chatbotLlmExecutor.submit(
-                () -> invoke(systemPrompt, history, userMessage, collector));
+                () -> invoke(systemPrompt, history, userMessage, executionState));
         try {
             GatewayResult result = response.get(properties.llm().timeout().toMillis(), TimeUnit.MILLISECONDS);
             log.info("chatbot_llm outcome={} provider={} model={} latencyMs={} toolCalls={} inputTokens=unavailable outputTokens=unavailable",
@@ -73,12 +72,9 @@ public class SpringAiLlmGateway implements LlmGateway {
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
         } catch (TimeoutException exception) {
             response.cancel(true);
-            if (collector.hasNavigateIntent() || collector.hasRouteExecution()) {
-                logFailure(collector.hasNavigateIntent() ? "NAVIGATE_ROUTE_FAIL_SAFE" : "TEXT_ROUTE_FAIL_SAFE",
-                        "ASYNC_WAIT_AFTER_TOOL_EXECUTION", exception, true);
-                return new LlmResult(null, collector.snapshot(),
-                        LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
-                        collector.searchResolutionSnapshot(), collector.routeExecution());
+            if (executionState.hasRecordedToolActivity()) {
+                logFailure("TOOL_PROGRESS_FAIL_SAFE", "ASYNC_WAIT_AFTER_TOOL_EXECUTION", exception, true);
+                return new LlmResult(null, LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION);
             }
             logFailure("TEMPORARILY_UNAVAILABLE", "ASYNC_WAIT", exception, true);
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
@@ -87,7 +83,7 @@ public class SpringAiLlmGateway implements LlmGateway {
             if (hasCause(exception, ToolCallLimitExceededException.class)) {
                 log.info("chatbot_llm outcome=TOOL_LIMIT provider={} model={}",
                         properties.llm().provider(), properties.llm().model());
-                return new LlmResult(TOOL_LIMIT_FALLBACK, List.of());
+                return new LlmResult(TOOL_LIMIT_FALLBACK);
             }
             logFailure("TEMPORARILY_UNAVAILABLE", failureStage(exception), exception, false);
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
@@ -109,52 +105,28 @@ public class SpringAiLlmGateway implements LlmGateway {
                         .call();
                 ChatClientResponse clientResponse = callResponse == null ? null : callResponse.chatClientResponse();
                 ChatResponse chatResponse = clientResponse == null ? null : clientResponse.chatResponse();
-                ensureTextRouteExecution(requestTools, collector);
                 String content = extractContent(chatResponse);
                 if (content == null || content.isBlank()) {
                     logEmptyCompletionDiagnostics(chatResponse, scope, collector);
                     throw new EmptyLlmCompletionException();
                 }
-                return new GatewayResult(new LlmGateway.LlmResult(content, collector.snapshot(),
-                        LlmGateway.CompletionStatus.COMPLETE, collector.searchResolutionSnapshot(),
-                        collector.routeExecution()), "SUCCESS",
+                return new GatewayResult(new LlmGateway.LlmResult(content), "SUCCESS",
                         elapsedMillis(startedAt), scope.callCount());
             } catch (RuntimeException exception) {
                 if (hasCause(exception, ToolCallLimitExceededException.class)) {
-                    return new GatewayResult(new LlmGateway.LlmResult(TOOL_LIMIT_FALLBACK, java.util.List.of()),
+                    return new GatewayResult(new LlmGateway.LlmResult(TOOL_LIMIT_FALLBACK),
                             "TOOL_LIMIT", elapsedMillis(startedAt),
                             scope.callCount());
                 }
-                if (collector.hasTextRouteIntent() && !collector.hasRouteExecution()) {
-                    try {
-                        ensureTextRouteExecution(requestTools, collector);
-                    } catch (RuntimeException ignored) {
-                        // Preserve the original provider/tool failure and its stable mapping.
-                    }
-                }
-                List<ResolvedLocation> resolvedLocations = collector.snapshot();
-                String stage = resolvedLocations.isEmpty() ? "MODEL_TOOL_LOOP" : "POST_TOOL_EXECUTION";
-                if (collector.hasNavigateIntent() || collector.hasRouteExecution()) {
-                    logFailure(collector.hasNavigateIntent() ? "NAVIGATE_ROUTE_FAIL_SAFE" : "TEXT_ROUTE_FAIL_SAFE",
-                            stage, exception, false);
-                    return new GatewayResult(new LlmGateway.LlmResult(null, resolvedLocations,
-                            LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
-                            collector.searchResolutionSnapshot(), collector.routeExecution()),
-                            "NAVIGATE_ROUTE_FAIL_SAFE", elapsedMillis(startedAt), scope.callCount());
+                String stage = collector.hasRecordedToolActivity() ? "POST_TOOL_EXECUTION" : "MODEL_TOOL_LOOP";
+                if (collector.hasRecordedToolActivity()) {
+                    logFailure("TOOL_PROGRESS_FAIL_SAFE", stage, exception, false);
+                    return new GatewayResult(new LlmGateway.LlmResult(null,
+                            LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION),
+                            "TOOL_PROGRESS_FAIL_SAFE", elapsedMillis(startedAt), scope.callCount());
                 }
                 throw new StagedLlmInvocationException(stage, exception);
             }
-        }
-    }
-
-    private void ensureTextRouteExecution(CampusChatbotTools requestTools,
-                                           ResolvedLocationCollector collector) {
-        if (!collector.hasTextRouteIntent() || collector.hasRouteExecution()) {
-            return;
-        }
-        var routeRequest = collector.currentTextRouteRequest();
-        if (routeRequest != null) {
-            requestTools.findRoute(routeRequest);
         }
     }
 
@@ -167,10 +139,8 @@ public class SpringAiLlmGateway implements LlmGateway {
             log.error("chatbot_llm empty_completion responseNull=true generationCount=0 "
                             + "toolCallCount=0 toolCallNames=[] toolCallsPresent=false "
                             + "textState=unavailable finishReasons=[] metadataClass=unavailable "
-                            + "toolCalls={} resolvedLocationCount={} searchResolutionCount={} "
-                            + "navigateIntent={} ambiguousTrace={}",
-                    scope.callCount(), collector.snapshot().size(), collector.searchResolutionSnapshot().size(),
-                    collector.hasNavigateIntent(), hasAmbiguousTrace(collector));
+                            + "toolCalls={} recordedToolActivity={}",
+                    scope.callCount(), collector.hasRecordedToolActivity());
             return;
         }
 
@@ -208,13 +178,11 @@ public class SpringAiLlmGateway implements LlmGateway {
         log.error("chatbot_llm empty_completion responseNull=false generationCount={} outputCount={} "
                         + "assistantCount={} blankTextCount={} toolCallCount={} toolCallNames={} "
                         + "toolCallsPresent={} finishReasons={} responseMetadataClass={} "
-                        + "toolCalls={} resolvedLocationCount={} searchResolutionCount={} "
-                        + "navigateIntent={} ambiguousTrace={}",
+                        + "toolCalls={} recordedToolActivity={}",
                 generations.size(), outputCount, assistantCount, blankTextCount, toolNames.size(), toolNames,
                 !toolNames.isEmpty(), finishReasons,
                 response.getMetadata() == null ? "unavailable" : response.getMetadata().getClass().getName(),
-                scope.callCount(), collector.snapshot().size(), collector.searchResolutionSnapshot().size(),
-                collector.hasNavigateIntent(), hasAmbiguousTrace(collector));
+                scope.callCount(), collector.hasRecordedToolActivity());
     }
 
     /** Mirrors ChatClient.content() extraction without issuing a second ChatModel call. */
@@ -227,10 +195,6 @@ public class SpringAiLlmGateway implements LlmGateway {
             return null;
         }
         return generation.getOutput().getText();
-    }
-
-    private boolean hasAmbiguousTrace(ResolvedLocationCollector collector) {
-        return collector.searchResolutionSnapshot().stream().anyMatch(trace -> trace.ambiguous());
     }
 
     private void logFailure(String outcome, String stage, Throwable exception, boolean timeout) {

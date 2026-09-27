@@ -9,10 +9,15 @@ import org.junit.jupiter.api.Test;
 
 class ChatServiceArchitectureTest {
     @Test
-    void dependsOnLlmGatewayOnlyForLlmAccess() {
+    void delegatesLlmWorkflowThroughChatOrchestrator() {
         Field[] fields = ChatService.class.getDeclaredFields();
 
         assertThat(Arrays.stream(fields).map(Field::getType))
+                .contains(ChatOrchestrator.class)
+                .noneMatch(type -> type.getName().startsWith("org.springframework.ai")
+                        || type.getName().startsWith("com.google"));
+
+        assertThat(Arrays.stream(ChatOrchestrator.class.getDeclaredFields()).map(Field::getType))
                 .contains(LlmGateway.class)
                 .noneMatch(type -> type.getName().startsWith("org.springframework.ai")
                         || type.getName().startsWith("com.google"));

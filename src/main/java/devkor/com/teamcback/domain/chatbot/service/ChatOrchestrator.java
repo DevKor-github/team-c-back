@@ -122,10 +122,17 @@ public class ChatOrchestrator {
 
     private String deterministicTextRouteReply(RouteExecutionTrace trace) {
         StringBuilder reply = new StringBuilder(trace.start().name()).append("에서 ")
-                .append(trace.end().name()).append("까지 경로를 찾았습니다.");
-        if (trace.route().estimatedDurationSeconds() != null) {
-            reply.append(" 예상 소요 시간은 ").append(trace.route().estimatedDurationSeconds()).append("초입니다.");
+                .append(trace.end().name()).append("까지 경로를 찾았어요.");
+        Long durationSeconds = trace.route().estimatedDurationSeconds();
+        if (durationSeconds != null) {
+            if (durationSeconds < 60) {
+                reply.append(" 예상 소요 시간은 1분 이내예요.");
+            } else {
+                long minutes = Math.max(1L, Math.round(durationSeconds / 60.0));
+                reply.append(" 예상 소요 시간은 약 ").append(minutes).append("분이에요.");
+            }
         }
+        reply.append(" 길찾기 화면으로 안내할까요?");
         return reply.toString();
     }
 }

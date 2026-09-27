@@ -259,7 +259,7 @@ class ChatServiceActionTest {
         RouteExecutionTrace execution = new RouteExecutionTrace(start, end, List.of(),
                 new FindRouteToolData(120L, List.of()), true);
         when(chatOrchestrator.execute(anyString(), anyList(), anyString())).thenReturn(new ChatOrchestrationResult(
-                "start에서 end까지 경로를 찾았습니다. 예상 소요 시간은 120초입니다.", List.of(start, end),
+                "start에서 end까지 경로를 찾았어요. 예상 소요 시간은 약 2분이에요. 길찾기 화면으로 안내할까요?", List.of(start, end),
                 LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION,
                 List.of(), execution));
         ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService);
@@ -270,6 +270,6 @@ class ChatServiceActionTest {
         var response = service.sendMessage(new ChatMessageReq(sessionId, "몇 분 걸려?", null), caller);
 
         assertThat(response.action()).isNull();
-        assertThat(response.reply()).isEqualTo("start에서 end까지 경로를 찾았습니다. 예상 소요 시간은 120초입니다.");
+        assertThat(response.reply()).isEqualTo("start에서 end까지 경로를 찾았어요. 예상 소요 시간은 약 2분이에요. 길찾기 화면으로 안내할까요?");
     }
 }

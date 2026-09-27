@@ -56,6 +56,38 @@ class ChatOrchestratorTest {
     }
 
     @Test
+    void formatsDurationAsApproximateMinutes() {
+        when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
+                new RoutePlan(RoutePlan.Intent.TEXT_ROUTE, "start", "end", List.of()));
+        when(campusToolAdapter.searchCampus(any(SearchCampusToolRequest.class))).thenAnswer(invocation -> {
+            SearchCampusToolRequest request = invocation.getArgument(0);
+            return resolved(request.role() == SearchCampusRole.START ? 11L : 22L, request.query());
+        });
+        when(campusToolAdapter.findRoute(any())).thenReturn(successfulRoute(421L));
+
+        ChatOrchestrationResult result = new ChatOrchestrator(llmGateway, campusToolAdapter, routePlanner)
+                .execute("system", List.of(), "route");
+
+        assertThat(result.reply()).isEqualTo("start에서 end까지 경로를 찾았어요. 예상 소요 시간은 약 7분이에요. 길찾기 화면으로 안내할까요?");
+    }
+
+    @Test
+    void formatsSubMinuteDurationNaturally() {
+        when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
+                new RoutePlan(RoutePlan.Intent.TEXT_ROUTE, "start", "end", List.of()));
+        when(campusToolAdapter.searchCampus(any(SearchCampusToolRequest.class))).thenAnswer(invocation -> {
+            SearchCampusToolRequest request = invocation.getArgument(0);
+            return resolved(request.role() == SearchCampusRole.START ? 11L : 22L, request.query());
+        });
+        when(campusToolAdapter.findRoute(any())).thenReturn(successfulRoute(45L));
+
+        ChatOrchestrationResult result = new ChatOrchestrator(llmGateway, campusToolAdapter, routePlanner)
+                .execute("system", List.of(), "route");
+
+        assertThat(result.reply()).isEqualTo("start에서 end까지 경로를 찾았어요. 예상 소요 시간은 1분 이내예요. 길찾기 화면으로 안내할까요?");
+    }
+
+    @Test
     void deterministicNavigateRouteResolvesBothEndpointsWithoutFindRoute() {
         when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
                 new RoutePlan(RoutePlan.Intent.NAVIGATE_ROUTE, "start place", "end place", List.of()));
@@ -137,7 +169,7 @@ class ChatOrchestratorTest {
 
         ChatOrchestrationResult result = orchestrator.execute("system", List.of(), "route");
 
-        assertThat(result.reply()).isEqualTo("start에서 end까지 경로를 찾았습니다. 예상 소요 시간은 120초입니다.");
+        assertThat(result.reply()).isEqualTo("start에서 end까지 경로를 찾았어요. 예상 소요 시간은 약 2분이에요. 길찾기 화면으로 안내할까요?");
         assertThat(result.completionStatus()).isEqualTo(LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION);
     }
 

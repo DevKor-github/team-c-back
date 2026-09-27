@@ -51,6 +51,9 @@ dependencies {
     // Spring AI
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
 
+    // LangGraph4j core is used only by the CROWD_STATUS workflow POC.
+    implementation 'org.bsc.langgraph4j:langgraph4j-core:1.9.2'
+
     // h2
     runtimeOnly 'com.h2database:h2'
 

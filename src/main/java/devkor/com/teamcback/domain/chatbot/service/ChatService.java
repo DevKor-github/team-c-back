@@ -66,27 +66,46 @@ public class ChatService {
     private final ChatSessionMemoryService memoryService;
     private final ChatRateLimiter rateLimiter;
     private final PendingRouteStateService pendingRouteStateService;
+    private final CrowdStatusWorkflow crowdStatusWorkflow;
 
     /** Compatibility constructor for focused unit tests that do not exercise pending state. */
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter) {
-        this(chatOrchestrator, memoryService, rateLimiter, null);
+        this(chatOrchestrator, memoryService, rateLimiter, null, null);
+    }
+
+    /** Compatibility constructor for tests that provide pending-route state only. */
+    public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
+                       ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService) {
+        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, null);
     }
 
     @Autowired
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter,
-                       PendingRouteStateService pendingRouteStateService) {
+                       PendingRouteStateService pendingRouteStateService,
+                       CrowdStatusWorkflow crowdStatusWorkflow) {
         this.chatOrchestrator = chatOrchestrator;
         this.memoryService = memoryService;
         this.rateLimiter = rateLimiter;
         this.pendingRouteStateService = pendingRouteStateService;
+        this.crowdStatusWorkflow = crowdStatusWorkflow;
     }
 
     public ChatMessageRes sendMessage(ChatMessageReq request, ChatCaller caller) {
         UUID sessionId = request.sessionId() == null ? UUID.randomUUID() : request.sessionId();
         rateLimiter.check(caller);
         var history = memoryService.load(sessionId, caller);
+        if (crowdStatusWorkflow != null) {
+            CrowdStatusWorkflow.CrowdWorkflowResult crowd = crowdStatusWorkflow.handle(
+                    sessionId, caller, toGatewayHistory(history), request.message());
+            if (crowd.handled()) {
+                String reply = crowd.reply() == null || crowd.reply().isBlank()
+                        ? "혼잡도 요청을 처리하지 못했어요." : crowd.reply();
+                memoryService.save(sessionId, caller, request.message(), reply);
+                return new ChatMessageRes(sessionId, reply, null);
+            }
+        }
         PendingRouteState pending = loadPending(sessionId, caller);
         ChatOrchestrationResult result = chatOrchestrator.execute(promptWithPendingState(pending),
                 toGatewayHistory(history), messageWithRequestContext(request));

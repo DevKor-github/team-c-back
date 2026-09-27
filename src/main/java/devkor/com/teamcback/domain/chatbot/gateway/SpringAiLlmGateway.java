@@ -4,6 +4,7 @@ import static devkor.com.teamcback.global.response.ResultCode.CHATBOT_TEMPORARIL
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -59,6 +60,47 @@ public class SpringAiLlmGateway implements LlmGateway {
         this.chatbotLlmExecutor = chatbotLlmExecutor;
         this.campusChatbotTools = campusChatbotTools;
         this.toolCallLimiter = toolCallLimiter;
+    }
+
+    @Override
+    public CrowdStatusPlan planCrowd(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        Future<CrowdStatusPlan> response = chatbotLlmExecutor.submit(
+                () -> invokeCrowdPlan(systemPrompt, history, userMessage));
+        try {
+            CrowdStatusPlan plan = response.get(properties.llm().timeout().toMillis(), TimeUnit.MILLISECONDS);
+            return plan == null ? CrowdStatusPlan.other() : plan;
+        } catch (InterruptedException exception) {
+            response.cancel(true);
+            Thread.currentThread().interrupt();
+            return CrowdStatusPlan.other();
+        } catch (ExecutionException | TimeoutException exception) {
+            response.cancel(true);
+            return CrowdStatusPlan.other();
+        }
+    }
+
+    private CrowdStatusPlan invokeCrowdPlan(String systemPrompt, List<ConversationMessage> history,
+                                             String userMessage) {
+        BeanOutputConverter<CrowdStatusPlan> converter = new BeanOutputConverter<>(CrowdStatusPlan.class);
+        String plannerPrompt = """
+                Determine whether the current user request asks for current campus crowd status.
+                Do not call tools and do not invent IDs, types, roles, conditions, or tool arguments.
+                Return only the structured CrowdStatusPlan requested by the output format.
+                Use CROWD_STATUS only for a crowd/congestion question; otherwise use OTHER.
+                For CROWD_STATUS, locationQuery must be only the natural-language campus location phrase.
+                Preserve the user's location wording and leave locationQuery null for OTHER.
+                Existing context:
+                %s
+
+                Output format:
+                %s
+                """.formatted(systemPrompt == null ? "" : systemPrompt, converter.getFormat());
+        ChatClient.CallResponseSpec response = chatClient.prompt()
+                .system(plannerPrompt)
+                .messages(toSpringMessages(history, userMessage))
+                .call();
+        CrowdStatusPlan plan = response == null ? null : response.entity(converter);
+        return plan == null ? CrowdStatusPlan.other() : plan;
     }
 
     @Override

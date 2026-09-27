@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.tool.CampusChatbotTools;
@@ -69,6 +70,30 @@ class SpringAiLlmGatewayTest {
 
         assertThat(plan.intent()).isEqualTo(RoutePlan.Intent.TEXT_ROUTE);
         assertThat(plan.startQuery()).isEqualTo("start");
+        verify(requestSpec).call();
+        org.mockito.Mockito.verify(requestSpec, org.mockito.Mockito.never()).tools(any());
+    }
+
+    @Test
+    void usesStructuredCrowdPlannerWithoutRegisteringCampusTools() {
+        ChatClient chatClient = mock(ChatClient.class);
+        ChatClient.Builder builder = mock(ChatClient.Builder.class);
+        ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
+        ChatClient.CallResponseSpec responseSpec = mock(ChatClient.CallResponseSpec.class);
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt()).thenReturn(requestSpec);
+        when(requestSpec.system(anyString())).thenReturn(requestSpec);
+        when(requestSpec.messages(anyList())).thenReturn(requestSpec);
+        when(requestSpec.call()).thenReturn(responseSpec);
+        when(responseSpec.entity(any(StructuredOutputConverter.class))).thenReturn(
+                new CrowdStatusPlan(CrowdStatusPlan.Intent.CROWD_STATUS, "미래관"));
+        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties(), executor,
+                mock(CampusChatbotTools.class), new ChatbotToolCallLimiter(properties()));
+
+        CrowdStatusPlan plan = gateway.planCrowd("system", List.of(), "미래관 혼잡도");
+
+        assertThat(plan.isCrowdStatus()).isTrue();
+        assertThat(plan.locationQuery()).isEqualTo("미래관");
         verify(requestSpec).call();
         org.mockito.Mockito.verify(requestSpec, org.mockito.Mockito.never()).tools(any());
     }

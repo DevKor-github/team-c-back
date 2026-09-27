@@ -11,11 +11,13 @@ import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 
-public interface PushInstallationRepository extends JpaRepository<PushInstallation, Long> {
-
-    @Query("select u.userId from User u where u.userId in :userIds and u.role = devkor.com.teamcback.domain.user.entity.Role.ADMIN")
-    Set<Long> findAdminUserIds(@Param("userIds") Collection<Long> userIds);
-
+@devkor.com.teamcback.domain.notification.persistence.PushStore
+public interface PushInstallationRepository extends JpaRepository<PushInstallation, Long>, PushInstallationLookup {
+    interface UserProfile {
+        Long getUserId();
+        String getUsername();
+        String getEmail();
+    }
 
     Optional<PushInstallation> findByInstallationId(
             String installationId

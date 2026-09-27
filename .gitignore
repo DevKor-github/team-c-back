@@ -49,3 +49,5 @@ out/
 /src/main/resources/application-local.yml
 /.env.local
 /docker-compose.local.yml
+# Local migration tooling
+scripts/__pycache__/

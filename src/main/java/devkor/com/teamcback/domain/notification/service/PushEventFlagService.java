@@ -17,6 +17,22 @@ public class PushEventFlagService {
 
     private final StringRedisTemplate redisTemplate;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private devkor.com.teamcback.domain.notification.repository.PushEventSettingRepository settings;
+    @Value("${push.storage:mysql}") private String storage = "mysql";
+    @Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private devkor.com.teamcback.domain.notification.repository.PushInstallationRepository installations;
+    public boolean isEligible(Long userId) {
+        return !"neon".equals(storage) || !"INTERNAL_TEST".equals(audience)
+                || (userId != null && installations.findAdminUserIds(List.of(userId)).contains(userId));
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    private devkor.com.teamcback.domain.notification.repository.PushEventSettingChangeRepository changes;
+    public String audience() { return audience; }
+
+
     @Value("${push.event.crowd-enabled:false}")
     private boolean crowdDefaultEnabled;
 
@@ -45,6 +61,10 @@ public class PushEventFlagService {
     }
 
     public boolean isEnabled(PushEventType eventType) {
+        if ("neon".equals(storage)) {
+            return settings.findById(audience + ":" + eventType.name())
+                    .map(devkor.com.teamcback.domain.notification.entity.PushEventSetting::isEnabled).orElse(false);
+        }
         String redisValue = getRedisValue(eventType);
         if ("true".equalsIgnoreCase(redisValue)) {
             return true;
@@ -61,11 +81,19 @@ public class PushEventFlagService {
                 .toList();
     }
 
+    @org.springframework.transaction.annotation.Transactional("pushTransactionManager")
     public AdminPushEventFlagRes updateFlag(
             PushEventType eventType,
             boolean enabled
     ) {
-        redisTemplate.opsForValue().set(eventType.redisKey(), Boolean.toString(enabled));
+        if ("neon".equals(storage)) {
+            var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            changes.save(new devkor.com.teamcback.domain.notification.entity.PushEventSettingChange(
+                    audience + ":" + eventType.name(), enabled, authentication == null ? "SYSTEM" : authentication.getName()));
+            settings.save(new devkor.com.teamcback.domain.notification.entity.PushEventSetting(audience + ":" + eventType.name(), enabled));
+        } else {
+            redisTemplate.opsForValue().set(eventType.redisKey(), Boolean.toString(enabled));
+        }
         return new AdminPushEventFlagRes(eventType, isEnabled(eventType));
     }
 

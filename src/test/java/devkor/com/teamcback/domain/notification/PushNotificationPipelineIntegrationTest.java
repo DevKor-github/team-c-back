@@ -126,6 +126,53 @@ class PushNotificationPipelineIntegrationTest {
         pushInstallationRepository.deleteAll();
     }
 
+    @Autowired
+    private devkor.com.teamcback.domain.user.repository.UserRepository userRepository;
+
+    @Test
+    void profileSearchReturnsRealNamesAndEmailsAndRespectsAdminScope() {
+        var admin = userRepository.saveAndFlush(new devkor.com.teamcback.domain.user.entity.User(
+                "qa_admin_name", "admin-qa@example.test", devkor.com.teamcback.domain.user.entity.Role.ADMIN,
+                devkor.com.teamcback.domain.user.entity.Provider.GOOGLE));
+        var user = userRepository.saveAndFlush(new devkor.com.teamcback.domain.user.entity.User(
+                "qa_regular_name", "regular-qa@example.test", devkor.com.teamcback.domain.user.entity.Role.USER,
+                devkor.com.teamcback.domain.user.entity.Provider.GOOGLE));
+        var adminDevice = pushInstallationRepository.saveAndFlush(new PushInstallation(admin.getUserId(), "qa-admin", "ExponentPushToken[qa-admin]", AppVariant.PRODUCTION));
+        var userDevice = pushInstallationRepository.saveAndFlush(new PushInstallation(user.getUserId(), "qa-user", "ExponentPushToken[qa-user]", AppVariant.PRODUCTION));
+        var page = org.springframework.data.domain.PageRequest.of(0, 200);
+        assertThat(pushInstallationRepository.searchByUserProfile("%qa!_admin%", AppVariant.PRODUCTION, false, page))
+                .extracting(PushInstallation::getInstallationId).containsExactly("qa-admin");
+        assertThat(pushInstallationRepository.searchByUserProfile("%REGULAR-QA@%", AppVariant.PRODUCTION, false, page))
+                .extracting(PushInstallation::getInstallationId).containsExactly("qa-user");
+        assertThat(pushInstallationRepository.searchByUserProfile("%@example.test%", AppVariant.PRODUCTION, true, page))
+                .extracting(PushInstallation::getInstallationId).containsExactly("qa-admin");
+        var profiles = pushInstallationRepository.findUserProfiles(List.of(admin.getUserId(), user.getUserId()));
+        assertThat(profiles).extracting(devkor.com.teamcback.domain.notification.repository.PushInstallationRepository.UserProfile::getUsername)
+                .containsExactlyInAnyOrder("qa_admin_name", "qa_regular_name");
+        assertThat(profiles).extracting(devkor.com.teamcback.domain.notification.repository.PushInstallationRepository.UserProfile::getEmail)
+                .containsExactlyInAnyOrder("admin-qa@example.test", "regular-qa@example.test");
+    }
+
+    @Test
+    void historySeparatesAdminLiveAndUnclassifiedRecordsWithoutGuessing() {
+        for (Boolean scope : new Boolean[] { true, false, null }) {
+            var dispatch = new PushDispatch(
+                    devkor.com.teamcback.domain.notification.entity.type.NotificationType.GENERAL,
+                    devkor.com.teamcback.domain.notification.entity.type.PushMode.ACTUAL, AppVariant.PRODUCTION,
+                    devkor.com.teamcback.domain.notification.entity.type.PushTargetType.ALL, "ALL", "title", "body",
+                    PushActionType.HOME, "{}", UUID.randomUUID().toString(), 1L, LocalDateTime.now());
+            dispatch.setAdminOnly(scope);
+            pushDispatchRepository.saveAndFlush(dispatch);
+        }
+        var page = org.springframework.data.domain.PageRequest.of(0, 20);
+        assertThat(pushDispatchRepository.findScopedAdminDispatches(AppVariant.PRODUCTION, null, true, false, page).getContent())
+                .extracting(PushDispatch::getAdminOnly).containsExactly(true);
+        assertThat(pushDispatchRepository.findScopedAdminDispatches(AppVariant.PRODUCTION, null, false, false, page).getContent())
+                .extracting(PushDispatch::getAdminOnly).containsExactly(false);
+        assertThat(pushDispatchRepository.findScopedAdminDispatches(AppVariant.PRODUCTION, null, false, true, page).getContent())
+                .extracting(PushDispatch::getAdminOnly).containsExactly((Boolean) null);
+    }
+
     @Test
     void testNotificationPipelineQueuesSendsReceiptsAndCompletesDispatch() throws Exception {
         PushInstallation installation = pushInstallationRepository.save(new PushInstallation(

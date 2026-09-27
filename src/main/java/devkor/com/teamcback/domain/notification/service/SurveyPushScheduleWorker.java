@@ -38,12 +38,20 @@ public class SurveyPushScheduleWorker {
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchService pushDispatchService;
     private final PushEventFlagService pushEventFlagService;
+    @org.springframework.beans.factory.annotation.Value("${push.survey.worker-enabled:false}") private boolean scheduledWorkerEnabled;
     private final Clock clock;
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
+    @org.springframework.beans.factory.annotation.Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
+    private devkor.com.teamcback.domain.notification.entity.type.PushAudience scope() {
+        return "neon".equals(storage) ? devkor.com.teamcback.domain.notification.entity.type.PushAudience.valueOf(audience)
+                : devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN;
+    }
+
 
     @Scheduled(fixedDelayString = "${push.survey.poll-interval-ms:60000}")
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void processDueSchedules() {
-        processDueSchedulesOnce();
+        if (scheduledWorkerEnabled) processDueSchedulesOnce();
     }
 
     public int processDueSchedulesOnce() {
@@ -55,7 +63,7 @@ public class SurveyPushScheduleWorker {
         List<SurveyPushSchedule> schedules = surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(
                 now,
                 BATCH_SIZE
-        );
+        , scope());
 
         schedules.forEach(schedule -> processSchedule(schedule, now));
         return schedules.size();
@@ -104,7 +112,7 @@ public class SurveyPushScheduleWorker {
         LocalDate executionDate = schedule.getScheduledAt().toLocalDate();
 
         SurveyPushSchedule deadline = surveyPushScheduleRepository
-                .findBySurveyKeyAndNotificationStage(schedule.getSurveyKey(), SurveyNotificationStage.DEADLINE)
+                .findBySurveyKeyAndNotificationStage(schedule.getSurveyKey(), SurveyNotificationStage.DEADLINE, scope())
                 .orElse(null);
         if (deadline == null) {
             schedule.cancel(now);
@@ -118,7 +126,7 @@ public class SurveyPushScheduleWorker {
         }
 
         return surveyPushScheduleRepository
-                .findBySurveyKeyAndNotificationStage(schedule.getSurveyKey(), SurveyNotificationStage.D_MINUS_3)
+                .findBySurveyKeyAndNotificationStage(schedule.getSurveyKey(), SurveyNotificationStage.D_MINUS_3, scope())
                 .map(SurveyPushSchedule::getScheduledAt)
                 .map(LocalDateTime::toLocalDate)
                 .filter(executionDate::equals)

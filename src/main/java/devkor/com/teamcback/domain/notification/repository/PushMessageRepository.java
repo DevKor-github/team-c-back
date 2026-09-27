@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+@devkor.com.teamcback.domain.notification.persistence.PushStore
 public interface PushMessageRepository extends JpaRepository<PushMessage, Long> {
 
     List<PushMessage> findAllByDispatch(

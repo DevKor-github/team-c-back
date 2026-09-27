@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+@devkor.com.teamcback.domain.notification.persistence.PushStore
 @Entity
 @Table(
         name = "tb_push_installation",

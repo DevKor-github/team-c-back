@@ -12,10 +12,16 @@ public record AdminPushInstallationRes(
         LocalDateTime lastActiveAt,
         LocalDateTime createdAt,
         LocalDateTime modifiedAt,
-        LocalDateTime deactivatedAt
+        LocalDateTime deactivatedAt,
+        String username,
+        String email
 ) {
 
     public AdminPushInstallationRes(PushInstallation installation) {
+        this(installation, null, null);
+    }
+
+    public AdminPushInstallationRes(PushInstallation installation, String username, String email) {
         this(
                 installation.getUserId(),
                 installation.getInstallationId(),
@@ -26,7 +32,9 @@ public record AdminPushInstallationRes(
                         : installation.getDeactivatedAt(),
                 installation.getCreatedAt(),
                 installation.getModifiedAt(),
-                installation.getDeactivatedAt()
+                installation.getDeactivatedAt(),
+                username,
+                email
         );
     }
 }

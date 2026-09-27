@@ -43,7 +43,7 @@ public class PushMessageClaimService {
     private final PushWorkerProperties pushWorkerProperties;
     private final Clock clock;
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public List<PushSendItem> claimDueMessages() {
         LocalDateTime now = LocalDateTime.now(clock);
         List<PushMessage> messages = pushMessageRepository.findDueQueuedForUpdateSkipLocked(
@@ -69,7 +69,7 @@ public class PushMessageClaimService {
         return sendItems;
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void recordTickets(
             List<PushSendItem> items,
             List<ExpoPushTicket> tickets
@@ -123,7 +123,7 @@ public class PushMessageClaimService {
         refreshDispatchStatuses(dispatchIds, now);
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void recordClientError(
             List<PushSendItem> items,
             boolean retryable,
@@ -169,6 +169,11 @@ public class PushMessageClaimService {
                 )
                 .orElse(null);
 
+        if (installation != null && Boolean.TRUE.equals(dispatch.getAdminOnly())
+                && !pushInstallationRepository.findAdminUserIds(List.of(installation.getUserId())).contains(installation.getUserId())) {
+            message.recordSkipped("admin_role_revoked", "no_longer_admin", now);
+            return null;
+        }
         if (installation == null) {
             message.recordSkipped(
                     "installation_inactive",

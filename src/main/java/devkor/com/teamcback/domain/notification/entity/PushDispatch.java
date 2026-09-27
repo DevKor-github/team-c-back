@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@devkor.com.teamcback.domain.notification.persistence.PushStore
 @Entity
 @Table(
         name = "tb_push_dispatch",
@@ -56,6 +57,23 @@ public class PushDispatch {
     @Column(name = "target_type", nullable = false, length = 30)
     private PushTargetType targetType;
 
+    @Column(name = "admin_only")
+    private Boolean adminOnly;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "audience", nullable = false, length = 24)
+    private devkor.com.teamcback.domain.notification.entity.type.PushAudience audience = devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN;
+
+    @jakarta.persistence.PrePersist @jakarta.persistence.PreUpdate
+    void classifyAudience() {
+        audience = adminOnly == null ? devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN
+                : adminOnly ? devkor.com.teamcback.domain.notification.entity.type.PushAudience.INTERNAL_TEST
+                : devkor.com.teamcback.domain.notification.entity.type.PushAudience.LIVE;
+    }
+
+
+    public void setAdminOnly(Boolean adminOnly) { this.adminOnly = adminOnly; }
+
     @Column(name = "target_value", nullable = false, length = 128)
     private String targetValue;
 
@@ -82,7 +100,7 @@ public class PushDispatch {
     @Column(name = "status", nullable = false, length = 30)
     private PushDispatchStatus status;
 
-    @Column(name = "idempotency_key", nullable = false, length = 128)
+    @Column(name = "idempotency_key", nullable = false, length = 160)
     private String idempotencyKey;
 
     @Column(name = "created_by", nullable = false)

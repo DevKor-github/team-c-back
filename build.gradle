@@ -58,6 +58,7 @@ dependencies {
 
     // mysql
     runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'org.postgresql:postgresql'
 
     // lombok
     annotationProcessor 'org.projectlombok:lombok'

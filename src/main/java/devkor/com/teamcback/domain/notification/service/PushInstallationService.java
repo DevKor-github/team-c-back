@@ -13,13 +13,13 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(transactionManager = "pushTransactionManager", readOnly = true)
 public class PushInstallationService {
 
     private final PushInstallationRepository repository;
     private final Clock clock;
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void register(
             Long userId,
             String installationId,
@@ -90,7 +90,7 @@ public class PushInstallationService {
         );
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void deactivate(
             Long userId,
             String installationId
@@ -106,7 +106,7 @@ public class PushInstallationService {
                 );
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void deactivateAll(
             Long userId
     ) {

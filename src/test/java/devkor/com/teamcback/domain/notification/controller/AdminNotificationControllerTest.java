@@ -87,7 +87,7 @@ class AdminNotificationControllerTest {
             "PRODUCTION,PRODUCTION"
     })
     void searchInstallationsBindsAppVariantIgnoringCase(String requestValue, AppVariant expected) throws Exception {
-        when(adminNotificationService.searchInstallations(1L, null, expected))
+        when(adminNotificationService.searchInstallations(1L, null, expected, null, false))
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/api/admin/notifications/installations/search")
@@ -95,19 +95,19 @@ class AdminNotificationControllerTest {
                         .param("appVariant", requestValue))
                 .andExpect(status().isOk());
 
-        verify(adminNotificationService).searchInstallations(1L, null, expected);
+        verify(adminNotificationService).searchInstallations(1L, null, expected, null, false);
     }
 
     @Test
     void getDispatchesBindsAppVariantIgnoringCase() throws Exception {
-        when(adminNotificationService.getDispatches(1, 20, AppVariant.PREVIEW, null))
+        when(adminNotificationService.getDispatches(1, 20, AppVariant.PREVIEW, null, null, false))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
         mockMvc.perform(get("/api/admin/notifications/dispatches")
                         .param("appVariant", "preview"))
                 .andExpect(status().isOk());
 
-        verify(adminNotificationService).getDispatches(1, 20, AppVariant.PREVIEW, null);
+        verify(adminNotificationService).getDispatches(1, 20, AppVariant.PREVIEW, null, null, false);
     }
 
     @Test

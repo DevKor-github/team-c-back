@@ -16,13 +16,14 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@devkor.com.teamcback.domain.notification.persistence.PushStore
 @Entity
 @Table(
         name = "tb_survey_push_schedule",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_survey_push_schedule_idempotency_key",
-                        columnNames = "idempotency_key"
+                        columnNames = {"idempotency_key", "audience"}
                 )
         },
         indexes = {
@@ -43,6 +44,15 @@ public class SurveyPushSchedule {
 
     @Column(name = "survey_key", nullable = false, length = 64)
     private String surveyKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="audience", nullable=false, length=24)
+    private devkor.com.teamcback.domain.notification.entity.type.PushAudience audience = devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN;
+
+    public SurveyPushSchedule withAudience(devkor.com.teamcback.domain.notification.entity.type.PushAudience value) {
+        this.audience=value; return this;
+    }
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_stage", nullable = false, length = 40)

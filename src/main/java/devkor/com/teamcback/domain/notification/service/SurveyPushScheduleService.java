@@ -23,7 +23,7 @@ import static devkor.com.teamcback.global.response.ResultCode.INVALID_INPUT;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(transactionManager = "pushTransactionManager", readOnly = true)
 public class SurveyPushScheduleService {
 
     private static final int MAX_SURVEY_KEY_LENGTH = 64;
@@ -35,8 +35,15 @@ public class SurveyPushScheduleService {
 
     private final SurveyPushScheduleRepository surveyPushScheduleRepository;
     private final Clock clock;
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
+    @org.springframework.beans.factory.annotation.Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
+    private devkor.com.teamcback.domain.notification.entity.type.PushAudience scope() {
+        return "neon".equals(storage) ? devkor.com.teamcback.domain.notification.entity.type.PushAudience.valueOf(audience)
+                : devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN;
+    }
 
-    @Transactional
+
+    @Transactional("pushTransactionManager")
     public AdminSurveyPushScheduleRes upsertAdminSchedules(
             String surveyKey,
             AdminSurveyPushScheduleReq request
@@ -78,7 +85,7 @@ public class SurveyPushScheduleService {
         validateSurveyKey(surveyKey);
 
         Map<SurveyNotificationStage, SurveyPushSchedule> schedules = new EnumMap<>(SurveyNotificationStage.class);
-        surveyPushScheduleRepository.findAllBySurveyKeyAndNotificationStageIn(surveyKey, ADMIN_STAGES)
+        surveyPushScheduleRepository.findAllBySurveyKeyAndNotificationStageIn(surveyKey, ADMIN_STAGES, scope())
                 .forEach(schedule -> schedules.put(schedule.getNotificationStage(), schedule));
 
         int rewardPoint = schedules.values()
@@ -96,12 +103,12 @@ public class SurveyPushScheduleService {
         );
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public AdminSurveyPushScheduleRes cancelSchedules(String surveyKey) {
         validateSurveyKey(surveyKey);
 
         LocalDateTime now = LocalDateTime.now(clock);
-        surveyPushScheduleRepository.findAllBySurveyKeyOrderByNotificationStageAscSurveyPushScheduleIdAsc(surveyKey)
+        surveyPushScheduleRepository.findAllBySurveyKeyOrderByNotificationStageAscSurveyPushScheduleIdAsc(surveyKey, scope())
                 .stream()
                 .filter(SurveyPushSchedule::isPending)
                 .forEach(schedule -> schedule.cancel(now));
@@ -109,7 +116,7 @@ public class SurveyPushScheduleService {
         return getAdminSchedules(surveyKey);
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public SurveyReminderRes remindAfterLater(
             String surveyKey,
             Long userId
@@ -120,7 +127,7 @@ public class SurveyPushScheduleService {
         }
 
         SurveyPushSchedule deadline = surveyPushScheduleRepository
-                .findBySurveyKeyAndNotificationStage(surveyKey, SurveyNotificationStage.DEADLINE)
+                .findBySurveyKeyAndNotificationStage(surveyKey, SurveyNotificationStage.DEADLINE, scope())
                 .orElseThrow(() -> new GlobalException(INVALID_INPUT));
 
         LocalDateTime now = LocalDateTime.now(clock);
@@ -137,7 +144,7 @@ public class SurveyPushScheduleService {
             return new SurveyReminderRes(surveyKey, false, null, suppressedBy);
         }
 
-        return surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey)
+        return surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey, scope())
                 .map(existing -> updateExistingReminder(surveyKey, remindAt, deadline.getRewardPoint(), existing))
                 .orElseGet(() -> createReminder(surveyKey, userId, remindAt, deadline.getRewardPoint(), idempotencyKey));
     }
@@ -150,7 +157,7 @@ public class SurveyPushScheduleService {
             int rewardPoint
     ) {
         String idempotencyKey = idempotencyKey(surveyKey, stage, targetUserId);
-        surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey)
+        surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey, scope())
                 .ifPresentOrElse(
                         schedule -> schedule.updatePendingSchedule(scheduledAt, rewardPoint),
                         () -> surveyPushScheduleRepository.save(new SurveyPushSchedule(
@@ -161,7 +168,7 @@ public class SurveyPushScheduleService {
                                 rewardPoint,
                                 idempotencyKey,
                                 LocalDateTime.now(clock)
-                        ))
+                        ).withAudience(scope()))
                 );
     }
 
@@ -205,7 +212,7 @@ public class SurveyPushScheduleService {
                 rewardPoint,
                 idempotencyKey,
                 LocalDateTime.now(clock)
-        ));
+        ).withAudience(scope()));
 
         return new SurveyReminderRes(
                 surveyKey,
@@ -219,7 +226,7 @@ public class SurveyPushScheduleService {
             String idempotencyKey,
             LocalDateTime now
     ) {
-        surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey)
+        surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey, scope())
                 .filter(SurveyPushSchedule::isPending)
                 .ifPresent(schedule -> schedule.cancel(now));
     }
@@ -239,7 +246,7 @@ public class SurveyPushScheduleService {
         }
 
         return surveyPushScheduleRepository
-                .findBySurveyKeyAndNotificationStage(surveyKey, SurveyNotificationStage.D_MINUS_3)
+                .findBySurveyKeyAndNotificationStage(surveyKey, SurveyNotificationStage.D_MINUS_3, scope())
                 .map(SurveyPushSchedule::getScheduledAt)
                 .map(LocalDateTime::toLocalDate)
                 .filter(remindDate::equals)

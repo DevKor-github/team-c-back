@@ -64,6 +64,24 @@ class AdminNotificationServiceTest {
     private PushDispatchService pushDispatchService;
 
     @Test
+    void profileSearchIncludesNicknameAndEmailAndEscapesWildcards() {
+        var installation = installation(AppVariant.PRODUCTION);
+        when(pushInstallationRepository.searchByUserProfile(org.mockito.ArgumentMatchers.eq("%qa!_%"),
+                org.mockito.ArgumentMatchers.eq(AppVariant.PRODUCTION), org.mockito.ArgumentMatchers.eq(true), any()))
+                .thenReturn(List.of(installation));
+        PushInstallationRepository.UserProfile profile = new PushInstallationRepository.UserProfile() {
+            public Long getUserId() { return installation.getUserId(); }
+            public String getUsername() { return "qa_tiger"; }
+            public String getEmail() { return "tiger@example.test"; }
+        };
+        when(pushInstallationRepository.findUserProfiles(List.of(installation.getUserId()))).thenReturn(List.of(profile));
+        var result = service(false).searchInstallations(null, null, AppVariant.PRODUCTION, "qa_", true);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).username()).isEqualTo("qa_tiger");
+        assertThat(result.get(0).email()).isEqualTo("tiger@example.test");
+    }
+
+    @Test
     void searchInstallationsDoesNotExposeExpoPushToken() throws Exception {
         PushInstallation installation = installation(AppVariant.DEV);
         when(pushInstallationRepository.findAllByUserIdOrderByModifiedAtDescPushInstallationIdDesc(1L))

@@ -99,13 +99,17 @@ public final class ResolvedLocationCollector {
 
     /** Builds a route request only from unique current-request search results. */
     public synchronized FindRouteToolRequest currentTextRouteRequest() {
-        if (!hasTextRouteIntent()) {
+        return currentRouteRequest(ResolvedLocation.RouteIntent.TEXT_ROUTE);
+    }
+
+    public synchronized FindRouteToolRequest currentRouteRequest(ResolvedLocation.RouteIntent intent) {
+        if (intent == null) {
             return null;
         }
         ResolvedLocation start = unique(devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.EndpointRole.START,
-                devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.RouteIntent.TEXT_ROUTE);
+                intent);
         ResolvedLocation end = unique(devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.EndpointRole.END,
-                devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation.RouteIntent.TEXT_ROUTE);
+                intent);
         if (!validEndpoint(start) || !validEndpoint(end)
                 || (start.type() == end.type() && start.id().equals(end.id()))) {
             return null;

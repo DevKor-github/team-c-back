@@ -55,7 +55,7 @@ public class ChatService {
             Ambiguous searchCampus results must not be guessed, merged, or invented. Ask using only actual candidate
             names and create no Action until unique.
             If PENDING_ROUTE_CONTINUATION is present and the current message is related, re-search both endpoints in
-            this request with explicit roles and NAVIGATE_ROUTE; never copy a previous ID. Unrelated requests stay
+            this request with explicit roles and the pending route intent; never copy a previous ID. Unrelated requests stay
             unrelated. Use only supported conditions; BARRIERFREE excludes stair nodes where supported and is not a
             complete accessibility guarantee.
             Examples: UI route -> START search, END search, no findRoute; text route -> START search, END search,
@@ -127,7 +127,7 @@ public class ChatService {
         }
         StringBuilder context = new StringBuilder(SYSTEM_PROMPT);
         context.append("\n\n[PENDING_ROUTE_CONTINUATION]\n")
-                .append("interaction=NAVIGATE_ROUTE\n")
+                .append("interaction=").append(pending.interactionType()).append("\n")
                 .append("unresolvedRole=").append(pending.unresolvedRole()).append("\n");
         if (pending.resolvedStart() != null) {
             context.append("resolvedStartName=").append(pending.resolvedStart().name()).append("\n");
@@ -140,8 +140,9 @@ public class ChatService {
                     .append(pending.ambiguousCandidates().stream().map(PendingLocationRef::name)
                             .collect(Collectors.joining(", "))).append("\n");
         }
+        context.append("conditions=").append(pending.conditions()).append("\n");
         context.append("Use ROUTE_BEHAVIOR for continuation: if related, re-search both endpoints in this request "
-                + "with explicit roles and NAVIGATE_ROUTE; never reuse an old ID. If unrelated, handle normally.\n"
+                + "with explicit roles and the pending route intent; never reuse an old ID. If unrelated, handle normally.\n"
                 + "[/PENDING_ROUTE_CONTINUATION]");
         return context.toString();
     }
@@ -152,7 +153,8 @@ public class ChatService {
             return;
         }
         List<SearchResolutionTrace> routeTraces = traces.stream()
-                .filter(trace -> trace.intent() == SearchCampusIntent.NAVIGATE_ROUTE).toList();
+                .filter(trace -> trace.intent() == SearchCampusIntent.NAVIGATE_ROUTE
+                        || trace.intent() == SearchCampusIntent.TEXT_ROUTE).toList();
         if (routeTraces.isEmpty()) {
             return;
         }
@@ -186,9 +188,11 @@ public class ChatService {
         if (conditions.isEmpty() && previous != null) {
             conditions = previous.conditions();
         }
+        ResolvedLocation.RouteIntent interaction = routeTraces.stream()
+                .anyMatch(trace -> trace.intent() == SearchCampusIntent.TEXT_ROUTE)
+                ? ResolvedLocation.RouteIntent.TEXT_ROUTE : ResolvedLocation.RouteIntent.NAVIGATE_ROUTE;
         pendingRouteStateService.save(sessionId, caller,
-                new PendingRouteState(ResolvedLocation.RouteIntent.NAVIGATE_ROUTE, start, end, unresolved,
-                        conditions, candidates));
+                new PendingRouteState(interaction, start, end, unresolved, conditions, candidates));
     }
 
     private String deterministicClarification(List<SearchResolutionTrace> traces) {
@@ -196,7 +200,8 @@ public class ChatService {
             return null;
         }
         SearchResolutionTrace ambiguous = traces.stream()
-                .filter(trace -> trace.intent() == SearchCampusIntent.NAVIGATE_ROUTE)
+                .filter(trace -> trace.intent() == SearchCampusIntent.NAVIGATE_ROUTE
+                        || trace.intent() == SearchCampusIntent.TEXT_ROUTE)
                 .filter(SearchResolutionTrace::ambiguous)
                 .filter(trace -> !trace.candidates().isEmpty())
                 .reduce((first, second) -> second)

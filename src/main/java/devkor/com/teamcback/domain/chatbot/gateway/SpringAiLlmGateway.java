@@ -3,6 +3,7 @@ package devkor.com.teamcback.domain.chatbot.gateway;
 import static devkor.com.teamcback.global.response.ResultCode.CHATBOT_TEMPORARILY_UNAVAILABLE;
 
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
+import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -24,6 +25,7 @@ import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,6 +54,48 @@ public class SpringAiLlmGateway implements LlmGateway {
         this.chatbotLlmExecutor = chatbotLlmExecutor;
         this.campusChatbotTools = campusChatbotTools;
         this.toolCallLimiter = toolCallLimiter;
+    }
+
+    @Override
+    public RoutePlan planRoute(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        Future<RoutePlan> response = chatbotLlmExecutor.submit(
+                () -> invokeRoutePlan(systemPrompt, history, userMessage));
+        try {
+            RoutePlan plan = response.get(properties.llm().timeout().toMillis(), TimeUnit.MILLISECONDS);
+            return plan == null ? RoutePlan.notRoute() : plan;
+        } catch (InterruptedException exception) {
+            response.cancel(true);
+            Thread.currentThread().interrupt();
+            return RoutePlan.notRoute();
+        } catch (ExecutionException | TimeoutException exception) {
+            response.cancel(true);
+            return RoutePlan.notRoute();
+        }
+    }
+
+    private RoutePlan invokeRoutePlan(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        BeanOutputConverter<RoutePlan> converter = new BeanOutputConverter<>(RoutePlan.class);
+        String plannerPrompt = """
+                Interpret whether the current request is a campus route request. Do not call tools and do not
+                invent any IDs. Return only the structured RoutePlan requested by the output format.
+                intent must be TEXT_ROUTE when the user wants route facts, duration, or written directions;
+                NAVIGATE_ROUTE when the user wants the app route screen/map; otherwise NOT_ROUTE.
+                For a route, preserve the user's specific natural-language startQuery and endQuery. If a pending
+                route clarification is present in the system context, complete that plan using the unresolved role.
+                Supported conditions are only BARRIERFREE, SHUTTLE, STUDENTCARD, and OPERATING.
+
+                Existing assistant policy/context:
+                %s
+
+                Output format:
+                %s
+                """.formatted(systemPrompt == null ? "" : systemPrompt, converter.getFormat());
+        ChatClient.CallResponseSpec response = chatClient.prompt()
+                .system(plannerPrompt)
+                .messages(toSpringMessages(history, userMessage))
+                .call();
+        RoutePlan plan = response == null ? null : response.entity(converter);
+        return plan == null ? RoutePlan.notRoute() : plan;
     }
 
     @Override

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
+import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.tool.CampusToolAdapter;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolData;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
@@ -31,6 +32,64 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ChatOrchestratorTest {
     @Mock LlmGateway llmGateway;
     @Mock CampusToolAdapter campusToolAdapter;
+    @Mock RoutePlanner routePlanner;
+
+    @Test
+    void deterministicTextRouteResolvesBothEndpointsAndExecutesRouteWithoutModelTools() {
+        when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
+                new RoutePlan(RoutePlan.Intent.TEXT_ROUTE, "start place", "end place", List.of()));
+        when(campusToolAdapter.searchCampus(any(SearchCampusToolRequest.class))).thenAnswer(invocation -> {
+            SearchCampusToolRequest request = invocation.getArgument(0);
+            long id = request.role() == SearchCampusRole.START ? 11L : 22L;
+            return resolved(id, request.query());
+        });
+        when(campusToolAdapter.findRoute(any())).thenReturn(successfulRoute(120L));
+        ChatOrchestrator orchestrator = new ChatOrchestrator(llmGateway, campusToolAdapter, routePlanner);
+
+        ChatOrchestrationResult result = orchestrator.execute("system", List.of(), "route");
+
+        assertThat(result.routeExecution()).isNotNull();
+        assertThat(result.reply()).contains("start place", "end place");
+        verify(campusToolAdapter, org.mockito.Mockito.times(2)).searchCampus(any());
+        verify(campusToolAdapter).findRoute(any());
+        verify(llmGateway, never()).generate(anyString(), anyList(), anyString(), any());
+    }
+
+    @Test
+    void deterministicNavigateRouteResolvesBothEndpointsWithoutFindRoute() {
+        when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
+                new RoutePlan(RoutePlan.Intent.NAVIGATE_ROUTE, "start place", "end place", List.of()));
+        when(campusToolAdapter.searchCampus(any(SearchCampusToolRequest.class))).thenAnswer(invocation -> {
+            SearchCampusToolRequest request = invocation.getArgument(0);
+            long id = request.role() == SearchCampusRole.START ? 11L : 22L;
+            return resolved(id, request.query());
+        });
+        ChatOrchestrator orchestrator = new ChatOrchestrator(llmGateway, campusToolAdapter, routePlanner);
+
+        ChatOrchestrationResult result = orchestrator.execute("system", List.of(), "route");
+
+        assertThat(result.resolvedLocations()).hasSize(2);
+        assertThat(result.routeExecution()).isNull();
+        verify(campusToolAdapter, org.mockito.Mockito.times(2)).searchCampus(any());
+        verify(campusToolAdapter, never()).findRoute(any());
+        verify(llmGateway, never()).generate(anyString(), anyList(), anyString(), any());
+    }
+
+    @Test
+    void deterministicRouteStopsAfterAmbiguousStart() {
+        when(routePlanner.plan(anyString(), anyList(), anyString())).thenReturn(
+                new RoutePlan(RoutePlan.Intent.TEXT_ROUTE, "ambiguous", "end place", List.of()));
+        when(campusToolAdapter.searchCampus(any(SearchCampusToolRequest.class))).thenReturn(
+                new SearchCampusToolResult(List.of(item(11L, "start A"), item(12L, "start B")), true, null));
+        ChatOrchestrator orchestrator = new ChatOrchestrator(llmGateway, campusToolAdapter, routePlanner);
+
+        ChatOrchestrationResult result = orchestrator.execute("system", List.of(), "route");
+
+        assertThat(result.routeExecution()).isNull();
+        assertThat(result.searchResolutions()).hasSize(1);
+        verify(campusToolAdapter).searchCampus(any());
+        verify(campusToolAdapter, never()).findRoute(any());
+    }
 
     @Test
     void keepsModelReplyAndDoesNotDuplicateExistingRouteExecution() {

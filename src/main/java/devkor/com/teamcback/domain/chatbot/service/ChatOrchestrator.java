@@ -1,12 +1,19 @@
 package devkor.com.teamcback.domain.chatbot.service;
 
 import devkor.com.teamcback.domain.chatbot.dto.ResolvedLocation;
+import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.dto.RouteExecutionTrace;
 import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
 import devkor.com.teamcback.domain.chatbot.tool.CampusToolAdapter;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolRequest;
 import devkor.com.teamcback.domain.chatbot.tool.dto.FindRouteToolResult;
+import devkor.com.teamcback.domain.chatbot.tool.dto.RouteCondition;
+import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusIntent;
+import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusRole;
+import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolRequest;
+import devkor.com.teamcback.domain.chatbot.tool.dto.SearchCampusToolResult;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -16,15 +23,27 @@ import org.springframework.stereotype.Component;
 public class ChatOrchestrator {
     private final LlmGateway llmGateway;
     private final CampusToolAdapter campusToolAdapter;
+    private final RoutePlanner routePlanner;
 
+    /** Compatibility constructor for focused tests that exercise the legacy non-route path. */
     public ChatOrchestrator(LlmGateway llmGateway, CampusToolAdapter campusToolAdapter) {
+        this(llmGateway, campusToolAdapter, new RoutePlanner(llmGateway));
+    }
+
+    @Autowired
+    public ChatOrchestrator(LlmGateway llmGateway, CampusToolAdapter campusToolAdapter, RoutePlanner routePlanner) {
         this.llmGateway = llmGateway;
         this.campusToolAdapter = campusToolAdapter;
+        this.routePlanner = routePlanner;
     }
 
     public ChatOrchestrationResult execute(String systemPrompt, List<LlmGateway.ConversationMessage> history,
                                            String userMessage) {
         ResolvedLocationCollector state = new ResolvedLocationCollector();
+        RoutePlan routePlan = routePlanner.plan(systemPrompt, history, userMessage);
+        if (routePlan.isRoute()) {
+            return executeRoutePlan(routePlan, state);
+        }
         LlmGateway.LlmResult llmResult = llmGateway.generate(systemPrompt, history, userMessage, state);
 
         ensureTextRouteExecution(state);
@@ -35,6 +54,51 @@ public class ChatOrchestrator {
 
         return new ChatOrchestrationResult(reply, llmResult.completionStatus(), state.snapshot(),
                 state.searchResolutionSnapshot(), state.routeExecution());
+    }
+
+    private ChatOrchestrationResult executeRoutePlan(RoutePlan plan, ResolvedLocationCollector state) {
+        SearchCampusIntent intent = plan.intent() == RoutePlan.Intent.TEXT_ROUTE
+                ? SearchCampusIntent.TEXT_ROUTE : SearchCampusIntent.NAVIGATE_ROUTE;
+        List<RouteCondition> conditions = plan.conditions();
+        resolve(state, plan.startQuery(), SearchCampusRole.START, intent, conditions);
+        if (!hasUnique(state, SearchCampusRole.START, intent)) {
+            return new ChatOrchestrationResult(null, List.of(), LlmGateway.CompletionStatus.COMPLETE,
+                    state.searchResolutionSnapshot(), null);
+        }
+        resolve(state, plan.endQuery(), SearchCampusRole.END, intent, conditions);
+        if (!hasUnique(state, SearchCampusRole.END, intent)) {
+            return new ChatOrchestrationResult(null, state.snapshot(), LlmGateway.CompletionStatus.COMPLETE,
+                    state.searchResolutionSnapshot(), null);
+        }
+
+        if (plan.intent() == RoutePlan.Intent.TEXT_ROUTE) {
+            FindRouteToolRequest request = state.currentRouteRequest(
+                    ResolvedLocation.RouteIntent.TEXT_ROUTE);
+            if (request != null) {
+                FindRouteToolResult result = campusToolAdapter.findRoute(request);
+                state.recordRouteExecution(request, result);
+                String reply = hasSuccessfulTextRoute(state.routeExecution())
+                        ? deterministicTextRouteReply(state.routeExecution()) : null;
+                return new ChatOrchestrationResult(reply, state.snapshot(), LlmGateway.CompletionStatus.COMPLETE,
+                        state.searchResolutionSnapshot(), state.routeExecution());
+            }
+        }
+        return new ChatOrchestrationResult(null, state.snapshot(), LlmGateway.CompletionStatus.COMPLETE,
+                state.searchResolutionSnapshot(), null);
+    }
+
+    private void resolve(ResolvedLocationCollector state, String query, SearchCampusRole role,
+                         SearchCampusIntent intent, List<RouteCondition> conditions) {
+        SearchCampusToolRequest request = new SearchCampusToolRequest(query, 5, role, intent, conditions);
+        SearchCampusToolResult result = campusToolAdapter.searchCampus(request);
+        state.record(request, result);
+    }
+
+    private boolean hasUnique(ResolvedLocationCollector state, SearchCampusRole role, SearchCampusIntent intent) {
+        return state.snapshot().stream().filter(location -> location.role() == role.toEndpointRole())
+                .anyMatch(location -> (intent == SearchCampusIntent.TEXT_ROUTE
+                        ? location.intent() == ResolvedLocation.RouteIntent.TEXT_ROUTE
+                        : location.intent() == ResolvedLocation.RouteIntent.NAVIGATE_ROUTE));
     }
 
     private void ensureTextRouteExecution(ResolvedLocationCollector state) {

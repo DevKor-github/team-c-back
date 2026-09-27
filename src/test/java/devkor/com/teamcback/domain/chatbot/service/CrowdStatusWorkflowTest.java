@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateSelection;
 import devkor.com.teamcback.domain.chatbot.crowd.CrowdPlaceCandidate;
 import devkor.com.teamcback.domain.chatbot.crowd.CrowdTargetResolver;
 import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
@@ -31,6 +32,7 @@ class CrowdStatusWorkflowTest {
     @Mock ChatbotCampusSearchService searchService;
     @Mock CampusToolAdapter campusToolAdapter;
     @Mock CrowdTargetResolver targetResolver;
+    @Mock CrowdCandidateSelector candidateSelector;
 
     @Test
     void uniquePlaceIsLoadedByBackendWithoutToolCalling() {
@@ -190,5 +192,34 @@ class CrowdStatusWorkflowTest {
         assertThat(second.reply()).contains("AVAILABLE");
         verify(targetResolver).resolveWithinBuilding("Mirae Building Blue Port", 33L);
         verify(campusToolAdapter).getCrowdStatus(new GetCrowdStatusToolRequest(4443L, false));
+    }
+
+    @Test
+    void semanticPlaceSelectionUsesExistingStateCandidateId() {
+        UUID sessionId = UUID.randomUUID();
+        ChatCaller caller = new ChatCaller("user:1", true);
+        when(planner.plan(any(), any())).thenReturn(new CrowdStatusPlan(
+                CrowdStatusPlan.Intent.CROWD_STATUS, "Mirae Building"));
+        when(searchService.search("Mirae Building")).thenReturn(List.of(
+                new ChatbotSearchCandidate(33L, ToolLocationType.BUILDING, "Mirae Building",
+                        33L, "Mirae Building", null, null, null, 300, "Mirae", false)));
+        CrowdPlaceCandidate first = new CrowdPlaceCandidate(4385L, "Mirae Building B1 Lounge", "Lounge",
+                -1D, null, 33L, "Mirae Building");
+        CrowdPlaceCandidate second = new CrowdPlaceCandidate(4443L, "Mirae Building Blue Port", "Blue Port",
+                3D, null, 33L, "Mirae Building");
+        when(targetResolver.resolve(any(), any())).thenReturn(CrowdTargetResolver.Resolution.of(List.of(first, second)));
+        when(candidateSelector.select(any(), any())).thenReturn(
+                new CrowdCandidateSelection(CrowdCandidateSelection.Status.SELECTED, 1));
+        when(campusToolAdapter.getCrowdStatus(any())).thenReturn(new GetCrowdStatusToolResult(
+                new CrowdStatusToolData(4443L, 10, 100, CrowdLevel.AVAILABLE, null, false, null), null));
+
+        CrowdStatusWorkflow workflow = new CrowdStatusWorkflow(planner, searchService, campusToolAdapter,
+                targetResolver, candidateSelector);
+        workflow.handle(sessionId, caller, List.of(), "Mirae Building");
+        CrowdStatusWorkflow.CrowdWorkflowResult result = workflow.handle(sessionId, caller, List.of(), "커피 파는 데");
+
+        assertThat(result.reply()).contains("AVAILABLE");
+        verify(campusToolAdapter).getCrowdStatus(new GetCrowdStatusToolRequest(4443L, false));
+        verify(targetResolver, never()).resolveWithinBuilding(any(), any());
     }
 }

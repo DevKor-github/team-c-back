@@ -4,6 +4,8 @@ import static org.bsc.langgraph4j.StateGraph.END;
 import static org.bsc.langgraph4j.StateGraph.START;
 
 import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateSelection;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateView;
 import devkor.com.teamcback.domain.chatbot.crowd.CrowdPlaceCandidate;
 import devkor.com.teamcback.domain.chatbot.crowd.CrowdTargetResolver;
 import devkor.com.teamcback.domain.chatbot.gateway.LlmGateway;
@@ -72,21 +74,29 @@ public class CrowdStatusWorkflow {
     private final ChatbotCampusSearchService searchService;
     private final CampusToolAdapter campusToolAdapter;
     private final CrowdTargetResolver targetResolver;
+    private final CrowdCandidateSelector candidateSelector;
     private final MemorySaver saver;
     private final CompiledGraph<CrowdGraphState> graph;
 
     CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
                         CampusToolAdapter campusToolAdapter) {
-        this(planner, searchService, campusToolAdapter, null);
+        this(planner, searchService, campusToolAdapter, null, null);
+    }
+
+    public CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
+                               CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver) {
+        this(planner, searchService, campusToolAdapter, targetResolver, null);
     }
 
     @Autowired
     public CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
-                               CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver) {
+                               CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver,
+                               CrowdCandidateSelector candidateSelector) {
         this.planner = planner;
         this.searchService = searchService;
         this.campusToolAdapter = campusToolAdapter;
         this.targetResolver = targetResolver;
+        this.candidateSelector = candidateSelector;
         try {
             this.saver = new MemorySaver();
             StateGraph<CrowdGraphState> stateGraph = new StateGraph<>(CrowdGraphState.SCHEMA,
@@ -235,9 +245,12 @@ public class CrowdStatusWorkflow {
     }
 
     private Map<String, Object> crowdMap(CrowdPlaceCandidate candidate) {
-        return locationMap(candidate.placeId(), ToolLocationType.PLACE,
+        Map<String, Object> value = locationMap(candidate.placeId(), ToolLocationType.PLACE,
                 candidate.deviceName() == null || candidate.deviceName().isBlank()
                         ? candidate.placeName() : candidate.deviceName(), "EXACT");
+        value.put("floor", candidate.floor() == null ? "" : String.valueOf(candidate.floor()));
+        value.put("placeType", candidate.placeType() == null ? "" : candidate.placeType().name());
+        return value;
     }
 
     private Map<String, Object> locationMap(Long id, ToolLocationType type, String name, String matchType) {
@@ -268,6 +281,26 @@ public class CrowdStatusWorkflow {
     private Map<String, Object> checkConfirmation(CrowdGraphState state) {
         String confirmation = state.value(CONFIRMATION, "").trim();
         if (PLACE_SELECTION.equals(state.value(AWAITING, ""))) {
+            if (candidateSelector != null) {
+                List<Map<String, Object>> candidates = state.value(CANDIDATES, List.of());
+                List<CrowdCandidateView> views = new ArrayList<>();
+                for (int index = 0; index < candidates.size(); index++) {
+                    Map<String, Object> candidate = candidates.get(index);
+                    views.add(new CrowdCandidateView(index, String.valueOf(candidate.get("name")),
+                            String.valueOf(candidate.getOrDefault("floor", "")),
+                            String.valueOf(candidate.getOrDefault("placeType", ""))));
+                }
+                CrowdCandidateSelection selection = candidateSelector.select(confirmation, views);
+                Integer index = selection == null ? null : selection.candidateIndex();
+                if (selection != null && selection.status() == CrowdCandidateSelection.Status.SELECTED
+                        && index != null && index >= 0 && index < candidates.size()) {
+                    Map<String, Object> candidate = candidates.get(index);
+                    return Map.of(SELECTED_ID, String.valueOf(candidate.get("id")),
+                            SELECTED_TYPE, candidate.get("type"), SELECTED_NAME, candidate.get("name"),
+                            AWAITING, "", REPLY, "", CONFIRMATION, "");
+                }
+                return Map.of(REPLY, "", SELECTED_ID, "", AWAITING, PLACE_SELECTION, CONFIRMATION, "");
+            }
             CrowdTargetResolver.Resolution selection = targetResolver == null
                     ? CrowdTargetResolver.Resolution.notFound()
                     : targetResolver.resolveWithinBuilding(confirmation,

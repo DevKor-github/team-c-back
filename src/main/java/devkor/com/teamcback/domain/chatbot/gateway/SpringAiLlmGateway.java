@@ -5,6 +5,8 @@ import static devkor.com.teamcback.global.response.ResultCode.CHATBOT_TEMPORARIL
 import devkor.com.teamcback.domain.chatbot.config.ChatbotProperties;
 import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateSelection;
+import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateView;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -101,6 +103,43 @@ public class SpringAiLlmGateway implements LlmGateway {
                 .call();
         CrowdStatusPlan plan = response == null ? null : response.entity(converter);
         return plan == null ? CrowdStatusPlan.other() : plan;
+    }
+
+    @Override
+    public CrowdCandidateSelection selectCrowdCandidate(String systemPrompt, List<ConversationMessage> history,
+                                                         String userMessage, List<CrowdCandidateView> candidates) {
+        Future<CrowdCandidateSelection> response = chatbotLlmExecutor.submit(
+                () -> invokeCrowdCandidateSelection(systemPrompt, history, userMessage, candidates));
+        try {
+            CrowdCandidateSelection selection = response.get(properties.llm().timeout().toMillis(), TimeUnit.MILLISECONDS);
+            return selection == null ? CrowdCandidateSelection.none() : selection;
+        } catch (InterruptedException exception) {
+            response.cancel(true);
+            Thread.currentThread().interrupt();
+            return CrowdCandidateSelection.none();
+        } catch (ExecutionException | TimeoutException exception) {
+            response.cancel(true);
+            return CrowdCandidateSelection.none();
+        }
+    }
+
+    private CrowdCandidateSelection invokeCrowdCandidateSelection(String systemPrompt,
+                                                                    List<ConversationMessage> history,
+                                                                    String userMessage,
+                                                                    List<CrowdCandidateView> candidates) {
+        BeanOutputConverter<CrowdCandidateSelection> converter = new BeanOutputConverter<>(CrowdCandidateSelection.class);
+        String selectorPrompt = """
+                %s
+
+                Output format:
+                %s
+                """.formatted(systemPrompt == null ? "" : systemPrompt, converter.getFormat());
+        ChatClient.CallResponseSpec response = chatClient.prompt()
+                .system(selectorPrompt)
+                .messages(toSpringMessages(history, userMessage))
+                .call();
+        CrowdCandidateSelection selection = response == null ? null : response.entity(converter);
+        return selection == null ? CrowdCandidateSelection.none() : selection;
     }
 
     @Override

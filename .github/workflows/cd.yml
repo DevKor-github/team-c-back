@@ -41,14 +41,25 @@ jobs:
 
       - name: Docker build & push to prod
         if: contains(github.ref, 'develop') || contains(github.ref, 'main')
+        env:
+          REGISTRY_USER: ${{ secrets.DOCKER_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker pull ${{ secrets.DOCKER_USER }}/kodaero-app:latest || true
-          docker tag ${{ secrets.DOCKER_USER }}/kodaero-app:latest ${{ secrets.DOCKER_USER }}/kodaero-app:stable || true
-          docker push ${{ secrets.DOCKER_USER }}/kodaero-app:stable || true
-          docker build -t kodaero-app -f ./Dockerfile .
-          docker tag kodaero-app:latest ${{ secrets.DOCKER_USER }}/kodaero-app:latest
-          docker push ${{ secrets.DOCKER_USER }}/kodaero-app:latest
+          printf '%s' "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USER" --password-stdin
+          previous_compatible=false
+          if docker pull "$REGISTRY_USER/kodaero-app:latest"; then
+            if [ "$(docker inspect --format '{{ index .Config.Labels "com.kodaero.push-storage" }}' "$REGISTRY_USER/kodaero-app:latest")" = "neon-capable" ]; then
+              docker tag "$REGISTRY_USER/kodaero-app:latest" "$REGISTRY_USER/kodaero-app:stable"
+              previous_compatible=true
+            fi
+          fi
+          docker build -t "$REGISTRY_USER/kodaero-app:latest" -f ./Dockerfile .
+          # Never restart a pre-Neon image after the storage cutover.
+          if [ "$previous_compatible" = false ]; then
+            docker tag "$REGISTRY_USER/kodaero-app:latest" "$REGISTRY_USER/kodaero-app:stable"
+          fi
+          docker push "$REGISTRY_USER/kodaero-app:stable"
+          docker push "$REGISTRY_USER/kodaero-app:latest"
           
           
   pull_from_registry:

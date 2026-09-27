@@ -43,7 +43,7 @@ class ChatbotCampusSearchServiceTest {
         List<ChatbotSearchCandidate> result = service.search("main");
 
         assertThat(result).extracting(ChatbotSearchCandidate::locationId)
-                .containsExactly(1L, 2L);
+                .containsExactly(1L);
         verify(buildingNicknameRepository).findChatbotByJaso(any(), any());
         verify(placeNicknameRepository).findChatbotByJaso(any(), any());
     }
@@ -52,18 +52,35 @@ class ChatbotCampusSearchServiceTest {
     void compositeSearchUsesBuildingIdsForPlaceProjection() {
         lenient().when(buildingNicknameRepository.findChatbotByJaso(any(), any())).thenReturn(List.of());
         when(buildingNicknameRepository.findChatbotByJaso(eq("building"), any()))
-                .thenReturn(List.of(new ChatbotBuildingCandidate(7L, "Building", "building")));
+                .thenReturn(List.of(new ChatbotBuildingCandidate(7L, "Building Room", "building")));
         when(buildingNicknameRepository.findChatbotByJaso(eq("room"), any()))
                 .thenReturn(List.of());
         when(placeNicknameRepository.findChatbotByJasoAndBuildingIds(eq("room"), eq(List.of(7L)), any()))
-                .thenReturn(List.of(new ChatbotPlaceCandidate(8L, "Room", 7L,
-                        "Building", 1.0, PlaceType.CLASSROOM, null, "room")));
+                .thenReturn(List.of(new ChatbotPlaceCandidate(8L, "109C", 7L,
+                        "Building Room", 1.0, PlaceType.CLASSROOM, null, "room")));
 
         List<ChatbotSearchCandidate> result = service.search("building room");
 
         assertThat(result).extracting(ChatbotSearchCandidate::locationId)
-                .containsExactly(7L, 8L);
+                .containsExactly(7L);
         verify(placeNicknameRepository).findChatbotByJasoAndBuildingIds(eq("room"), eq(List.of(7L)), any());
+    }
+
+    @Test
+    void keepsSpecificPlaceWhenWholeQueryIdentifiesParentAndPlace() {
+        lenient().when(buildingNicknameRepository.findChatbotByJaso(any(), any())).thenReturn(List.of());
+        when(buildingNicknameRepository.findChatbotByJaso(eq("building"), any()))
+                .thenReturn(List.of(new ChatbotBuildingCandidate(7L, "Building Room", "building")));
+        when(placeNicknameRepository.findChatbotByJasoAndBuildingIds(eq("room129b"), eq(List.of(7L)), any()))
+                .thenReturn(List.of(new ChatbotPlaceCandidate(8L, "129B", 7L,
+                        "Building Room", 1.0, PlaceType.CLASSROOM, null, "129B")));
+
+        List<ChatbotSearchCandidate> result = service.search("building room 129B");
+
+        assertThat(result).extracting(ChatbotSearchCandidate::locationId)
+                .containsExactly(8L);
+        assertThat(result.get(0).locationType()).isEqualTo(
+                devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType.PLACE);
     }
 
     @Test
@@ -71,7 +88,7 @@ class ChatbotCampusSearchServiceTest {
         when(buildingNicknameRepository.findChatbotByJaso(any(), any())).thenReturn(List.of(
                 new ChatbotBuildingCandidate(1L, "Building", "one"),
                 new ChatbotBuildingCandidate(1L, "Building", "alias"),
-                new ChatbotBuildingCandidate(2L, "Building Annex", "two")));
+                new ChatbotBuildingCandidate(2L, "Building Annex", "building")));
 
         List<ChatbotSearchCandidate> result = service.search("building");
 

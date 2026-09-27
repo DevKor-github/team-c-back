@@ -130,6 +130,6 @@ class CampusToolAdapterTest {
         return new ChatbotSearchCandidate(id, type, name, type == ToolLocationType.PLACE ? 1L : id,
                 type == ToolLocationType.PLACE ? "건물" : name,
                 type == ToolLocationType.PLACE ? 1.0 : null,
-                type == ToolLocationType.PLACE ? PlaceType.CLASSROOM : null, null, 100);
+                type == ToolLocationType.PLACE ? PlaceType.CLASSROOM : null, null, 100, name, false);
     }
 }

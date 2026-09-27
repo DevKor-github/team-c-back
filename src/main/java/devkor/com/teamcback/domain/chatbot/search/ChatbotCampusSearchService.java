@@ -1,9 +1,7 @@
 package devkor.com.teamcback.domain.chatbot.search;
 
-import devkor.com.teamcback.domain.building.entity.BuildingNickname;
 import devkor.com.teamcback.domain.building.repository.BuildingNicknameRepository;
 import devkor.com.teamcback.domain.chatbot.tool.dto.ToolLocationType;
-import devkor.com.teamcback.domain.place.entity.PlaceNickname;
 import devkor.com.teamcback.domain.place.repository.PlaceNicknameRepository;
 import devkor.com.teamcback.domain.search.util.HangeulUtils;
 import java.util.ArrayList;
@@ -61,10 +59,14 @@ public class ChatbotCampusSearchService {
                 unique.put(key, candidate);
             }
         }
-        return unique.values().stream()
+        List<ChatbotSearchCandidate> ranked = unique.values().stream()
                 .sorted(java.util.Comparator.comparingInt(ChatbotSearchCandidate::sourcePriority).reversed()
                         .thenComparing(ChatbotSearchCandidate::name, java.util.Comparator.nullsLast(String::compareTo)))
                 .toList();
+        List<ChatbotSearchCandidate> strong = ranked.stream()
+                .filter(candidate -> stronglyMatchesWholeQuery(trimmed, candidate))
+                .toList();
+        return strong.isEmpty() ? ranked : strong;
     }
 
     private void addCompositeCandidates(List<ChatbotSearchCandidate> target, String buildingWord,
@@ -78,8 +80,8 @@ public class ChatbotCampusSearchService {
         if (buildingIds.isEmpty()) {
             return;
         }
-        addBuildingCandidates(target, buildings, priority);
-        addPlaceCandidates(target, findPlaces(compact(placeWord), buildingIds, limit), priority - 1);
+        addBuildingCandidates(target, buildings, priority, true);
+        addPlaceCandidates(target, findPlaces(compact(placeWord), buildingIds, limit), priority - 1, true);
     }
 
     private List<ChatbotBuildingCandidate> findBuildings(String word, Pageable limit) {
@@ -114,22 +116,64 @@ public class ChatbotCampusSearchService {
 
     private void addBuildingCandidates(List<ChatbotSearchCandidate> target,
                                        List<ChatbotBuildingCandidate> source, int priority) {
+        addBuildingCandidates(target, source, priority, false);
+    }
+
+    private void addBuildingCandidates(List<ChatbotSearchCandidate> target,
+                                       List<ChatbotBuildingCandidate> source, int priority, boolean composite) {
         for (ChatbotBuildingCandidate item : source) {
             if (item.id() != null) {
                 target.add(new ChatbotSearchCandidate(item.id(), ToolLocationType.BUILDING, item.name(),
-                        item.id(), item.name(), null, null, null, priority));
+                        item.id(), item.name(), null, null, null, priority, item.nickname(), composite));
             }
         }
     }
 
     private void addPlaceCandidates(List<ChatbotSearchCandidate> target,
                                     List<ChatbotPlaceCandidate> source, int priority) {
+        addPlaceCandidates(target, source, priority, false);
+    }
+
+    private void addPlaceCandidates(List<ChatbotSearchCandidate> target,
+                                    List<ChatbotPlaceCandidate> source, int priority, boolean composite) {
         for (ChatbotPlaceCandidate item : source) {
             if (item.id() != null) {
                 target.add(new ChatbotSearchCandidate(item.id(), ToolLocationType.PLACE, item.name(),
-                        item.buildingId(), item.buildingName(), item.floor(), item.placeType(), item.detail(), priority));
+                        item.buildingId(), item.buildingName(), item.floor(), item.placeType(), item.detail(), priority,
+                        item.nickname(), composite));
             }
         }
+    }
+
+    private boolean stronglyMatchesWholeQuery(String query, ChatbotSearchCandidate candidate) {
+        String normalizedQuery = normalize(query);
+        if (candidate.locationType() == ToolLocationType.BUILDING) {
+            return normalizedQuery.equals(normalize(candidate.name()))
+                    || normalizedQuery.equals(normalize(candidate.matchedNickname()));
+        }
+
+        if (!candidate.compositeQuery()) {
+            return normalizedQuery.equals(normalize(candidate.name()))
+                    || normalizedQuery.equals(normalize(candidate.matchedNickname()));
+        }
+
+        String parentAndPlace = normalize((candidate.buildingName() == null ? "" : candidate.buildingName())
+                + (candidate.name() == null ? "" : candidate.name()));
+        String parentAndNickname = normalize((candidate.buildingName() == null ? "" : candidate.buildingName())
+                + (candidate.matchedNickname() == null ? "" : candidate.matchedNickname()));
+        return normalizedQuery.equals(parentAndPlace) || normalizedQuery.equals(parentAndNickname);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replaceAll("\\s+", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace("[", "")
+                .replace("]", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private String compact(String value) {

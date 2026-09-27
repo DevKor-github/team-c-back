@@ -26,6 +26,11 @@ import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.support.ToolCallbacks;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.definition.ToolDefinition;
+import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -142,11 +147,12 @@ public class SpringAiLlmGateway implements LlmGateway {
             try {
                 List<Message> springMessages = toSpringMessages(history, userMessage);
                 logRequestMessageDiagnostics(springMessages);
-                ChatClient.CallResponseSpec callResponse = chatClient.prompt()
+                ChatClient.ChatClientRequestSpec request = chatClient.prompt()
                         .system(systemPrompt)
-                        .messages(springMessages)
-                        .tools(requestTools)
-                        .call();
+                        .messages(springMessages);
+                ChatClient.CallResponseSpec callResponse = (diagnosticsEnabled
+                        ? request.toolCallbacks(diagnosticToolCallbacks(requestTools))
+                        : request.tools(requestTools)).call();
                 ChatClientResponse clientResponse = callResponse == null ? null : callResponse.chatClientResponse();
                 ChatResponse chatResponse = clientResponse == null ? null : clientResponse.chatResponse();
                 String content = extractContent(chatResponse);
@@ -171,6 +177,53 @@ public class SpringAiLlmGateway implements LlmGateway {
                 }
                 throw new StagedLlmInvocationException(stage, exception);
             }
+        }
+    }
+
+    /**
+     * ToolCallbacks.from creates MethodToolCallback instances. Wrapping at the ToolCallback boundary logs the
+     * model-produced JSON before MethodToolCallback performs Jackson argument binding.
+     */
+    private List<ToolCallback> diagnosticToolCallbacks(CampusChatbotTools requestTools) {
+        return java.util.Arrays.stream(ToolCallbacks.from(requestTools))
+                .map(callback -> (ToolCallback) new DiagnosticToolCallback(callback))
+                .toList();
+    }
+
+    private final class DiagnosticToolCallback implements ToolCallback {
+        private final ToolCallback delegate;
+
+        private DiagnosticToolCallback(ToolCallback delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public ToolDefinition getToolDefinition() {
+            return delegate.getToolDefinition();
+        }
+
+        @Override
+        public ToolMetadata getToolMetadata() {
+            return delegate.getToolMetadata();
+        }
+
+        @Override
+        public String call(String toolInput) {
+            log.warn("chatbot_raw_tool_call toolName={} callbackType={} arguments={}",
+                    toolName(), delegate.getClass().getName(), toolInput);
+            return delegate.call(toolInput);
+        }
+
+        @Override
+        public String call(String toolInput, ToolContext toolContext) {
+            log.warn("chatbot_raw_tool_call toolName={} callbackType={} arguments={}",
+                    toolName(), delegate.getClass().getName(), toolInput);
+            return delegate.call(toolInput, toolContext);
+        }
+
+        private String toolName() {
+            ToolDefinition definition = delegate.getToolDefinition();
+            return definition == null ? "unknown" : definition.name();
         }
     }
 

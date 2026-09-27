@@ -2,7 +2,7 @@
 
 ## 상태
 
-2026-09-28 로컬 구현. 운영 배포·운영 DB 변경·실제 데이터 이전·실제 알림 발송은 하지 않았다. 기존 배포는 계속 MySQL을 사용한다. `PUSH_STORAGE=neon`은 아래 전환 절차 완료 시에만 적용한다. 기본값 mysql은 배포 전 기존 실행을 보존하기 위한 전환 스위치다.
+2026-09-28 운영 데이터 이전 완료. 쓰기를 중지한 상태에서 기기 387건, 발송 68건, 메시지 73건, 완료된 설문 예약 1건을 Neon으로 복사했고 모든 행의 내용 체크섬을 검증했다. 기존 MySQL 푸시 테이블은 보존했다. 서버 교체 후 검증 결과는 아래 배포 기록에 남긴다.
 
 Neon 연결과 트랜잭션은 기기, 발송, 메시지, 설문 예약, 자동 알림 설정에만 적용된다. 기존 회원/업무 데이터와 내구성 있는 이벤트 전달 기록은 서비스 DB에 둔다. 자동 알림 설정 변경 이력(변경자/시각/값)은 Neon에 기록한다. 이미지는 기존 Vercel 프로젝트의 같은 Neon DB를 사용한다.
 
@@ -22,8 +22,8 @@ Neon 연결과 트랜잭션은 기기, 발송, 메시지, 설문 예약, 자동 
 
 ## 스키마와 복사
 
-1. `docs/sql/2026-09-28-push-neon.sql`을 Neon에, `docs/sql/2026-09-28-push-outbox-mysql.sql`을 서비스 MySQL에 적용할 변경으로 검토한다. 둘 다 아직 미적용이다. 이미지 테이블은 기존 것을 유지한다. **이전 `2026-09-28-push-audience.sql`은 적용하지 않는다.**
-2. 백업/복구 지점과 Neon 계정 권한을 준비한다. 이미지 런타임은 이미지 테이블에만, 백엔드 런타임은 푸시 테이블 및 해당 identity sequence에만 접근하도록 분리한다. DDL은 별도 마이그레이션 계정으로 실행한다.
+1. `docs/sql/2026-09-28-push-neon.sql`을 Neon에, `docs/sql/2026-09-28-push-outbox-mysql.sql`을 서비스 MySQL에 적용할 변경으로 검토한다. 2026-09-28 applied both schemas. 이미지 테이블은 기존 것을 유지한다. **이전 `2026-09-28-push-audience.sql`은 적용하지 않는다.**
+2. 백업/복구 지점과 Neon 계정 권한을 준비한다. The backend runtime role is restricted to push tables and sequences; the existing Vercel image connection remains unchanged. DDL은 별도 마이그레이션 계정으로 실행한다.
 3. Python 가상환경에 `scripts/migrate-push-neon.requirements.txt`를 설치하고 보호된 환경변수로 `PUSH_SOURCE_MYSQL_URL`, `PUSH_TARGET_POSTGRES_URL`을 제공한다. 필요한 MySQL TLS CA는 `PUSH_SOURCE_MYSQL_SSL_CA`로 지정한다. 연결 문자열이나 토큰을 명령행 인자/로그로 남기지 않는다.
 4. `python scripts/migrate-push-neon.py`는 읽기 전용 건수 조사다. Neon baseline을 먼저 적용한 상태에서 실행한다.
 5. 최종 전환 창에서 앱 기기 등록/해제, 관리자 쓰기, 업무 이벤트 생산자, 발송/receipt/복구/예약 워커를 일시 중지한다. 기존 SENDING 작업의 진행 여부를 확인하고 새로운 호출이 없는 시점에 복사한다. 출처가 섞인 예약은 먼저 목록과 담당 환경을 확인한다.
@@ -64,4 +64,19 @@ KODAERO_PUSH_PG_TEST=true ./gradlew test --tests '*notification*'
 python3 scripts/test_migrate_push_neon.py
 ```
 
-실제 운영 MySQL→Neon 복사 및 운영 PostgreSQL validate 기동은 배포 전 별도 검증 대상이다. 로컬 테스트 성공을 실제 운영 이전 완료로 간주하지 않는다.
+실제 운영 MySQL→Neon 복사와 별도 canary 서버의 양쪽 DB validate 기동 및 HTTP 200 응답을 확인했다.
+
+## 2026-09-28 배포 기록
+
+- 관리자 주소: https://admin.kodaero.co.kr (Vercel 프론트 및 이미지 API).
+- 백엔드 전용 Neon 역할은 푸시 테이블 6개와 해당 sequence에만 접근한다. 기존 Vercel 이미지 API 연결은 유지한다.
+- 원본 데이터와 설정 백업: 서버 `/home/yjlee/infra/neon-cutover-20260928/backups`. 최종 데이터는 타입 정보를 포함한 JSON gzip이다. SHA256: `7109fa7f2c6584694c4b38758bc698770c07a68ec2b052fb7f03cc9ed3952b93`.
+- 기존 자동 알림 4종의 Redis 값과 환경 기본값을 확인했고, 두 audience에 동일한 활성 상태를 저장하고 이전 이력을 남겼다. 과거 발송 68건은 `LEGACY_UNKNOWN`으로 보존한다.
+- 런타임 연결 정보는 서버의 권한 0600 env 파일로 주입한다. 코드에 포함하지 않는다.
+- 최초 전환 이미지: `leeyejin113035/kodaero-app:neon-3584f92ee922c15b445fb69525057e983eede8a8`.
+- 이전 이미지: 서버의 `kodaero-backup:*pre-neon-20260928` 태그로 보존한다. 데이터 전환 후 단순한 이전 이미지 재기동은 금지한다.
+- 운영 CI는 Neon 지원 라벨이 없는 이미지를 stable로 승격하지 않는다.
+- 전체 Java 테스트: 207개, 실패 0개, 별도 PostgreSQL 환경 필요 8개 skip. 별도 PostgreSQL 통합 테스트와 이전 스크립트 테스트도 검증했다.
+- 검증용 실제 푸시는 발송하지 않았다.
+
+All three backend containers passed HTTP 200 health checks and maintenance was removed at 2026-09-28 01:27 KST.

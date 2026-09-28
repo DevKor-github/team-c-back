@@ -222,4 +222,30 @@ class CrowdStatusWorkflowTest {
         verify(campusToolAdapter).getCrowdStatus(new GetCrowdStatusToolRequest(4443L, false));
         verify(targetResolver, never()).resolveWithinBuilding(any(), any());
     }
+
+    @Test
+    void invalidSemanticCandidateIndexCannotSelectOrLoadCrowd() {
+        UUID sessionId = UUID.randomUUID();
+        ChatCaller caller = new ChatCaller("user:1", true);
+        when(planner.plan(any(), any())).thenReturn(new CrowdStatusPlan(
+                CrowdStatusPlan.Intent.CROWD_STATUS, "Mirae Building"));
+        when(searchService.search("Mirae Building")).thenReturn(List.of(
+                new ChatbotSearchCandidate(33L, ToolLocationType.BUILDING, "Mirae Building",
+                        33L, "Mirae Building", null, null, null, 300, "Mirae", false)));
+        CrowdPlaceCandidate first = new CrowdPlaceCandidate(4385L, "Mirae Building B1 Lounge", "Lounge",
+                -1D, null, 33L, "Mirae Building");
+        CrowdPlaceCandidate second = new CrowdPlaceCandidate(4443L, "Mirae Building Blue Port", "Blue Port",
+                3D, null, 33L, "Mirae Building");
+        when(targetResolver.resolve(any(), any())).thenReturn(CrowdTargetResolver.Resolution.of(List.of(first, second)));
+        when(candidateSelector.select(any(), any())).thenReturn(
+                new CrowdCandidateSelection(CrowdCandidateSelection.Status.SELECTED, 99));
+
+        CrowdStatusWorkflow workflow = new CrowdStatusWorkflow(planner, searchService, campusToolAdapter,
+                targetResolver, candidateSelector);
+        workflow.handle(sessionId, caller, List.of(), "Mirae Building");
+        CrowdStatusWorkflow.CrowdWorkflowResult result = workflow.handle(sessionId, caller, List.of(), "unknown");
+
+        assertThat(result.waiting()).isTrue();
+        verify(campusToolAdapter, never()).getCrowdStatus(any());
+    }
 }

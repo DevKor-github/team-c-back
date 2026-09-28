@@ -130,7 +130,7 @@ public class CrowdStatusWorkflow {
     }
 
     public CrowdWorkflowResult handle(UUID sessionId, ChatCaller caller,
-                                      List<LlmGateway.ConversationMessage> history, String userMessage) {
+                                       List<LlmGateway.ConversationMessage> history, String userMessage) {
         RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
         var checkpoint = graph.lastStateOf(config);
         if (checkpoint.isPresent()) {
@@ -153,6 +153,38 @@ public class CrowdStatusWorkflow {
         CrowdWorkflowResult started = result(run(GraphInput.args(input), config));
         releaseIfCompleted(started, config);
         return started;
+    }
+
+    /** Returns whether this session currently owns an interrupted Crowd interaction. */
+    public boolean hasPending(UUID sessionId, ChatCaller caller) {
+        RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
+        var checkpoint = graph.lastStateOf(config);
+        if (checkpoint.isEmpty()) {
+            return false;
+        }
+        assertOwner(checkpoint.get().state(), caller);
+        return true;
+    }
+
+    /** Releases a superseded Crowd interaction without changing its graph node structure. */
+    public void cancel(UUID sessionId, ChatCaller caller) {
+        RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
+        var checkpoint = graph.lastStateOf(config);
+        if (checkpoint.isEmpty()) {
+            return;
+        }
+        assertOwner(checkpoint.get().state(), caller);
+        try {
+            saver.release(config);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to release superseded CROWD_STATUS workflow", exception);
+        }
+    }
+
+    private void assertOwner(CrowdGraphState state, ChatCaller caller) {
+        if (!caller.key().equals(state.value(OWNER, ""))) {
+            throw new GlobalException(devkor.com.teamcback.global.response.ResultCode.CHATBOT_SESSION_FORBIDDEN);
+        }
     }
 
     private void releaseIfCompleted(CrowdWorkflowResult result, RunnableConfig config) {

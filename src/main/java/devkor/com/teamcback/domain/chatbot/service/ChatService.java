@@ -67,36 +67,56 @@ public class ChatService {
     private final ChatRateLimiter rateLimiter;
     private final PendingRouteStateService pendingRouteStateService;
     private final CrowdStatusWorkflow crowdStatusWorkflow;
+    private final ChatRequestRouter requestRouter;
 
     /** Compatibility constructor for focused unit tests that do not exercise pending state. */
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter) {
-        this(chatOrchestrator, memoryService, rateLimiter, null, null);
+        this(chatOrchestrator, memoryService, rateLimiter, null, null, new ChatRequestRouter());
     }
 
     /** Compatibility constructor for tests that provide pending-route state only. */
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService) {
-        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, null);
+        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, null, new ChatRequestRouter());
+    }
+
+    /** Compatibility constructor for focused tests that provide the existing Crowd workflow. */
+    public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
+                       ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService,
+                       CrowdStatusWorkflow crowdStatusWorkflow) {
+        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService,
+                crowdStatusWorkflow, new ChatRequestRouter());
     }
 
     @Autowired
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter,
                        PendingRouteStateService pendingRouteStateService,
-                       CrowdStatusWorkflow crowdStatusWorkflow) {
+                       CrowdStatusWorkflow crowdStatusWorkflow,
+                       ChatRequestRouter requestRouter) {
         this.chatOrchestrator = chatOrchestrator;
         this.memoryService = memoryService;
         this.rateLimiter = rateLimiter;
         this.pendingRouteStateService = pendingRouteStateService;
         this.crowdStatusWorkflow = crowdStatusWorkflow;
+        this.requestRouter = requestRouter;
     }
 
     public ChatMessageRes sendMessage(ChatMessageReq request, ChatCaller caller) {
         UUID sessionId = request.sessionId() == null ? UUID.randomUUID() : request.sessionId();
         rateLimiter.check(caller);
         var history = memoryService.load(sessionId, caller);
-        if (crowdStatusWorkflow != null) {
+        PendingRouteState pending = loadPending(sessionId, caller);
+        ChatRequestRouter.PendingWorkflow pendingWorkflow = activePendingWorkflow(sessionId, caller, pending);
+        ChatRequestRouter.RoutingDecision routing = requestRouter.route(pendingWorkflow, request.message());
+        if (routing.route() != ChatRequestRouter.Route.CONTINUE_PENDING) {
+            releaseSupersededWorkflows(sessionId, caller, pending);
+        }
+        if (crowdStatusWorkflow != null
+                && routing.workflowType() == ChatRequestRouter.WorkflowType.CROWD
+                && (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
+                || routing.route() == ChatRequestRouter.Route.NEW_INTENT)) {
             CrowdStatusWorkflow.CrowdWorkflowResult crowd = crowdStatusWorkflow.handle(
                     sessionId, caller, toGatewayHistory(history), request.message());
             if (crowd.handled()) {
@@ -106,7 +126,12 @@ public class ChatService {
                 return new ChatMessageRes(sessionId, reply, null);
             }
         }
-        PendingRouteState pending = loadPending(sessionId, caller);
+        if (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
+                && routing.workflowType() == ChatRequestRouter.WorkflowType.ROUTE) {
+            pending = loadPending(sessionId, caller);
+        } else {
+            pending = null;
+        }
         ChatOrchestrationResult result = chatOrchestrator.execute(promptWithPendingState(pending),
                 toGatewayHistory(history), messageWithRequestContext(request));
         ClientAction action = assembleRouteAction(result.resolvedLocations());
@@ -127,6 +152,25 @@ public class ChatService {
         String reply = action == null ? result.reply() : routeActionReply(action);
         memoryService.save(sessionId, caller, request.message(), reply);
         return new ChatMessageRes(sessionId, reply, action);
+    }
+
+    private ChatRequestRouter.PendingWorkflow activePendingWorkflow(UUID sessionId, ChatCaller caller,
+                                                                     PendingRouteState pendingRoute) {
+        if (crowdStatusWorkflow != null && crowdStatusWorkflow.hasPending(sessionId, caller)) {
+            return ChatRequestRouter.PendingWorkflow.CROWD;
+        }
+        return pendingRoute == null
+                ? ChatRequestRouter.PendingWorkflow.NONE : ChatRequestRouter.PendingWorkflow.ROUTE;
+    }
+
+    private void releaseSupersededWorkflows(UUID sessionId, ChatCaller caller,
+                                            PendingRouteState pendingRoute) {
+        if (crowdStatusWorkflow != null && crowdStatusWorkflow.hasPending(sessionId, caller)) {
+            crowdStatusWorkflow.cancel(sessionId, caller);
+        }
+        if (pendingRoute != null) {
+            deletePending(sessionId, caller);
+        }
     }
 
     private PendingRouteState loadPending(UUID sessionId, ChatCaller caller) {

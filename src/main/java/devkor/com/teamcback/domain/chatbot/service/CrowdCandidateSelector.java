@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 /** Interprets a PLACE_SELECTION reply without receiving tools or database identifiers. */
 @Component
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
-public class CrowdCandidateSelector {
+public class CrowdCandidateSelector implements SemanticCandidateSelector<CrowdCandidateView> {
     private static final String PROMPT = """
             Select a crowd location only from the supplied candidates.
             Return SELECTED only when the user's reply clearly identifies exactly one candidate.
@@ -29,6 +29,7 @@ public class CrowdCandidateSelector {
         this.gateway = gateway;
     }
 
+    @Override
     public CrowdCandidateSelection select(String userMessage, List<CrowdCandidateView> candidates) {
         List<CrowdCandidateView> safeCandidates = candidates == null ? List.of() : List.copyOf(candidates);
         if (safeCandidates.isEmpty()) {

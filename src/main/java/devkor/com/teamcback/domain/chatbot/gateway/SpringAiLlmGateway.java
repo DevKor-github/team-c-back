@@ -11,6 +11,9 @@ import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateSelection;
 import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateView;
 import devkor.com.teamcback.domain.chatbot.dto.LocationDetailPlan;
 import devkor.com.teamcback.domain.chatbot.dto.PlaceReviewsPlan;
+import devkor.com.teamcback.domain.chatbot.dto.MenuPlan;
+import devkor.com.teamcback.domain.chatbot.dto.FacilityPlan;
+import devkor.com.teamcback.domain.chatbot.dto.RoomCoursePlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -214,6 +217,36 @@ public class SpringAiLlmGateway implements LlmGateway {
             PlaceReviewsPlan plan = response == null ? null : response.entity(converter);
             return plan == null ? PlaceReviewsPlan.other() : plan;
         }, PlaceReviewsPlan.other());
+    }
+
+    @Override
+    public MenuPlan planMenu(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        return structured(() -> plan(MenuPlan.class, "MENU", "cafeteriaQuery", "dateExpression", systemPrompt, history, userMessage), MenuPlan.other());
+    }
+
+    @Override
+    public FacilityPlan planFacility(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        return structured(() -> plan(FacilityPlan.class, "FACILITY", "locationQuery", "facilityType", systemPrompt, history, userMessage), FacilityPlan.other());
+    }
+
+    @Override
+    public RoomCoursePlan planRoomCourse(String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        return structured(() -> plan(RoomCoursePlan.class, "ROOM_COURSE", "roomQuery", "weekdayExpression", systemPrompt, history, userMessage), RoomCoursePlan.other());
+    }
+
+    private <T> T plan(Class<T> type, String intent, String firstSlot, String secondSlot,
+                       String systemPrompt, List<ConversationMessage> history, String userMessage) {
+        try {
+            BeanOutputConverter<T> converter = new BeanOutputConverter<>(type);
+            String prompt = "Extract only intent and natural-language slots for the " + intent
+                    + " workflow. Do not call tools, invent IDs, or choose database entities. "
+                    + "Use OTHER when unrelated. Preserve the user's wording. " + firstSlot + " and " + secondSlot
+                    + " are optional.\n" + (systemPrompt == null ? "" : systemPrompt) + "\n" + converter.getFormat();
+            var response = chatClient.prompt().system(prompt).messages(toSpringMessages(history, userMessage)).call();
+            return response == null ? null : response.entity(converter);
+        } catch (RuntimeException exception) {
+            return null;
+        }
     }
 
     @Override

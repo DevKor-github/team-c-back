@@ -8,6 +8,9 @@ import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateSelection;
 import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateView;
 import devkor.com.teamcback.domain.chatbot.dto.LocationDetailPlan;
 import devkor.com.teamcback.domain.chatbot.dto.PlaceReviewsPlan;
+import devkor.com.teamcback.domain.chatbot.dto.MenuPlan;
+import devkor.com.teamcback.domain.chatbot.dto.FacilityPlan;
+import devkor.com.teamcback.domain.chatbot.dto.RoomCoursePlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import java.util.List;
 
@@ -35,6 +38,9 @@ public interface LlmGateway {
                                                String userMessage) {
         return PlaceReviewsPlan.other();
     }
+    default MenuPlan planMenu(String systemPrompt, List<ConversationMessage> history, String userMessage) { return MenuPlan.other(); }
+    default FacilityPlan planFacility(String systemPrompt, List<ConversationMessage> history, String userMessage) { return FacilityPlan.other(); }
+    default RoomCoursePlan planRoomCourse(String systemPrompt, List<ConversationMessage> history, String userMessage) { return RoomCoursePlan.other(); }
     default LocationCandidateSelection selectLocationCandidate(String systemPrompt,
                                                                  List<ConversationMessage> history,
                                                                  String userMessage,

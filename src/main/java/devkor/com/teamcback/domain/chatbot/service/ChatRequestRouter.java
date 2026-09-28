@@ -34,7 +34,10 @@ public class ChatRequestRouter {
         return (pendingWorkflow == PendingWorkflow.CROWD && intent == Intent.CROWD)
                 || (pendingWorkflow == PendingWorkflow.ROUTE && intent == Intent.ROUTE)
                 || (pendingWorkflow == PendingWorkflow.LOCATION_DETAIL && intent == Intent.LOCATION_DETAIL)
-                || (pendingWorkflow == PendingWorkflow.REVIEW && intent == Intent.REVIEW);
+                || (pendingWorkflow == PendingWorkflow.REVIEW && intent == Intent.REVIEW)
+                || (pendingWorkflow == PendingWorkflow.MENU && intent == Intent.MENU)
+                || (pendingWorkflow == PendingWorkflow.FACILITY && intent == Intent.FACILITY)
+                || (pendingWorkflow == PendingWorkflow.ROOM_COURSE && intent == Intent.ROOM_COURSE);
     }
 
     private Intent detectObviousIntent(String message) {
@@ -88,7 +91,7 @@ public class ChatRequestRouter {
     }
 
     public enum PendingWorkflow {
-        NONE,
+        NONE, MENU, FACILITY, ROOM_COURSE,
         ROUTE,
         CROWD,
         LOCATION_DETAIL,
@@ -100,6 +103,9 @@ public class ChatRequestRouter {
                 case LOCATION_DETAIL -> WorkflowType.LOCATION_DETAIL;
                 case REVIEW -> WorkflowType.REVIEW;
                 case ROUTE -> WorkflowType.ROUTE;
+                case MENU -> WorkflowType.MENU;
+                case FACILITY -> WorkflowType.FACILITY;
+                case ROOM_COURSE -> WorkflowType.ROOM_COURSE;
                 case NONE -> WorkflowType.GENERAL_CHAT;
             };
         }

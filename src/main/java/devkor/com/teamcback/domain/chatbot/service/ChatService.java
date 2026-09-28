@@ -32,34 +32,11 @@ import org.springframework.stereotype.Service;
 public class ChatService {
     static final String SYSTEM_PROMPT = """
             You are a concise Korean Korea University campus assistant.
-
-            [GROUNDING]
-            Use read-only campus tools for dynamic campus facts. Tool results are the only source of truth.
-            Never invent locations, IDs, routes, menus, operating hours, crowd data, or reviews. Do not expose
-            private data, authentication data, raw coordinates, or internal identifiers. Prefer the latest user
-            correction or negation over older conversation and never select a denied candidate again. Use concise,
-            practical Korean. If data is unavailable, say so. Do not end with only a future promise such as
-            "찾아보겠습니다" when a required Tool can be called. Stay within the six-call limit.
-
-            Future-only responses are prohibited when a Tool can complete the request.
-            [ROUTE_BEHAVIOR]
-            Decide intent first: NAVIGATE_ROUTE opens the existing route screen; TEXT_ROUTE returns route facts in chat.
-            NAVIGATE_ROUTE requires searchCampus(query, role=START, intent=NAVIGATE_ROUTE) and
-            searchCampus(query, role=END, intent=NAVIGATE_ROUTE). Preserve specific place wording, use only
-            actual Tool results, and do not call findRoute. Once both endpoints are unique, the backend creates
-            NAVIGATE_ROUTE ClientAction; never invent or write an Action ID.
-            TEXT_ROUTE requires searchCampus for START and END with intent=TEXT_ROUTE, then findRoute only after
-            both endpoints are unique. Answer only from findRoute.
-            Allowed route values are exactly START/END and NAVIGATE_ROUTE/TEXT_ROUTE. Do not create other role or
-            intent values, and do not create NODE/COORD Actions.
-            Ambiguous searchCampus results must not be guessed, merged, or invented. Ask using only actual candidate
-            names and create no Action until unique.
-            If PENDING_ROUTE_CONTINUATION is present and the current message is related, re-search both endpoints in
-            this request with explicit roles and the pending route intent; never copy a previous ID. Unrelated requests stay
-            unrelated. Use only supported conditions; BARRIERFREE excludes stair nodes where supported and is not a
-            complete accessibility guarantee.
-            Examples: UI route -> START search, END search, no findRoute; text route -> START search, END search,
-            findRoute; pending END clarification -> re-search both endpoints; ambiguous END -> ask which candidate.
+            Answer general conversation naturally and use concise, practical Korean.
+            Dynamic campus facts may be answered only when reliable campus context is already provided.
+            If current or changing campus information is not present in context, do not guess; explain that
+            the information is unavailable or ask the user to clarify.
+            Never expose private data, authentication data, raw coordinates, or internal identifiers.
             """;
 
     private final ChatOrchestrator chatOrchestrator;
@@ -200,7 +177,10 @@ public class ChatService {
         } else {
             pending = null;
         }
-        ChatOrchestrationResult result = chatOrchestrator.execute(promptWithPendingState(pending),
+        boolean generalChat = routing.workflowType() == ChatRequestRouter.WorkflowType.GENERAL_CHAT;
+        ChatOrchestrationResult result = generalChat
+                ? chatOrchestrator.executeGeneral(SYSTEM_PROMPT, toGatewayHistory(history), request.message())
+                : chatOrchestrator.execute(promptWithPendingState(pending),
                 toGatewayHistory(history), messageWithRequestContext(request));
         ClientAction action = assembleRouteAction(result.resolvedLocations());
         if (action != null) {

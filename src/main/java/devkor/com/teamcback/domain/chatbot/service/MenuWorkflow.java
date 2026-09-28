@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.util.*;
 import org.bsc.langgraph4j.*;
 import org.bsc.langgraph4j.action.*;
+import org.bsc.langgraph4j.checkpoint.BaseCheckpointSaver;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
+import devkor.com.teamcback.domain.chatbot.checkpoint.RedisCheckpointSaver;
 import org.bsc.langgraph4j.state.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,9 +25,9 @@ public class MenuWorkflow {
     private static final String SEARCH="search", DECIDE="decide", ASK="ask", SELECT="select", LOAD="load", FORMAT="format";
     private static final String OWNER="owner", QUERY="query", DATE="date", INPUT="input", CANDIDATES="candidates", ID="id", NAME="name", REPLY="reply", WAITING="waiting", DATA="data";
     private final MenuPlanner planner; private final CampusToolAdapter adapter; private final LocationCandidateSelector selector;
-    private final MemorySaver saver=new MemorySaver(); private final CompiledGraph<State> graph;
-    @Autowired public MenuWorkflow(MenuPlanner planner, CampusToolAdapter adapter, LocationCandidateSelector selector) {
-        this.planner=planner; this.adapter=adapter; this.selector=selector;
+    private final BaseCheckpointSaver saver; private final CompiledGraph<State> graph;
+    @Autowired public MenuWorkflow(MenuPlanner planner, CampusToolAdapter adapter, LocationCandidateSelector selector, BaseCheckpointSaver saver) {
+        this.planner=planner; this.adapter=adapter; this.selector=selector; this.saver=saver;
         try { StateGraph<State> s=new StateGraph<>(State.SCHEMA, State::new);
             s.addNode(SEARCH, AsyncNodeAction.node_async((NodeAction<State>)this::search)); s.addNode(DECIDE,AsyncNodeAction.node_async((NodeAction<State>)this::decide));
             s.addNode(ASK,AsyncNodeAction.node_async((NodeAction<State>)this::ask)); s.addNode(SELECT,AsyncNodeAction.node_async((NodeAction<State>)this::select));
@@ -35,6 +37,10 @@ public class MenuWorkflow {
             graph=s.compile(CompileConfig.builder().checkpointSaver(saver).interruptAfter(ASK).releaseThread(true).build());
         } catch(GraphStateException e){throw new IllegalStateException("Unable to compile MENU workflow",e);}
     }
+    public MenuWorkflow(MenuPlanner planner, CampusToolAdapter adapter, LocationCandidateSelector selector) {
+        this(planner, adapter, selector, new MemorySaver());
+    }
+
     public WorkflowResult handle(UUID sessionId, ChatCaller caller,List<LlmGateway.ConversationMessage> history,String message){
         RunnableConfig c=config(sessionId); var checkpoint=graph.lastStateOf(c); State state;
         if(checkpoint.isPresent()){assertOwner(checkpoint.get().state(),caller); state=run(GraphInput.resume(Map.of(INPUT,message)),c);}

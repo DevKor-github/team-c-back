@@ -28,6 +28,8 @@ class ChatServiceCurrentLocationTest {
     void passesCurrentLocationOnlyInCurrentProviderRequestAndNeverSavesIt() {
         when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
                 .thenReturn(new ChatOrchestrationResult("route answer", List.of()));
+        when(chatOrchestrator.executeGeneral(anyString(), anyList(), anyString()))
+                .thenReturn(new ChatOrchestrationResult("route answer", List.of()));
         ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
@@ -38,9 +40,11 @@ class ChatServiceCurrentLocationTest {
         service.sendMessage(new ChatMessageReq(sessionId, "tell me again", null), caller);
 
         ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
-        verify(chatOrchestrator, org.mockito.Mockito.times(2)).execute(anyString(), anyList(), messages.capture());
+        verify(chatOrchestrator).execute(anyString(), anyList(), messages.capture());
         assertThat(messages.getAllValues().get(0)).contains("latitude=37.5861", "longitude=127.029");
-        assertThat(messages.getAllValues().get(1)).isEqualTo("tell me again")
+        ArgumentCaptor<String> generalMessage = ArgumentCaptor.forClass(String.class);
+        verify(chatOrchestrator).executeGeneral(anyString(), anyList(), generalMessage.capture());
+        assertThat(generalMessage.getValue()).isEqualTo("tell me again")
                 .doesNotContain("37.5861", "127.029", "currentLocation");
         verify(memoryService).save(sessionId, caller, "route from current location", "route answer");
         verify(memoryService).save(sessionId, caller, "tell me again", "route answer");
@@ -48,7 +52,7 @@ class ChatServiceCurrentLocationTest {
 
     @Test
     void preservesRecentRolesAndKeepsCurrentCorrectionAsLatestUserMessage() {
-        when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
+        when(chatOrchestrator.executeGeneral(anyString(), anyList(), anyString()))
                 .thenReturn(new ChatOrchestrationResult("answer", List.of()));
         ChatService service = new ChatService(chatOrchestrator, memoryService, rateLimiter);
         UUID sessionId = UUID.randomUUID();
@@ -61,7 +65,7 @@ class ChatServiceCurrentLocationTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<LlmGateway.ConversationMessage>> history = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<String> currentMessage = ArgumentCaptor.forClass(String.class);
-        verify(chatOrchestrator).execute(anyString(), history.capture(), currentMessage.capture());
+        verify(chatOrchestrator).executeGeneral(anyString(), history.capture(), currentMessage.capture());
         assertThat(history.getValue()).containsExactly(
                 new LlmGateway.ConversationMessage(LlmGateway.Role.USER, "old user"),
                 new LlmGateway.ConversationMessage(LlmGateway.Role.ASSISTANT, "old assistant"));

@@ -31,7 +31,9 @@ import org.bsc.langgraph4j.action.AsyncEdgeAction;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
 import org.bsc.langgraph4j.action.EdgeAction;
 import org.bsc.langgraph4j.action.NodeAction;
+import org.bsc.langgraph4j.checkpoint.BaseCheckpointSaver;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
+import devkor.com.teamcback.domain.chatbot.checkpoint.RedisCheckpointSaver;
 import org.bsc.langgraph4j.state.AgentState;
 import org.bsc.langgraph4j.state.Channel;
 import org.bsc.langgraph4j.state.Channels;
@@ -63,15 +65,16 @@ public class LocationDetailWorkflow {
     private final LocationDetailPlanner planner;
     private final CampusToolAdapter adapter;
     private final LocationCandidateSelector selector;
-    private final MemorySaver saver = new MemorySaver();
+    private final BaseCheckpointSaver saver;
     private final CompiledGraph<LocationGraphState> graph;
 
     @Autowired
     public LocationDetailWorkflow(LocationDetailPlanner planner, CampusToolAdapter adapter,
-                                  LocationCandidateSelector selector) {
+                                  LocationCandidateSelector selector, BaseCheckpointSaver saver) {
         this.planner = planner;
         this.adapter = adapter;
         this.selector = selector;
+        this.saver = saver;
         try {
             StateGraph<LocationGraphState> state = new StateGraph<>(LocationGraphState.SCHEMA, LocationGraphState::new);
             state.addNode(SEARCH, AsyncNodeAction.node_async((NodeAction<LocationGraphState>) this::search));
@@ -96,6 +99,11 @@ public class LocationDetailWorkflow {
         } catch (GraphStateException exception) {
             throw new IllegalStateException("Unable to compile LOCATION_DETAIL workflow", exception);
         }
+    }
+
+    public LocationDetailWorkflow(LocationDetailPlanner planner, CampusToolAdapter adapter,
+                                  LocationCandidateSelector selector) {
+        this(planner, adapter, selector, new MemorySaver());
     }
 
     public WorkflowResult handle(UUID sessionId, ChatCaller caller, List<LlmGateway.ConversationMessage> history,

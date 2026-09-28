@@ -6,18 +6,16 @@ import org.junit.jupiter.api.Test;
 
 class ChatServicePromptTest {
     @Test
-    void separatesUiActionAndTextRouteOrchestration() {
+    void keepsGeneralPromptMinimalAndGrounded() {
         assertThat(ChatService.SYSTEM_PROMPT)
-                .contains("[ROUTE_BEHAVIOR]", "intent=NAVIGATE_ROUTE", "do not call findRoute")
-                .contains("intent=TEXT_ROUTE", "then findRoute")
-                .contains("backend creates", "actual Tool results")
-                .contains("never invent", "ambiguous", "PENDING_ROUTE_CONTINUATION", "never copy");
+                .contains("general conversation", "Dynamic campus facts", "do not guess")
+                .doesNotContain("searchCampus", "findRoute", "Tool", "ROUTE_BEHAVIOR");
     }
 
     @Test
-    void routeContractKeepsAllowedRolesAndIntentsExplicit() {
+    void generalPromptDoesNotExposeWorkflowOrchestration() {
         assertThat(ChatService.SYSTEM_PROMPT)
-                .contains("role=START", "role=END", "START/END", "NAVIGATE_ROUTE/TEXT_ROUTE")
-                .contains("BARRIERFREE", "six-call limit", "latest user");
+                .doesNotContain("START", "END", "NAVIGATE_ROUTE", "TEXT_ROUTE", "six-call limit")
+                .contains("private data", "internal identifiers");
     }
 }

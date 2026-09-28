@@ -56,6 +56,16 @@ public class ChatOrchestrator {
                 state.searchResolutionSnapshot(), state.routeExecution());
     }
 
+    /** General conversation path: no route planner and no campus capability execution. */
+    public ChatOrchestrationResult executeGeneral(String systemPrompt,
+                                                  List<LlmGateway.ConversationMessage> history,
+                                                  String userMessage) {
+        ResolvedLocationCollector state = new ResolvedLocationCollector();
+        LlmGateway.LlmResult result = llmGateway.generate(systemPrompt, history, userMessage, state);
+        return new ChatOrchestrationResult(result.reply(), result.completionStatus(),
+                state.snapshot(), state.searchResolutionSnapshot(), state.routeExecution());
+    }
+
     private ChatOrchestrationResult executeRoutePlan(RoutePlan plan, ResolvedLocationCollector state) {
         SearchCampusIntent intent = plan.intent() == RoutePlan.Intent.TEXT_ROUTE
                 ? SearchCampusIntent.TEXT_ROUTE : SearchCampusIntent.NAVIGATE_ROUTE;

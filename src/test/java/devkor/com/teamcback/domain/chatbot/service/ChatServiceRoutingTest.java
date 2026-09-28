@@ -27,6 +27,7 @@ class ChatServiceRoutingTest {
     @Mock ChatRateLimiter rateLimiter;
     @Mock PendingRouteStateService pendingRouteStateService;
     @Mock CrowdStatusWorkflow crowdStatusWorkflow;
+    @Mock MenuWorkflow menuWorkflow;
 
     private final UUID sessionId = UUID.randomUUID();
     private final ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
@@ -36,6 +37,8 @@ class ChatServiceRoutingTest {
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
         when(pendingRouteStateService.load(sessionId, caller)).thenReturn(Optional.empty());
         lenient().when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
+                .thenReturn(new ChatOrchestrationResult("general", List.of()));
+        lenient().when(chatOrchestrator.executeGeneral(anyString(), anyList(), anyString()))
                 .thenReturn(new ChatOrchestrationResult("general", List.of()));
     }
 
@@ -55,12 +58,16 @@ class ChatServiceRoutingTest {
     @Test
     void crowdPendingMenuMessageCancelsCrowdAndUsesGeneralPath() {
         when(crowdStatusWorkflow.hasPending(sessionId, caller)).thenReturn(true);
+        when(menuWorkflow.handle(any(), any(), anyList(), anyString()))
+                .thenReturn(new MenuWorkflow.WorkflowResult(true, "menu", false));
 
         newService().sendMessage(new ChatMessageReq(sessionId, "오늘 학식 뭐야", null), caller);
 
         verify(crowdStatusWorkflow).cancel(sessionId, caller);
         verify(crowdStatusWorkflow, never()).handle(any(), any(), anyList(), anyString());
-        verify(chatOrchestrator).execute(anyString(), anyList(), anyString());
+        verify(menuWorkflow).handle(any(), any(), anyList(), anyString());
+        verify(chatOrchestrator, never()).execute(anyString(), anyList(), anyString());
+        verify(chatOrchestrator, never()).executeGeneral(anyString(), anyList(), anyString());
     }
 
     @Test
@@ -99,11 +106,12 @@ class ChatServiceRoutingTest {
         newService().sendMessage(new ChatMessageReq(sessionId, "안녕", null), caller);
 
         verify(crowdStatusWorkflow, never()).handle(any(), any(), anyList(), anyString());
-        verify(chatOrchestrator).execute(anyString(), anyList(), anyString());
+        verify(chatOrchestrator).executeGeneral(anyString(), anyList(), anyString());
     }
 
     private ChatService newService() {
         return new ChatService(chatOrchestrator, memoryService, rateLimiter,
-                pendingRouteStateService, crowdStatusWorkflow, new ChatRequestRouter());
+                pendingRouteStateService, crowdStatusWorkflow, new ChatRequestRouter(),
+                null, null, null, menuWorkflow, null, null);
     }
 }

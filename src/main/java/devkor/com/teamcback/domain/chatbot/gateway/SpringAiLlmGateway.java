@@ -15,9 +15,6 @@ import devkor.com.teamcback.domain.chatbot.dto.MenuPlan;
 import devkor.com.teamcback.domain.chatbot.dto.FacilityPlan;
 import devkor.com.teamcback.domain.chatbot.dto.RoomCoursePlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
-import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
-import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
-import devkor.com.teamcback.domain.chatbot.tool.CampusChatbotTools;
 import devkor.com.teamcback.global.exception.exception.GlobalException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,11 +33,6 @@ import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.converter.BeanOutputConverter;
-import org.springframework.ai.chat.model.ToolContext;
-import org.springframework.ai.support.ToolCallbacks;
-import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.definition.ToolDefinition;
-import org.springframework.ai.tool.metadata.ToolMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,20 +47,22 @@ public class SpringAiLlmGateway implements LlmGateway {
     private final ChatClient chatClient;
     private final ChatbotProperties properties;
     private final ExecutorService chatbotLlmExecutor;
-    private final CampusChatbotTools campusChatbotTools;
-    private final ChatbotToolCallLimiter toolCallLimiter;
     /** Enables stack-frame diagnostics without ever logging prompt/tool payloads. */
     @Value("${chatbot.llm.diagnostics-enabled:false}")
     private boolean diagnosticsEnabled;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public SpringAiLlmGateway(ChatClient.Builder chatClientBuilder, ChatbotProperties properties,
-                              ExecutorService chatbotLlmExecutor, CampusChatbotTools campusChatbotTools,
-                              ChatbotToolCallLimiter toolCallLimiter) {
+                              ExecutorService chatbotLlmExecutor) {
         this.chatClient = chatClientBuilder.build();
         this.properties = properties;
         this.chatbotLlmExecutor = chatbotLlmExecutor;
-        this.campusChatbotTools = campusChatbotTools;
-        this.toolCallLimiter = toolCallLimiter;
+    }
+
+    @Deprecated
+    public SpringAiLlmGateway(ChatClient.Builder chatClientBuilder, ChatbotProperties properties,
+                              ExecutorService chatbotLlmExecutor, Object ignoredTools, Object ignoredLimiter) {
+        this(chatClientBuilder, properties, chatbotLlmExecutor);
     }
 
     @Override
@@ -305,11 +299,6 @@ public class SpringAiLlmGateway implements LlmGateway {
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
         } catch (ExecutionException exception) {
             response.cancel(true);
-            if (hasCause(exception, ToolCallLimitExceededException.class)) {
-                log.info("chatbot_llm outcome=TOOL_LIMIT provider={} model={}",
-                        properties.llm().provider(), properties.llm().model());
-                return new LlmResult(TOOL_LIMIT_FALLBACK);
-            }
             logFailure("TEMPORARILY_UNAVAILABLE", failureStage(exception), exception, false);
             throw new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE);
         }
@@ -318,93 +307,28 @@ public class SpringAiLlmGateway implements LlmGateway {
     private GatewayResult invoke(String systemPrompt, List<ConversationMessage> history, String userMessage,
                                  ResolvedLocationCollector collector) {
         long startedAt = System.nanoTime();
-        try (ChatbotToolCallLimiter.Scope scope = toolCallLimiter.open()) {
-            CampusChatbotTools requestTools = campusChatbotTools.forRequest(collector, scope);
-            try {
+        try {
                 List<Message> springMessages = toSpringMessages(history, userMessage);
                 logRequestMessageDiagnostics(springMessages);
                 ChatClient.ChatClientRequestSpec request = chatClient.prompt()
                         .system(systemPrompt)
                         .messages(springMessages);
-                ChatClient.CallResponseSpec callResponse = (diagnosticsEnabled
-                        ? request.toolCallbacks(diagnosticToolCallbacks(requestTools))
-                        : request.tools(requestTools)).call();
+                ChatClient.CallResponseSpec callResponse = request.call();
                 ChatClientResponse clientResponse = callResponse == null ? null : callResponse.chatClientResponse();
                 ChatResponse chatResponse = clientResponse == null ? null : clientResponse.chatResponse();
                 String content = extractContent(chatResponse);
                 if (content == null || content.isBlank()) {
-                    logEmptyCompletionDiagnostics(chatResponse, scope, collector);
+                    logEmptyCompletionDiagnostics(chatResponse);
                     throw new EmptyLlmCompletionException();
                 }
                 return new GatewayResult(new LlmGateway.LlmResult(content), "SUCCESS",
-                        elapsedMillis(startedAt), scope.callCount());
+                        elapsedMillis(startedAt), 0);
             } catch (RuntimeException exception) {
-                if (hasCause(exception, ToolCallLimitExceededException.class)) {
-                    return new GatewayResult(new LlmGateway.LlmResult(TOOL_LIMIT_FALLBACK),
-                            "TOOL_LIMIT", elapsedMillis(startedAt),
-                            scope.callCount());
-                }
-                String stage = collector.hasRecordedToolActivity() ? "POST_TOOL_EXECUTION" : "MODEL_TOOL_LOOP";
-                if (collector.hasRecordedToolActivity()) {
-                    logFailure("TOOL_PROGRESS_FAIL_SAFE", stage, exception, false);
-                    return new GatewayResult(new LlmGateway.LlmResult(null,
-                            LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION),
-                            "TOOL_PROGRESS_FAIL_SAFE", elapsedMillis(startedAt), scope.callCount());
-                }
-                throw new StagedLlmInvocationException(stage, exception);
-            }
+                throw new StagedLlmInvocationException("MODEL_COMPLETION", exception);
         }
     }
 
-    /**
-     * ToolCallbacks.from creates MethodToolCallback instances. Wrapping at the ToolCallback boundary logs the
-     * model-produced JSON before MethodToolCallback performs Jackson argument binding.
-     */
-    private List<ToolCallback> diagnosticToolCallbacks(CampusChatbotTools requestTools) {
-        return java.util.Arrays.stream(ToolCallbacks.from(requestTools))
-                .map(callback -> (ToolCallback) new DiagnosticToolCallback(callback))
-                .toList();
-    }
-
-    private final class DiagnosticToolCallback implements ToolCallback {
-        private final ToolCallback delegate;
-
-        private DiagnosticToolCallback(ToolCallback delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public ToolDefinition getToolDefinition() {
-            return delegate.getToolDefinition();
-        }
-
-        @Override
-        public ToolMetadata getToolMetadata() {
-            return delegate.getToolMetadata();
-        }
-
-        @Override
-        public String call(String toolInput) {
-            log.warn("chatbot_raw_tool_call toolName={} callbackType={} arguments={}",
-                    toolName(), delegate.getClass().getName(), toolInput);
-            return delegate.call(toolInput);
-        }
-
-        @Override
-        public String call(String toolInput, ToolContext toolContext) {
-            log.warn("chatbot_raw_tool_call toolName={} callbackType={} arguments={}",
-                    toolName(), delegate.getClass().getName(), toolInput);
-            return delegate.call(toolInput, toolContext);
-        }
-
-        private String toolName() {
-            ToolDefinition definition = delegate.getToolDefinition();
-            return definition == null ? "unknown" : definition.name();
-        }
-    }
-
-    private void logEmptyCompletionDiagnostics(ChatResponse response, ChatbotToolCallLimiter.Scope scope,
-                                               ResolvedLocationCollector collector) {
+    private void logEmptyCompletionDiagnostics(ChatResponse response) {
         if (!diagnosticsEnabled) {
             return;
         }
@@ -412,8 +336,7 @@ public class SpringAiLlmGateway implements LlmGateway {
             log.error("chatbot_llm empty_completion responseNull=true generationCount=0 "
                             + "toolCallCount=0 toolCallNames=[] toolCallsPresent=false "
                             + "textState=unavailable finishReasons=[] metadataClass=unavailable "
-                            + "toolCalls={} recordedToolActivity={}",
-                    scope.callCount(), collector.hasRecordedToolActivity());
+                            + "toolCalls=[] recordedToolActivity=false");
             return;
         }
 
@@ -451,11 +374,10 @@ public class SpringAiLlmGateway implements LlmGateway {
         log.error("chatbot_llm empty_completion responseNull=false generationCount={} outputCount={} "
                         + "assistantCount={} blankTextCount={} toolCallCount={} toolCallNames={} "
                         + "toolCallsPresent={} finishReasons={} responseMetadataClass={} "
-                        + "toolCalls={} recordedToolActivity={}",
+                        + "toolCalls=[] recordedToolActivity=false",
                 generations.size(), outputCount, assistantCount, blankTextCount, toolNames.size(), toolNames,
                 !toolNames.isEmpty(), finishReasons,
-                response.getMetadata() == null ? "unavailable" : response.getMetadata().getClass().getName(),
-                scope.callCount(), collector.hasRecordedToolActivity());
+                response.getMetadata() == null ? "unavailable" : response.getMetadata().getClass().getName());
     }
 
     /** Mirrors ChatClient.content() extraction without issuing a second ChatModel call. */

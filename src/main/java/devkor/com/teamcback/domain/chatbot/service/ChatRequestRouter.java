@@ -45,6 +45,9 @@ public class ChatRequestRouter {
         if (normalized.isBlank()) {
             return Intent.NONE;
         }
+        if (normalized.contains("route") || normalized.contains("분")) {
+            return Intent.ROUTE;
+        }
         if (containsAny(normalized, "길찾", "가는길", "경로", "어디로가")) {
             return Intent.ROUTE;
         }

@@ -74,7 +74,7 @@ class ChatControllerTest {
 
     @Test
     void generatesSessionIdAndReturnsGatewayReplyWithoutAction() throws Exception {
-        when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
+        when(chatOrchestrator.executeGeneral(anyString(), anyList(), anyString()))
                 .thenReturn(new ChatOrchestrationResult("hello", List.of()));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"hello\"}"))
@@ -97,7 +97,7 @@ class ChatControllerTest {
 
     @Test
     void hidesProviderFailureDetails() throws Exception {
-        when(chatOrchestrator.execute(anyString(), anyList(), anyString()))
+        when(chatOrchestrator.executeGeneral(anyString(), anyList(), anyString()))
                 .thenThrow(new GlobalException(CHATBOT_TEMPORARILY_UNAVAILABLE));
         mockMvc.perform(post("/api/chatbot/messages").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"hello\"}"))

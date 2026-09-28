@@ -32,7 +32,9 @@ import org.bsc.langgraph4j.action.AsyncNodeAction;
 import org.bsc.langgraph4j.action.AsyncEdgeAction;
 import org.bsc.langgraph4j.action.EdgeAction;
 import org.bsc.langgraph4j.action.NodeAction;
+import org.bsc.langgraph4j.checkpoint.BaseCheckpointSaver;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
+import devkor.com.teamcback.domain.chatbot.checkpoint.RedisCheckpointSaver;
 import org.bsc.langgraph4j.state.AgentState;
 import org.bsc.langgraph4j.state.Channel;
 import org.bsc.langgraph4j.state.Channels;
@@ -42,7 +44,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Backend-owned CROWD_STATUS proof of concept. It deliberately does not expose any campus tool to the model.
- * MemorySaver is intentionally used only for this POC; production persistence belongs in a dedicated saver.
+ * MemorySaver is used only by test-compatibility constructors; production wiring uses RedisCheckpointSaver.
  */
 @Component
 @ConditionalOnProperty(prefix = "chatbot", name = "enabled", havingValue = "true")
@@ -75,30 +77,30 @@ public class CrowdStatusWorkflow {
     private final CampusToolAdapter campusToolAdapter;
     private final CrowdTargetResolver targetResolver;
     private final CrowdCandidateSelector candidateSelector;
-    private final MemorySaver saver;
+    private final BaseCheckpointSaver saver;
     private final CompiledGraph<CrowdGraphState> graph;
 
     CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
                         CampusToolAdapter campusToolAdapter) {
-        this(planner, searchService, campusToolAdapter, null, null);
+        this(planner, searchService, campusToolAdapter, null, null, new MemorySaver());
     }
 
     public CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
                                CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver) {
-        this(planner, searchService, campusToolAdapter, targetResolver, null);
+        this(planner, searchService, campusToolAdapter, targetResolver, null, new MemorySaver());
     }
 
     @Autowired
     public CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
                                CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver,
-                               CrowdCandidateSelector candidateSelector) {
+                               CrowdCandidateSelector candidateSelector, BaseCheckpointSaver saver) {
         this.planner = planner;
         this.searchService = searchService;
         this.campusToolAdapter = campusToolAdapter;
         this.targetResolver = targetResolver;
         this.candidateSelector = candidateSelector;
+        this.saver = saver;
         try {
-            this.saver = new MemorySaver();
             StateGraph<CrowdGraphState> stateGraph = new StateGraph<>(CrowdGraphState.SCHEMA,
                     CrowdGraphState::new);
             stateGraph.addNode(RESOLVE, AsyncNodeAction.node_async((NodeAction<CrowdGraphState>) this::resolveLocation));
@@ -129,9 +131,15 @@ public class CrowdStatusWorkflow {
         }
     }
 
+    CrowdStatusWorkflow(CrowdStatusPlanner planner, ChatbotCampusSearchService searchService,
+                        CampusToolAdapter campusToolAdapter, CrowdTargetResolver targetResolver,
+                        CrowdCandidateSelector candidateSelector) {
+        this(planner, searchService, campusToolAdapter, targetResolver, candidateSelector, new MemorySaver());
+    }
+
     public CrowdWorkflowResult handle(UUID sessionId, ChatCaller caller,
                                        List<LlmGateway.ConversationMessage> history, String userMessage) {
-        RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
+        RunnableConfig config = RunnableConfig.builder().threadId("crowd:" + sessionId).build();
         var checkpoint = graph.lastStateOf(config);
         if (checkpoint.isPresent()) {
             CrowdGraphState state = checkpoint.get().state();
@@ -157,7 +165,7 @@ public class CrowdStatusWorkflow {
 
     /** Returns whether this session currently owns an interrupted Crowd interaction. */
     public boolean hasPending(UUID sessionId, ChatCaller caller) {
-        RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
+        RunnableConfig config = RunnableConfig.builder().threadId("crowd:" + sessionId).build();
         var checkpoint = graph.lastStateOf(config);
         if (checkpoint.isEmpty()) {
             return false;
@@ -168,7 +176,7 @@ public class CrowdStatusWorkflow {
 
     /** Releases a superseded Crowd interaction without changing its graph node structure. */
     public void cancel(UUID sessionId, ChatCaller caller) {
-        RunnableConfig config = RunnableConfig.builder().threadId(sessionId.toString()).build();
+        RunnableConfig config = RunnableConfig.builder().threadId("crowd:" + sessionId).build();
         var checkpoint = graph.lastStateOf(config);
         if (checkpoint.isEmpty()) {
             return;

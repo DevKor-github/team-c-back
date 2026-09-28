@@ -68,7 +68,7 @@ class ChatServiceActionTest {
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
 
-        var response = service.sendMessage(new ChatMessageReq(sessionId, "몇 분 걸려?", null), caller);
+        var response = service.sendMessage(new ChatMessageReq(sessionId, "text route", null), caller);
 
         assertThat(response.action()).isNull();
         assertThat(response.reply()).isEqualTo("text route");

@@ -147,7 +147,7 @@ class SpringAiLlmGatewayTest {
     }
 
     @Test
-    void sendsHistoryAsOrderedRoleMessagesAndRegistersRequestLocalTools() {
+    void sendsHistoryAsOrderedRoleMessagesWithoutCampusTools() {
         ChatClient chatClient = mock(ChatClient.class);
         ChatClient.Builder builder = mock(ChatClient.Builder.class);
         ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
@@ -159,7 +159,6 @@ class SpringAiLlmGatewayTest {
         when(chatClient.prompt()).thenReturn(requestSpec);
         when(requestSpec.system("system")).thenReturn(requestSpec);
         when(requestSpec.messages(anyList())).thenReturn(requestSpec);
-        when(requestSpec.tools(requestTools)).thenReturn(requestSpec);
         when(requestSpec.call()).thenReturn(responseSpec);
         when(responseSpec.chatClientResponse()).thenReturn(new ChatClientResponse(
                 new ChatResponse(List.of(new Generation(new AssistantMessage("done")))), java.util.Map.of()));
@@ -179,52 +178,31 @@ class SpringAiLlmGatewayTest {
         assertThat(messages.getValue().get(0)).isInstanceOf(UserMessage.class);
         assertThat(messages.getValue().get(1)).isInstanceOf(AssistantMessage.class);
         assertThat(messages.getValue().get(2)).isInstanceOf(UserMessage.class);
-        verify(requestSpec).tools(requestTools);
+        org.mockito.Mockito.verify(requestSpec, org.mockito.Mockito.never()).tools(any());
     }
 
     @Test
-    void preservesRequestLocalToolStateWhenFinalModelFollowUpFails() {
+    void generalGenerationCannotAccessCampusTools() {
         ChatClient chatClient = mock(ChatClient.class);
         ChatClient.Builder builder = mock(ChatClient.Builder.class);
         ChatClient.ChatClientRequestSpec requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
         ChatClient.CallResponseSpec responseSpec = mock(ChatClient.CallResponseSpec.class);
-        CampusToolAdapter adapter = mock(CampusToolAdapter.class);
-        ChatbotProperties properties = properties();
-        ChatbotToolCallLimiter limiter = new ChatbotToolCallLimiter(properties);
-        CampusChatbotTools baseTools = new CampusChatbotTools(adapter, limiter);
-        AtomicReference<CampusChatbotTools> requestTools = new AtomicReference<>();
-        SearchCampusToolRequest startRequest = new SearchCampusToolRequest("start", 1,
-                SearchCampusRole.START, SearchCampusIntent.NAVIGATE_ROUTE, List.of());
-        SearchCampusToolRequest endRequest = new SearchCampusToolRequest("end", 1,
-                SearchCampusRole.END, SearchCampusIntent.NAVIGATE_ROUTE, List.of());
         when(builder.build()).thenReturn(chatClient);
         when(chatClient.prompt()).thenReturn(requestSpec);
         when(requestSpec.system("system")).thenReturn(requestSpec);
         when(requestSpec.messages(anyList())).thenReturn(requestSpec);
-        when(requestSpec.tools(any(CampusChatbotTools.class))).thenAnswer(invocation -> {
-            requestTools.set(invocation.getArgument(0));
-            return requestSpec;
-        });
         when(requestSpec.call()).thenReturn(responseSpec);
-        when(adapter.searchCampus(startRequest)).thenReturn(resolved(11L, "start"));
-        when(adapter.searchCampus(endRequest)).thenReturn(resolved(22L, "end"));
-        when(responseSpec.chatClientResponse()).thenAnswer(invocation -> {
-            requestTools.get().searchCampus(startRequest);
-            requestTools.get().searchCampus(endRequest);
-            return new ChatClientResponse(
-                    new ChatResponse(List.of(new Generation(new AssistantMessage("")))), java.util.Map.of());
-        });
-        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties, executor, baseTools, limiter);
+        when(responseSpec.chatClientResponse()).thenReturn(new ChatClientResponse(
+                new ChatResponse(List.of(new Generation(new AssistantMessage("done")))), java.util.Map.of()));
+        SpringAiLlmGateway gateway = new SpringAiLlmGateway(builder, properties(), executor,
+                mock(CampusChatbotTools.class), new ChatbotToolCallLimiter(properties()));
 
         ResolvedLocationCollector executionState = new ResolvedLocationCollector();
-        LlmGateway.LlmResult result = gateway.generate("system", List.of(), "route request", executionState);
+        LlmGateway.LlmResult result = gateway.generate("system", List.of(), "hello", executionState);
 
-        assertThat(result.reply()).isNull();
-        assertThat(result.completionStatus())
-                .isEqualTo(LlmGateway.CompletionStatus.FAILED_AFTER_TOOL_EXECUTION);
-        assertThat(executionState.snapshot()).hasSize(2);
-        assertThat(executionState.snapshot()).extracting(location -> location.id())
-                .containsExactly(11L, 22L);
+        assertThat(result.reply()).isEqualTo("done");
+        assertThat(executionState.snapshot()).isEmpty();
+        org.mockito.Mockito.verify(requestSpec, org.mockito.Mockito.never()).tools(any());
     }
 
     private SearchCampusToolResult resolved(long id, String name) {

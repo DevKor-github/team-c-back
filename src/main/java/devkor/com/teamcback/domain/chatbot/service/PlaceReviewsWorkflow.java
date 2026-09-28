@@ -31,7 +31,9 @@ import org.bsc.langgraph4j.action.AsyncEdgeAction;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
 import org.bsc.langgraph4j.action.EdgeAction;
 import org.bsc.langgraph4j.action.NodeAction;
+import org.bsc.langgraph4j.checkpoint.BaseCheckpointSaver;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
+import devkor.com.teamcback.domain.chatbot.checkpoint.RedisCheckpointSaver;
 import org.bsc.langgraph4j.state.AgentState;
 import org.bsc.langgraph4j.state.Channel;
 import org.bsc.langgraph4j.state.Channels;
@@ -50,13 +52,13 @@ public class PlaceReviewsWorkflow {
     private final PlaceReviewsPlanner planner;
     private final CampusToolAdapter adapter;
     private final LocationCandidateSelector selector;
-    private final MemorySaver saver = new MemorySaver();
+    private final BaseCheckpointSaver saver;
     private final CompiledGraph<ReviewGraphState> graph;
 
     @Autowired
     public PlaceReviewsWorkflow(PlaceReviewsPlanner planner, CampusToolAdapter adapter,
-                                LocationCandidateSelector selector) {
-        this.planner=planner; this.adapter=adapter; this.selector=selector;
+                                LocationCandidateSelector selector, BaseCheckpointSaver saver) {
+        this.planner=planner; this.adapter=adapter; this.selector=selector; this.saver=saver;
         try {
             StateGraph<ReviewGraphState> s = new StateGraph<>(ReviewGraphState.SCHEMA, ReviewGraphState::new);
             s.addNode(SEARCH, AsyncNodeAction.node_async((NodeAction<ReviewGraphState>) this::search));
@@ -74,6 +76,11 @@ public class PlaceReviewsWorkflow {
             s.addEdge(LOAD, FORMAT); s.addEdge(FORMAT, END);
             graph=s.compile(CompileConfig.builder().checkpointSaver(saver).interruptAfter(ASK).releaseThread(true).build());
         } catch (GraphStateException e) { throw new IllegalStateException("Unable to compile REVIEW workflow", e); }
+    }
+
+    public PlaceReviewsWorkflow(PlaceReviewsPlanner planner, CampusToolAdapter adapter,
+                                LocationCandidateSelector selector) {
+        this(planner, adapter, selector, new MemorySaver());
     }
 
     public WorkflowResult handle(UUID sessionId, ChatCaller caller, List<LlmGateway.ConversationMessage> history,

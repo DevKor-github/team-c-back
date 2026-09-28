@@ -68,17 +68,20 @@ public class ChatService {
     private final PendingRouteStateService pendingRouteStateService;
     private final CrowdStatusWorkflow crowdStatusWorkflow;
     private final ChatRequestRouter requestRouter;
+    private final LocationDetailWorkflow locationDetailWorkflow;
+    private final PlaceReviewsWorkflow placeReviewsWorkflow;
+    private final CampusStatusWorkflow campusStatusWorkflow;
 
     /** Compatibility constructor for focused unit tests that do not exercise pending state. */
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter) {
-        this(chatOrchestrator, memoryService, rateLimiter, null, null, new ChatRequestRouter());
+        this(chatOrchestrator, memoryService, rateLimiter, null, null, new ChatRequestRouter(), null, null, null);
     }
 
     /** Compatibility constructor for tests that provide pending-route state only. */
     public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
                        ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService) {
-        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, null, new ChatRequestRouter());
+        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, null, new ChatRequestRouter(), null, null, null);
     }
 
     /** Compatibility constructor for focused tests that provide the existing Crowd workflow. */
@@ -86,7 +89,7 @@ public class ChatService {
                        ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService,
                        CrowdStatusWorkflow crowdStatusWorkflow) {
         this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService,
-                crowdStatusWorkflow, new ChatRequestRouter());
+                crowdStatusWorkflow, new ChatRequestRouter(), null, null, null);
     }
 
     @Autowired
@@ -94,13 +97,27 @@ public class ChatService {
                        ChatRateLimiter rateLimiter,
                        PendingRouteStateService pendingRouteStateService,
                        CrowdStatusWorkflow crowdStatusWorkflow,
-                       ChatRequestRouter requestRouter) {
+                       ChatRequestRouter requestRouter,
+                       LocationDetailWorkflow locationDetailWorkflow,
+                       PlaceReviewsWorkflow placeReviewsWorkflow,
+                       CampusStatusWorkflow campusStatusWorkflow) {
         this.chatOrchestrator = chatOrchestrator;
         this.memoryService = memoryService;
         this.rateLimiter = rateLimiter;
         this.pendingRouteStateService = pendingRouteStateService;
         this.crowdStatusWorkflow = crowdStatusWorkflow;
         this.requestRouter = requestRouter;
+        this.locationDetailWorkflow = locationDetailWorkflow;
+        this.placeReviewsWorkflow = placeReviewsWorkflow;
+        this.campusStatusWorkflow = campusStatusWorkflow;
+    }
+
+    /** Compatibility constructor for callers that only wire the PR1 routing boundary. */
+    public ChatService(ChatOrchestrator chatOrchestrator, ChatSessionMemoryService memoryService,
+                       ChatRateLimiter rateLimiter, PendingRouteStateService pendingRouteStateService,
+                       CrowdStatusWorkflow crowdStatusWorkflow, ChatRequestRouter requestRouter) {
+        this(chatOrchestrator, memoryService, rateLimiter, pendingRouteStateService, crowdStatusWorkflow,
+                requestRouter, null, null, null);
     }
 
     public ChatMessageRes sendMessage(ChatMessageReq request, ChatCaller caller) {
@@ -125,6 +142,25 @@ public class ChatService {
                 memoryService.save(sessionId, caller, request.message(), reply);
                 return new ChatMessageRes(sessionId, reply, null);
             }
+        }
+        if (locationDetailWorkflow != null && routing.workflowType() == ChatRequestRouter.WorkflowType.LOCATION_DETAIL
+                && (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
+                || routing.route() == ChatRequestRouter.Route.NEW_INTENT)) {
+            LocationDetailWorkflow.WorkflowResult location = locationDetailWorkflow.handle(
+                    sessionId, caller, toGatewayHistory(history), request.message());
+            if (location.handled()) return saveWorkflowReply(sessionId, caller, request.message(), location.reply());
+        }
+        if (placeReviewsWorkflow != null && routing.workflowType() == ChatRequestRouter.WorkflowType.REVIEW
+                && (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
+                || routing.route() == ChatRequestRouter.Route.NEW_INTENT)) {
+            PlaceReviewsWorkflow.WorkflowResult review = placeReviewsWorkflow.handle(
+                    sessionId, caller, toGatewayHistory(history), request.message());
+            if (review.handled()) return saveWorkflowReply(sessionId, caller, request.message(), review.reply());
+        }
+        if (campusStatusWorkflow != null && routing.workflowType() == ChatRequestRouter.WorkflowType.CAMPUS_STATUS
+                && routing.route() == ChatRequestRouter.Route.NEW_INTENT) {
+            CampusStatusWorkflow.WorkflowResult status = campusStatusWorkflow.handle(sessionId, caller, request.message());
+            return saveWorkflowReply(sessionId, caller, request.message(), status.reply());
         }
         if (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
                 && routing.workflowType() == ChatRequestRouter.WorkflowType.ROUTE) {
@@ -159,6 +195,12 @@ public class ChatService {
         if (crowdStatusWorkflow != null && crowdStatusWorkflow.hasPending(sessionId, caller)) {
             return ChatRequestRouter.PendingWorkflow.CROWD;
         }
+        if (locationDetailWorkflow != null && locationDetailWorkflow.hasPending(sessionId, caller)) {
+            return ChatRequestRouter.PendingWorkflow.LOCATION_DETAIL;
+        }
+        if (placeReviewsWorkflow != null && placeReviewsWorkflow.hasPending(sessionId, caller)) {
+            return ChatRequestRouter.PendingWorkflow.REVIEW;
+        }
         return pendingRoute == null
                 ? ChatRequestRouter.PendingWorkflow.NONE : ChatRequestRouter.PendingWorkflow.ROUTE;
     }
@@ -168,6 +210,12 @@ public class ChatService {
         if (crowdStatusWorkflow != null && crowdStatusWorkflow.hasPending(sessionId, caller)) {
             crowdStatusWorkflow.cancel(sessionId, caller);
         }
+        if (locationDetailWorkflow != null && locationDetailWorkflow.hasPending(sessionId, caller)) {
+            locationDetailWorkflow.cancel(sessionId, caller);
+        }
+        if (placeReviewsWorkflow != null && placeReviewsWorkflow.hasPending(sessionId, caller)) {
+            placeReviewsWorkflow.cancel(sessionId, caller);
+        }
         if (pendingRoute != null) {
             deletePending(sessionId, caller);
         }
@@ -176,6 +224,12 @@ public class ChatService {
     private PendingRouteState loadPending(UUID sessionId, ChatCaller caller) {
         return pendingRouteStateService == null ? null
                 : pendingRouteStateService.load(sessionId, caller).orElse(null);
+    }
+
+    private ChatMessageRes saveWorkflowReply(UUID sessionId, ChatCaller caller, String userMessage, String reply) {
+        String safeReply = reply == null || reply.isBlank() ? "요청을 처리하지 못했어요." : reply;
+        memoryService.save(sessionId, caller, userMessage, safeReply);
+        return new ChatMessageRes(sessionId, safeReply, null);
     }
 
     private void deletePending(UUID sessionId, ChatCaller caller) {

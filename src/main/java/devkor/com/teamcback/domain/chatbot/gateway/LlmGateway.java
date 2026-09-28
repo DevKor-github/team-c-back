@@ -4,6 +4,10 @@ import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateSelection;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateView;
+import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateSelection;
+import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateView;
+import devkor.com.teamcback.domain.chatbot.dto.LocationDetailPlan;
+import devkor.com.teamcback.domain.chatbot.dto.PlaceReviewsPlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import java.util.List;
 
@@ -22,6 +26,20 @@ public interface LlmGateway {
     /** Structured route interpretation; provider implementations must not resolve IDs or execute routes. */
     default RoutePlan planRoute(String systemPrompt, List<ConversationMessage> history, String userMessage) {
         return RoutePlan.notRoute();
+    }
+    default LocationDetailPlan planLocationDetail(String systemPrompt, List<ConversationMessage> history,
+                                                   String userMessage) {
+        return LocationDetailPlan.other();
+    }
+    default PlaceReviewsPlan planPlaceReviews(String systemPrompt, List<ConversationMessage> history,
+                                               String userMessage) {
+        return PlaceReviewsPlan.other();
+    }
+    default LocationCandidateSelection selectLocationCandidate(String systemPrompt,
+                                                                 List<ConversationMessage> history,
+                                                                 String userMessage,
+                                                                 List<LocationCandidateView> candidates) {
+        return LocationCandidateSelection.none();
     }
 
     LlmResult generate(String systemPrompt, List<ConversationMessage> history, String userMessage,

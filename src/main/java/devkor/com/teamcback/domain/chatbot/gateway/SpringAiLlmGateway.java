@@ -7,6 +7,10 @@ import devkor.com.teamcback.domain.chatbot.dto.RoutePlan;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdStatusPlan;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateSelection;
 import devkor.com.teamcback.domain.chatbot.dto.CrowdCandidateView;
+import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateSelection;
+import devkor.com.teamcback.domain.chatbot.dto.LocationCandidateView;
+import devkor.com.teamcback.domain.chatbot.dto.LocationDetailPlan;
+import devkor.com.teamcback.domain.chatbot.dto.PlaceReviewsPlan;
 import devkor.com.teamcback.domain.chatbot.service.ResolvedLocationCollector;
 import devkor.com.teamcback.domain.chatbot.service.ChatbotToolCallLimiter;
 import devkor.com.teamcback.domain.chatbot.service.ToolCallLimitExceededException;
@@ -182,6 +186,64 @@ public class SpringAiLlmGateway implements LlmGateway {
                 .call();
         RoutePlan plan = response == null ? null : response.entity(converter);
         return plan == null ? RoutePlan.notRoute() : plan;
+    }
+
+    @Override
+    public LocationDetailPlan planLocationDetail(String systemPrompt, List<ConversationMessage> history,
+                                                  String userMessage) {
+        return structured(() -> {
+            BeanOutputConverter<LocationDetailPlan> converter = new BeanOutputConverter<>(LocationDetailPlan.class);
+            String prompt = "Determine whether this is a campus location detail/operating-hours request. "
+                    + "Do not call tools or invent IDs. Preserve only the natural-language location phrase.\n"
+                    + (systemPrompt == null ? "" : systemPrompt) + "\n" + converter.getFormat();
+            var response = chatClient.prompt().system(prompt).messages(toSpringMessages(history, userMessage)).call();
+            LocationDetailPlan plan = response == null ? null : response.entity(converter);
+            return plan == null ? LocationDetailPlan.other() : plan;
+        }, LocationDetailPlan.other());
+    }
+
+    @Override
+    public PlaceReviewsPlan planPlaceReviews(String systemPrompt, List<ConversationMessage> history,
+                                             String userMessage) {
+        return structured(() -> {
+            BeanOutputConverter<PlaceReviewsPlan> converter = new BeanOutputConverter<>(PlaceReviewsPlan.class);
+            String prompt = "Determine whether this is a campus place review request. Do not call tools or invent IDs. "
+                    + "Preserve only the natural-language place phrase.\n"
+                    + (systemPrompt == null ? "" : systemPrompt) + "\n" + converter.getFormat();
+            var response = chatClient.prompt().system(prompt).messages(toSpringMessages(history, userMessage)).call();
+            PlaceReviewsPlan plan = response == null ? null : response.entity(converter);
+            return plan == null ? PlaceReviewsPlan.other() : plan;
+        }, PlaceReviewsPlan.other());
+    }
+
+    @Override
+    public LocationCandidateSelection selectLocationCandidate(String systemPrompt,
+                                                                List<ConversationMessage> history,
+                                                                String userMessage,
+                                                                List<LocationCandidateView> candidates) {
+        return structured(() -> {
+            BeanOutputConverter<LocationCandidateSelection> converter =
+                    new BeanOutputConverter<>(LocationCandidateSelection.class);
+            var response = chatClient.prompt().system(systemPrompt + "\n" + converter.getFormat())
+                    .messages(toSpringMessages(history, userMessage)).call();
+            LocationCandidateSelection selection = response == null ? null : response.entity(converter);
+            return selection == null ? LocationCandidateSelection.none() : selection;
+        }, LocationCandidateSelection.none());
+    }
+
+    private <T> T structured(java.util.concurrent.Callable<T> callable, T fallback) {
+        Future<T> response = chatbotLlmExecutor.submit(callable);
+        try {
+            T value = response.get(properties.llm().timeout().toMillis(), TimeUnit.MILLISECONDS);
+            return value == null ? fallback : value;
+        } catch (InterruptedException exception) {
+            response.cancel(true);
+            Thread.currentThread().interrupt();
+            return fallback;
+        } catch (ExecutionException | TimeoutException exception) {
+            response.cancel(true);
+            return fallback;
+        }
     }
 
     @Override

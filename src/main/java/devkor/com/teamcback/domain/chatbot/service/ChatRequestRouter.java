@@ -32,7 +32,9 @@ public class ChatRequestRouter {
 
     private boolean matchesPending(PendingWorkflow pendingWorkflow, Intent intent) {
         return (pendingWorkflow == PendingWorkflow.CROWD && intent == Intent.CROWD)
-                || (pendingWorkflow == PendingWorkflow.ROUTE && intent == Intent.ROUTE);
+                || (pendingWorkflow == PendingWorkflow.ROUTE && intent == Intent.ROUTE)
+                || (pendingWorkflow == PendingWorkflow.LOCATION_DETAIL && intent == Intent.LOCATION_DETAIL)
+                || (pendingWorkflow == PendingWorkflow.REVIEW && intent == Intent.REVIEW);
     }
 
     private Intent detectObviousIntent(String message) {
@@ -61,7 +63,7 @@ public class ChatRequestRouter {
         if (containsAny(normalized, "방학", "학기", "고연전")) {
             return Intent.CAMPUS_STATUS;
         }
-        if (containsAny(normalized, "어디야", "어디있", "열려", "운영시간")) {
+        if (containsAny(normalized, "어디야", "어디있", "열려", "운영시간", "몇시", "닫", "정보")) {
             return Intent.LOCATION_DETAIL;
         }
         return Intent.NONE;
@@ -88,10 +90,18 @@ public class ChatRequestRouter {
     public enum PendingWorkflow {
         NONE,
         ROUTE,
-        CROWD;
+        CROWD,
+        LOCATION_DETAIL,
+        REVIEW;
 
         private WorkflowType toWorkflowType() {
-            return this == CROWD ? WorkflowType.CROWD : WorkflowType.ROUTE;
+            return switch (this) {
+                case CROWD -> WorkflowType.CROWD;
+                case LOCATION_DETAIL -> WorkflowType.LOCATION_DETAIL;
+                case REVIEW -> WorkflowType.REVIEW;
+                case ROUTE -> WorkflowType.ROUTE;
+                case NONE -> WorkflowType.GENERAL_CHAT;
+            };
         }
     }
 

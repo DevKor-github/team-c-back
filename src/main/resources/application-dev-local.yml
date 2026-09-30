@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # dev DB 스키마 절대 수정하지 않음
+      ddl-auto: none
+    show-sql: true
+
+  sql:
+    init:
+      # schema.sql / data.sql 실행 금지
+      mode: never
+
+# 챗봇은 실제 Vertex 사용
+chatbot:
+  enabled: true
+  llm:
+    diagnostics-enabled: true
+
+# 혹시 공통 설정에서 켜질 가능성까지 명시적으로 차단
+push:
+  event:
+    crowd-enabled: false
+    report-enabled: false
+    character-enabled: false
+    survey-enabled: false
+
+  worker:
+    enabled: false
+
+  receipt-worker:
+    enabled: false
+
+  recovery-worker:
+    enabled: false

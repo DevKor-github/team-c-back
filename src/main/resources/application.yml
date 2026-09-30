@@ -1,4 +1,16 @@
 spring:
+  ai:
+    model:
+      chat: vertexai
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GOOGLE_CLOUD_PROJECT}
+          location: ${GOOGLE_CLOUD_LOCATION:us-central1}
+          chat:
+            options:
+              model: ${chatbot.llm.model}
+              max-output-tokens: ${chatbot.llm.max-output-tokens}
   cache:
     type: redis
   datasource:
@@ -157,6 +169,36 @@ management:
 
 staff:
   emails: leeyejin113@gmail.com,pingdoll3110@naver.com,ku.kodaero@gmail.com
+
+chatbot:
+  enabled: ${CHATBOT_ENABLED:true}
+  llm:
+    provider: ${CHATBOT_LLM_PROVIDER:google}
+    model: ${CHATBOT_LLM_MODEL:gemini-2.5-flash-lite}
+    max-output-tokens: ${CHATBOT_MAX_OUTPUT_TOKENS:500}
+    timeout-seconds: ${CHATBOT_TIMEOUT_SECONDS:20}
+    diagnostics-enabled: ${CHATBOT_LLM_DIAGNOSTICS_ENABLED:false}
+  agent:
+    max-tool-calls-per-message: ${CHATBOT_MAX_TOOL_CALLS:6}
+    history-turns: ${CHATBOT_HISTORY_TURNS:5}
+    session-ttl-minutes: ${CHATBOT_SESSION_TTL_MINUTES:60}
+    pending-route-ttl-minutes: ${CHATBOT_PENDING_ROUTE_TTL_MINUTES:15}
+  tools:
+    search:
+      default-limit: ${CHATBOT_SEARCH_DEFAULT_LIMIT:5}
+      max-limit: ${CHATBOT_SEARCH_MAX_LIMIT:10}
+    facilities:
+      default-limit: ${CHATBOT_FACILITIES_DEFAULT_LIMIT:10}
+      max-limit: ${CHATBOT_FACILITIES_MAX_LIMIT:20}
+    menu-max-days: ${CHATBOT_MENU_MAX_DAYS:7}
+    reviews:
+      default-limit: ${CHATBOT_REVIEWS_DEFAULT_LIMIT:5}
+      max-limit: ${CHATBOT_REVIEWS_MAX_LIMIT:10}
+  rate-limit:
+    authenticated-daily-limit: ${CHATBOT_AUTHENTICATED_DAILY_LIMIT:30}
+    anonymous-daily-limit: ${CHATBOT_ANONYMOUS_DAILY_LIMIT:10}
+    burst-per-minute: ${CHATBOT_BURST_PER_MINUTE:5}
+    daily-reset-zone: ${CHATBOT_DAILY_RESET_ZONE:Asia/Seoul}
 
 push:
   # Opt in only after the coordinated data migration. Local workers stay disabled.

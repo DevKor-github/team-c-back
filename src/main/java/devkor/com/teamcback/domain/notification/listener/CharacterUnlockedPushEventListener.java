@@ -28,6 +28,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class CharacterUnlockedPushEventListener {
 
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
     private static final Long SYSTEM_CREATED_BY = 0L;
 
     private final PushInstallationRepository pushInstallationRepository;
@@ -35,11 +36,13 @@ public class CharacterUnlockedPushEventListener {
     private final PushEventFlagService pushEventFlagService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, condition = "@environment.getProperty('push.storage', 'mysql') != 'neon'")
     public void handle(CharacterUnlockedEvent event) {
         if (!pushEventFlagService.isEnabled(PushEventType.CHARACTER)) {
             return;
         }
+
+        if ("neon".equals(storage) && !pushEventFlagService.isEligible(event.userId())) return;
 
         for (AppVariant targetAppVariant : targetAppVariants()) {
             try {
@@ -70,6 +73,7 @@ public class CharacterUnlockedPushEventListener {
                         SYSTEM_CREATED_BY
                 ));
             } catch (Exception e) {
+                if ("neon".equals(storage)) throw new IllegalStateException("Push event delivery failed", e);
                 log.warn(
                         "character unlock push failed: userId={}, characterId={}, userCharacterId={}, appVariant={}, error={}",
                         event.userId(),

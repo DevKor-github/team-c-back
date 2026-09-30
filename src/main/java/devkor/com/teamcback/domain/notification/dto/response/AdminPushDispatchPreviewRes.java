@@ -6,6 +6,7 @@ import java.util.List;
 public record AdminPushDispatchPreviewRes(
         int recipientCount,
         List<AdminPushInstallationRes> recipients,
-        PushPayload payload
+        PushPayload payload,
+        boolean adminOnly
 ) {
 }

@@ -32,6 +32,28 @@ class PushTargetResolverTest {
     }
 
     @Test
+    void adminScopeKeepsOnlyAdminOwnedInstallations() {
+        var admin = new PushInstallation(1L, "admin", "ExponentPushToken[admin]", AppVariant.PRODUCTION);
+        var user = new PushInstallation(2L, "user", "ExponentPushToken[user]", AppVariant.PRODUCTION);
+        when(pushInstallationRepository.findAdminUserIds(List.of(1L, 2L))).thenReturn(java.util.Set.of(1L));
+        assertThat(resolver.restrictToAdmins(List.of(admin, user), true)).containsExactly(admin);
+    }
+
+    @Test
+    void adminScopeWithNoAdminsHasNoRecipients() {
+        var user = new PushInstallation(2L, "user", "ExponentPushToken[user]", AppVariant.PRODUCTION);
+        when(pushInstallationRepository.findAdminUserIds(List.of(2L))).thenReturn(java.util.Set.of());
+        assertThat(resolver.restrictToAdmins(List.of(user), true)).isEmpty();
+    }
+
+    @Test
+    void productionScopeKeepsRegularUsersWithoutRoleLookup() {
+        var user = new PushInstallation(2L, "user", "ExponentPushToken[user]", AppVariant.PRODUCTION);
+        assertThat(resolver.restrictToAdmins(List.of(user), false)).containsExactly(user);
+        org.mockito.Mockito.verifyNoInteractions(pushInstallationRepository);
+    }
+
+    @Test
     void allTargetResolvesDistinctActiveProductionInstallations() {
         PushInstallation first = new PushInstallation(1L, "install-1", "ExponentPushToken[first]", AppVariant.PRODUCTION);
         PushInstallation duplicate = new PushInstallation(2L, "install-1", "ExponentPushToken[duplicate]", AppVariant.PRODUCTION);

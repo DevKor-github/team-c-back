@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@devkor.com.teamcback.domain.notification.persistence.PushStore
 @Entity
 @Table(
         name = "tb_push_message",

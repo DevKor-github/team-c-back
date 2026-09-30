@@ -30,7 +30,7 @@ public class PushMessageRecoveryService {
     private final PushRecoveryWorkerProperties pushRecoveryWorkerProperties;
     private final Clock clock;
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public int recoverStaleSendingMessages() {
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime staleBefore = now.minusMinutes(pushRecoveryWorkerProperties.staleThresholdMinutes());

@@ -39,7 +39,7 @@ public class PushReceiptClaimService {
     private final PushReceiptWorkerProperties pushReceiptWorkerProperties;
     private final Clock clock;
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public List<PushReceiptItem> claimDueReceipts() {
         LocalDateTime now = LocalDateTime.now(clock);
         List<PushMessage> messages = pushMessageRepository.findDueReceiptPendingForUpdateSkipLocked(
@@ -61,7 +61,7 @@ public class PushReceiptClaimService {
         return receiptItems;
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void recordReceipts(
             List<PushReceiptItem> items,
             Map<String, ExpoPushReceipt> receiptMap
@@ -104,7 +104,7 @@ public class PushReceiptClaimService {
         refreshDispatchStatuses(dispatchIds, now);
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public void recordClientError(
             List<PushReceiptItem> items,
             boolean retryable,

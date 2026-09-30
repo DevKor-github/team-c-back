@@ -83,7 +83,7 @@ class SurveyPushScheduleWorkerTest {
     void dueStartedScheduleEnqueuesAllProductionActualGeneralAndCompletes() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.STARTED, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
 
@@ -108,11 +108,11 @@ class SurveyPushScheduleWorkerTest {
     void dueReminderScheduleEnqueuesUserTarget() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-18T10:00:00", 100)));
         when(pushInstallationRepository.existsByUserIdAndAppVariantAndActiveTrue(7L, AppVariant.PRODUCTION)).thenReturn(true);
 
@@ -130,7 +130,7 @@ class SurveyPushScheduleWorkerTest {
     void noActiveTargetMarksSkippedWithProcessedAt() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(false);
 
@@ -145,7 +145,7 @@ class SurveyPushScheduleWorkerTest {
     void pushDispatchInvalidInputNotCausedByNoTargetKeepsPending() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
         when(pushDispatchService.enqueue(any())).thenThrow(new GlobalException(ResultCode.INVALID_INPUT));
@@ -161,7 +161,7 @@ class SurveyPushScheduleWorkerTest {
     void pushDispatchGlobalExceptionKeepsPending() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
         when(pushDispatchService.enqueue(any())).thenThrow(new GlobalException(ResultCode.UNSUPPORTED_REQUEST));
@@ -177,7 +177,7 @@ class SurveyPushScheduleWorkerTest {
     void pushDispatchRuntimeExceptionKeepsPending() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
         when(pushDispatchService.enqueue(any())).thenThrow(new RuntimeException("boom"));
@@ -193,11 +193,11 @@ class SurveyPushScheduleWorkerTest {
     void reminderIsCancelledWhenLatestD3DateHasPriority() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-17T10:00:00", 100)));
 
         worker.processDueSchedulesOnce();
@@ -210,9 +210,9 @@ class SurveyPushScheduleWorkerTest {
     void reminderIsCancelledWhenLatestDeadlineDateHasPriority() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T10:00:00", 100)));
 
         worker.processDueSchedulesOnce();
@@ -226,9 +226,9 @@ class SurveyPushScheduleWorkerTest {
     void reminderIsCancelledWhenNowIsAfterDeadline() {
         SurveyPushSchedule schedule = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-16T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(schedule));
-        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(surveyPushScheduleRepository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:59:59", 100)));
 
         worker.processDueSchedulesOnce();
@@ -244,7 +244,7 @@ class SurveyPushScheduleWorkerTest {
         SurveyPushSchedule d3 = schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-17T09:00:00", 100);
         SurveyPushSchedule deadline = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-17T09:00:00", 100);
         when(pushEventFlagService.isEnabled(PushEventType.SURVEY)).thenReturn(true);
-        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50))
+        when(surveyPushScheduleRepository.findDuePendingForUpdateSkipLocked(LocalDateTime.parse("2026-08-17T10:00:00"), 50, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(List.of(started, d3, deadline));
         when(pushInstallationRepository.existsByAppVariantAndActiveTrue(AppVariant.PRODUCTION)).thenReturn(true);
 

@@ -2,6 +2,11 @@ name: CI/CD using github actions & docker
 
 on:
   workflow_dispatch:
+    inputs:
+      stage_only:
+        description: Build an immutable image without deploying
+        type: boolean
+        default: false
   push:
     branches:
       - develop
@@ -40,8 +45,18 @@ jobs:
         run: ./gradlew clean build --stacktrace
         shell: bash
 
+      - name: Build immutable cutover image
+        if: inputs.stage_only
+        env:
+          REGISTRY_USER: ${{ secrets.DOCKER_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          printf '%s' "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USER" --password-stdin
+          docker build -t "$REGISTRY_USER/kodaero-app:neon-$GITHUB_SHA" -f ./Dockerfile .
+          docker push "$REGISTRY_USER/kodaero-app:neon-$GITHUB_SHA"
+
       - name: Docker build & push to prod
-        if: contains(github.ref, 'develop') || contains(github.ref, 'main')
+        if: ${{ !inputs.stage_only && (contains(github.ref, 'develop') || contains(github.ref, 'main')) }}
         run: |
           docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}
           docker build -t kodaero-dev -f ./Dockerfile .
@@ -50,6 +65,7 @@ jobs:
           
           
   pull_from_registry:
+    if: ${{ !inputs.stage_only }}
     name: Connect server ssh and pull from container registry
     needs: push_to_registry
     runs-on: ubuntu-latest

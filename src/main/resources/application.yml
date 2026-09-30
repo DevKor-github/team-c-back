@@ -201,6 +201,21 @@ chatbot:
     daily-reset-zone: ${CHATBOT_DAILY_RESET_ZONE:Asia/Seoul}
 
 push:
+  # Opt in only after the coordinated data migration. Local workers stay disabled.
+  storage: ${PUSH_STORAGE:mysql}
+  audience: ${PUSH_AUDIENCE:INTERNAL_TEST}
+  datasource:
+    url: ${PUSH_DATABASE_URL:}
+    username: ${PUSH_DATABASE_USERNAME:}
+    password: ${PUSH_DATABASE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
+      connection-timeout: 10000
+  outbox:
+    enabled: ${PUSH_OUTBOX_ENABLED:false}
+    poll-interval-ms: 1000
   expo:
     base-url: https://exp.host/--/api/v2/push
     access-token: ${EXPO_ACCESS_TOKEN:}
@@ -214,6 +229,7 @@ push:
     character-enabled: ${PUSH_EVENT_CHARACTER_ENABLED:false}
     survey-enabled: ${PUSH_EVENT_SURVEY_ENABLED:false}
   survey:
+    worker-enabled: ${PUSH_SURVEY_WORKER_ENABLED:false}
     poll-interval-ms: ${PUSH_SURVEY_POLL_INTERVAL_MS:60000}
   worker:
     enabled: ${PUSH_WORKER_ENABLED:false}

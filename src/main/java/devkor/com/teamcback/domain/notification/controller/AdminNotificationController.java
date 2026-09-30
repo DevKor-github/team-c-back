@@ -58,9 +58,11 @@ public class AdminNotificationController {
     public CommonResponse<List<AdminPushInstallationRes>> searchInstallations(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String installationId,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "false") boolean adminOnly,
             @RequestParam(required = false) AppVariant appVariant
     ) {
-        return CommonResponse.success(adminNotificationService.searchInstallations(userId, installationId, appVariant));
+        return CommonResponse.success(adminNotificationService.searchInstallations(userId, installationId, appVariant, query, adminOnly));
     }
 
     @Operation(
@@ -117,13 +119,17 @@ public class AdminNotificationController {
             @RequestParam(defaultValue = DEFAULT_PAGE) int page,
             @RequestParam(defaultValue = DEFAULT_SIZE) int size,
             @RequestParam(required = false) AppVariant appVariant,
-            @RequestParam(required = false) PushDispatchStatus status
+            @RequestParam(required = false) PushDispatchStatus status,
+            @RequestParam(required = false) Boolean adminOnly,
+            @RequestParam(defaultValue = "false") boolean legacyOnly
     ) {
         return CommonResponse.success(adminNotificationService.getDispatches(
                 page,
                 size,
                 appVariant,
-                status
+                status,
+                adminOnly,
+                legacyOnly
         ));
     }
 

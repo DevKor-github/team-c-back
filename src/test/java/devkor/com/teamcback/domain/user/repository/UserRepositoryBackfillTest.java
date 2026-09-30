@@ -19,7 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(QueryDslConfig.class) // @Repository인 QueryDSL 커스텀 구현체 스캔에 필요
+@Import({QueryDslConfig.class, devkor.com.teamcback.domain.notification.persistence.LegacyPushStoreConfiguration.class}) // @Repository인 QueryDSL 커스텀 구현체 스캔에 필요
 class UserRepositoryBackfillTest {
     @Autowired
     UserRepository userRepository;

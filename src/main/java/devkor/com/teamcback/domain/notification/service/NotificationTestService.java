@@ -33,6 +33,7 @@ import static devkor.com.teamcback.global.response.ResultCode.UNSUPPORTED_PUSH_I
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional("pushTransactionManager")
 public class NotificationTestService {
 
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 128;
@@ -45,6 +46,9 @@ public class NotificationTestService {
     private final PushMessageRepository pushMessageRepository;
     private final PushPayloadFactory pushPayloadFactory;
     private final Clock clock;
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
+    @org.springframework.beans.factory.annotation.Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
+
 
     public NotificationTestRes sendTest(
             Long userId,
@@ -58,11 +62,18 @@ public class NotificationTestService {
                 request.installationId()
         );
 
-        return pushDispatchRepository.findByIdempotencyKey(idempotencyKey)
+        if ("neon".equals(storage)) {
+            if ("INTERNAL_TEST".equals(audience) && !pushInstallationRepository.findAdminUserIds(List.of(userId)).contains(userId))
+                throw new GlobalException(FORBIDDEN_PUSH_INSTALLATION);
+            idempotencyKey = ("INTERNAL_TEST".equals(audience) ? "internal:test:" : "live:test:") + idempotencyKey;
+            pushDispatchRepository.lockIdempotencyKey(idempotencyKey);
+        }
+        final String requestKey = idempotencyKey;
+        return pushDispatchRepository.findByIdempotencyKey(requestKey)
                 .map(dispatch -> responseFromExistingDispatch(dispatch, installation))
                 .orElseGet(() -> enqueue(
                         userId,
-                        idempotencyKey,
+                        requestKey,
                         installation
                 ));
     }
@@ -90,6 +101,7 @@ public class NotificationTestService {
                     now
             ));
 
+            if ("neon".equals(storage)) dispatch.setAdminOnly("INTERNAL_TEST".equals(audience));
             PushMessage message = pushMessageRepository.saveAndFlush(new PushMessage(
                     dispatch,
                     installation,

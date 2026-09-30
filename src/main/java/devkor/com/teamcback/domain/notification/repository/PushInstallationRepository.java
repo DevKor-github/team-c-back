@@ -3,11 +3,21 @@ package devkor.com.teamcback.domain.notification.repository;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.PushInstallation;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.Collection;
+import java.util.Set;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface PushInstallationRepository extends JpaRepository<PushInstallation, Long> {
+@devkor.com.teamcback.domain.notification.persistence.PushStore
+public interface PushInstallationRepository extends JpaRepository<PushInstallation, Long>, PushInstallationLookup {
+    interface UserProfile {
+        Long getUserId();
+        String getUsername();
+        String getEmail();
+    }
 
     Optional<PushInstallation> findByInstallationId(
             String installationId

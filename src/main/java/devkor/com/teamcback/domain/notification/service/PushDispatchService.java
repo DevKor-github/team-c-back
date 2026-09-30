@@ -22,13 +22,13 @@ import static devkor.com.teamcback.global.response.ResultCode.INVALID_INPUT;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(transactionManager = "pushTransactionManager", readOnly = true)
 public class PushDispatchService {
 
     private static final int MAX_TITLE_LENGTH = 200;
     private static final int MAX_BODY_LENGTH = 1024;
     private static final int MAX_TARGET_VALUE_LENGTH = 128;
-    private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 128;
+    private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 160;
     private static final int MAX_SELECTED_TARGETS = 500;
 
     private final PushDispatchRepository pushDispatchRepository;
@@ -36,10 +36,19 @@ public class PushDispatchService {
     private final PushPayloadFactory pushPayloadFactory;
     private final PushTargetResolver pushTargetResolver;
     private final Clock clock;
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
+    @org.springframework.beans.factory.annotation.Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
 
-    @Transactional
+
+    @Transactional("pushTransactionManager")
     public PushDispatchEnqueueRes enqueue(PushDispatchCommand command) {
+        if ("neon".equals(storage)) {
+            boolean internal = command.adminOnly() == null ? "INTERNAL_TEST".equals(audience) : command.adminOnly();
+            if (!internal && !"LIVE".equals(audience)) throw new GlobalException(devkor.com.teamcback.global.response.ResultCode.FORBIDDEN);
+            command = command.withAudience(internal);
+        }
         validateCommand(command);
+        if ("neon".equals(storage)) pushDispatchRepository.lockIdempotencyKey(command.idempotencyKey());
 
         PushPayload payload = pushPayloadFactory.createForPreDispatchValidation(
                 command.title(),
@@ -51,9 +60,10 @@ public class PushDispatchService {
                 command.imageUrl()
         );
 
-        return pushDispatchRepository.findByIdempotencyKey(command.idempotencyKey())
+        final PushDispatchCommand scopedCommand = command;
+        return pushDispatchRepository.findByIdempotencyKey(scopedCommand.idempotencyKey())
                 .map(PushDispatchEnqueueRes::new)
-                .orElseGet(() -> createDispatch(command, payload));
+                .orElseGet(() -> createDispatch(scopedCommand, payload));
     }
 
     private PushDispatchEnqueueRes createDispatch(
@@ -70,6 +80,11 @@ public class PushDispatchService {
                         command.targetValue(),
                         command.appVariant()
                 );
+
+        if (Boolean.TRUE.equals(command.adminOnly())) {
+            installations = pushTargetResolver.restrictToAdmins(installations, true);
+        }
+        if (installations.isEmpty()) throw new GlobalException(INVALID_INPUT);
 
         LocalDateTime now = LocalDateTime.now(clock);
 
@@ -90,6 +105,8 @@ public class PushDispatchService {
                         now
                 )
         );
+
+        dispatch.setAdminOnly(command.adminOnly());
 
         List<PushMessage> messages = installations.stream()
                 .map(installation -> new PushMessage(

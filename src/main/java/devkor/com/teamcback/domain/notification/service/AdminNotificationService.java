@@ -39,7 +39,7 @@ import static devkor.com.teamcback.global.response.ResultCode.UNSUPPORTED_REQUES
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(transactionManager = "pushTransactionManager", readOnly = true)
 public class AdminNotificationService {
 
     private final PushInstallationRepository pushInstallationRepository;
@@ -59,24 +59,40 @@ public class AdminNotificationService {
             String installationId,
             AppVariant appVariant
     ) {
-        if ((userId == null && !hasText(installationId))
-                || (userId != null && hasText(installationId))) {
-            throw new GlobalException(INVALID_INPUT);
-        }
+        return searchInstallations(userId, installationId, appVariant, null, false);
+    }
 
-        if (userId != null) {
-            return pushInstallationRepository.findAllByUserIdOrderByModifiedAtDescPushInstallationIdDesc(userId)
-                    .stream()
-                    .filter(installation -> appVariant == null || appVariant.equals(installation.getAppVariant()))
-                    .map(AdminPushInstallationRes::new)
-                    .toList();
+    public List<AdminPushInstallationRes> searchInstallations(Long userId, String installationId,
+            AppVariant appVariant, String query, boolean adminOnly) {
+        int criteria = (userId != null ? 1 : 0) + (hasText(installationId) ? 1 : 0) + (hasText(query) ? 1 : 0);
+        if (criteria != 1) throw new GlobalException(INVALID_INPUT);
+        List<PushInstallation> installations;
+        if (hasText(query)) {
+            String term = query.trim();
+            if (term.length() < 2 || term.length() > 100) throw new GlobalException(INVALID_INPUT);
+            String pattern = "%" + term.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+            installations = pushInstallationRepository.searchByUserProfile(pattern, appVariant, adminOnly, PageRequest.of(0, 200));
+        } else {
+            installations = userId != null
+                    ? pushInstallationRepository.findAllByUserIdOrderByModifiedAtDescPushInstallationIdDesc(userId)
+                    : pushInstallationRepository.findByInstallationId(installationId).stream().toList();
+            installations = installations.stream()
+                    .filter(item -> appVariant == null || appVariant.equals(item.getAppVariant())).toList();
+            if (adminOnly) installations = pushTargetResolver.restrictToAdmins(installations, true);
         }
+        return describeInstallations(installations);
+    }
 
-        return pushInstallationRepository.findByInstallationId(installationId)
-                .stream()
-                .filter(installation -> appVariant == null || appVariant.equals(installation.getAppVariant()))
-                .map(AdminPushInstallationRes::new)
-                .toList();
+    private List<AdminPushInstallationRes> describeInstallations(List<PushInstallation> installations) {
+        if (installations.isEmpty()) return List.of();
+        var profiles = pushInstallationRepository.findUserProfiles(
+                installations.stream().map(PushInstallation::getUserId).distinct().toList()).stream()
+                .collect(java.util.stream.Collectors.toMap(PushInstallationRepository.UserProfile::getUserId, profile -> profile));
+        return installations.stream().map(installation -> {
+            var user = profiles.get(installation.getUserId());
+            return new AdminPushInstallationRes(installation,
+                    user == null ? null : user.getUsername(), user == null ? null : user.getEmail());
+        }).toList();
     }
 
     public AdminPushDispatchPreviewRes preview(AdminPushDispatchReq request) {
@@ -93,6 +109,10 @@ public class AdminNotificationService {
                         request.appVariant()
                 );
 
+        if (Boolean.TRUE.equals(request.adminOnly())) {
+            installations = pushTargetResolver.restrictToAdmins(installations, true);
+        }
+
         PushPayload payload = pushPayloadFactory.createForPreDispatchValidation(
                 request.title(),
                 request.body(),
@@ -105,12 +125,13 @@ public class AdminNotificationService {
 
         return new AdminPushDispatchPreviewRes(
                 installations.size(),
-                installations.stream().map(AdminPushInstallationRes::new).toList(),
-                payload
+                describeInstallations(installations),
+                payload,
+                Boolean.TRUE.equals(request.adminOnly())
         );
     }
 
-    @Transactional
+    @Transactional("pushTransactionManager")
     public PushDispatchEnqueueRes enqueue(
             Long adminUserId,
             String idempotencyKey,
@@ -132,7 +153,8 @@ public class AdminNotificationService {
                 request.actionType(),
                 request.actionParams(),
                 idempotencyKey,
-                adminUserId
+                adminUserId,
+                request.adminOnly()
         ));
     }
 
@@ -148,6 +170,15 @@ public class AdminNotificationService {
 
         Pageable pageable = PageRequest.of(page - 1, size);
         return pushDispatchRepository.findAdminDispatches(appVariant, status, pageable)
+                .map(AdminPushDispatchSummaryRes::new);
+    }
+
+    public Page<AdminPushDispatchSummaryRes> getDispatches(int page, int size, AppVariant appVariant,
+            PushDispatchStatus status, Boolean adminOnly, boolean legacyOnly) {
+        if (adminOnly == null && !legacyOnly) return getDispatches(page, size, appVariant, status);
+        if (page < 1 || size < 1 || size > 200) throw new GlobalException(INVALID_INPUT);
+        return pushDispatchRepository.findScopedAdminDispatches(appVariant, status,
+                Boolean.TRUE.equals(adminOnly), legacyOnly, PageRequest.of(page - 1, size))
                 .map(AdminPushDispatchSummaryRes::new);
     }
 

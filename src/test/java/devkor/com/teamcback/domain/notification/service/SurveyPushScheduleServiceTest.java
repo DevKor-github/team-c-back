@@ -53,13 +53,13 @@ class SurveyPushScheduleServiceTest {
     @Test
     void upsertAdminSchedulesCreatesThreeWholeAudienceSchedules() {
         List<SurveyPushSchedule> saved = new ArrayList<>();
-        when(repository.findByIdempotencyKey(any())).thenReturn(Optional.empty());
+        when(repository.findByIdempotencyKey(any(), org.mockito.ArgumentMatchers.eq(devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))).thenReturn(Optional.empty());
         when(repository.save(any(SurveyPushSchedule.class))).thenAnswer(invocation -> {
             SurveyPushSchedule schedule = invocation.getArgument(0);
             saved.add(schedule);
             return schedule;
         });
-        when(repository.findAllBySurveyKeyAndNotificationStageIn(eq(SURVEY_KEY), anyCollection()))
+        when(repository.findAllBySurveyKeyAndNotificationStageIn(eq(SURVEY_KEY), anyCollection(), org.mockito.ArgumentMatchers.eq(devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN)))
                 .thenAnswer(ignored -> saved);
 
         service.upsertAdminSchedules(
@@ -93,14 +93,14 @@ class SurveyPushScheduleServiceTest {
         SurveyPushSchedule completed = schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-17T10:00:00", 100);
         completed.complete(LocalDateTime.parse("2026-08-17T10:01:00"));
 
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":STARTED"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":STARTED", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(pending));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":D_MINUS_3"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":D_MINUS_3", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(completed));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":DEADLINE"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":DEADLINE", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
         when(repository.save(any(SurveyPushSchedule.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(repository.findAllBySurveyKeyAndNotificationStageIn(eq(SURVEY_KEY), anyCollection()))
+        when(repository.findAllBySurveyKeyAndNotificationStageIn(eq(SURVEY_KEY), anyCollection(), org.mockito.ArgumentMatchers.eq(devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN)))
                 .thenReturn(List.of(pending, completed));
 
         service.upsertAdminSchedules(
@@ -151,11 +151,11 @@ class SurveyPushScheduleServiceTest {
         SurveyPushSchedule deadline = schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100);
         SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 50);
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(deadline));
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(existing));
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -178,9 +178,9 @@ class SurveyPushScheduleServiceTest {
                 SurveyReminderSuppressedBy.D3
         );
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T09:59:59", 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -193,11 +193,11 @@ class SurveyPushScheduleServiceTest {
     void remindAfterLaterCancelsExistingPendingReminderWhenSuppressedByD3() {
         SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-07T09:00:00", 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(existing));
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -214,9 +214,9 @@ class SurveyPushScheduleServiceTest {
     void remindAfterLaterCancelsExistingPendingReminderWhenSuppressedByDeadline() {
         SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T11:00:00", 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(existing));
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -233,9 +233,9 @@ class SurveyPushScheduleServiceTest {
     void remindAfterLaterCancelsExistingPendingReminderWhenExpired() {
         SurveyPushSchedule existing = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-07T09:59:59", 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(existing));
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -250,11 +250,11 @@ class SurveyPushScheduleServiceTest {
 
     @Test
     void remindAfterLaterDoesNotCreateCancelledRowWhenSuppressedWithoutExistingReminder() {
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, "2026-08-20T10:00:00", 100)));
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, "2026-08-07T09:00:00", 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -271,11 +271,11 @@ class SurveyPushScheduleServiceTest {
         SurveyPushSchedule completed = schedule(SurveyNotificationStage.REMIND_AFTER_LATER, 7L, "2026-08-07T09:00:00", 100);
         completed.complete(LocalDateTime.parse("2026-08-07T09:01:00"));
 
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(deadline));
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(completed));
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);
@@ -289,11 +289,11 @@ class SurveyPushScheduleServiceTest {
             String d3At,
             SurveyReminderSuppressedBy suppressedBy
     ) {
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.DEADLINE, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.DEADLINE, null, deadlineAt, 100)));
-        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3))
+        when(repository.findBySurveyKeyAndNotificationStage(SURVEY_KEY, SurveyNotificationStage.D_MINUS_3, devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.of(schedule(SurveyNotificationStage.D_MINUS_3, null, d3At, 100)));
-        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7"))
+        when(repository.findByIdempotencyKey("survey:" + SURVEY_KEY + ":REMIND_AFTER_LATER:7", devkor.com.teamcback.domain.notification.entity.type.PushAudience.LEGACY_UNKNOWN))
                 .thenReturn(Optional.empty());
 
         SurveyReminderRes response = service.remindAfterLater(SURVEY_KEY, 7L);

@@ -34,6 +34,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class CrowdVacantPushEventListener {
 
+    @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
     private static final Long SYSTEM_CREATED_BY = 0L;
 
     private final PlaceRepository placeRepository;
@@ -43,7 +44,7 @@ public class CrowdVacantPushEventListener {
     private final PushEventFlagService pushEventFlagService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, condition = "@environment.getProperty('push.storage', 'mysql') != 'neon'")
     public void handle(PlaceBecameVacantEvent event) {
         if (!pushEventFlagService.isEnabled(PushEventType.CROWD)) {
             return;
@@ -75,6 +76,7 @@ public class CrowdVacantPushEventListener {
                 enqueueIfPushTargetExists(event, userId, content);
             }
         } catch (Exception e) {
+                if ("neon".equals(storage)) throw new IllegalStateException("Push event delivery failed", e);
             log.warn(
                     "crowd vacant push failed: placeId={}, bleDataId={}, error={}",
                     event.placeId(),
@@ -89,7 +91,7 @@ public class CrowdVacantPushEventListener {
             Long userId,
             PushContent content
     ) {
-        if (userId == null) {
+        if (userId == null || ("neon".equals(storage) && !pushEventFlagService.isEligible(userId))) {
             return;
         }
 

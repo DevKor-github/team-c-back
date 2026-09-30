@@ -45,10 +45,10 @@ public class ChatRequestRouter {
         if (normalized.isBlank()) {
             return Intent.NONE;
         }
-        if (normalized.contains("route") || normalized.contains("분")) {
+        if (normalized.contains("route")) {
             return Intent.ROUTE;
         }
-        if (containsAny(normalized, "길찾", "가는길", "경로", "어디로가")) {
+        if (containsAny(normalized, "길찾", "가는길", "경로", "어디로가", "길알려줘", "어떻게가", "길안내", "도보로")) {
             return Intent.ROUTE;
         }
         if (containsAny(normalized, "학식", "식단")) {
@@ -66,7 +66,7 @@ public class ChatRequestRouter {
         if (containsAny(normalized, "화장실", "프린터", "시설", "자판기", "정수기")) {
             return Intent.FACILITY;
         }
-        if (containsAny(normalized, "방학", "학기", "고연전")) {
+        if (containsAny(normalized, "방학", "학기", "고연전", "학교상태", "학교현황", "오늘학교", "지금학교", "캠퍼스상태")) {
             return Intent.CAMPUS_STATUS;
         }
         if (containsAny(normalized, "어디야", "어디있", "열려", "운영시간", "몇시", "닫", "정보")) {

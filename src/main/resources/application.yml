@@ -196,10 +196,8 @@ chatbot:
       max-limit: ${CHATBOT_REVIEWS_MAX_LIMIT:10}
   rate-limit:
     authenticated-daily-limit: ${CHATBOT_AUTHENTICATED_DAILY_LIMIT:30}
-    anonymous-daily-limit: ${CHATBOT_ANONYMOUS_DAILY_LIMIT:100}
-    burst-per-minute: ${CHATBOT_BURST_PER_MINUTE:50}
-    #anonymous-daily-limit: ${CHATBOT_ANONYMOUS_DAILY_LIMIT:10}
-    #burst-per-minute: ${CHATBOT_BURST_PER_MINUTE:5}
+    anonymous-daily-limit: ${CHATBOT_ANONYMOUS_DAILY_LIMIT:10}
+    burst-per-minute: ${CHATBOT_BURST_PER_MINUTE:5}
     daily-reset-zone: ${CHATBOT_DAILY_RESET_ZONE:Asia/Seoul}
 
 push:

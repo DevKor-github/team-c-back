@@ -109,6 +109,22 @@ class ChatServiceRoutingTest {
         verify(chatOrchestrator).executeGeneral(anyString(), anyList(), anyString());
     }
 
+    @Test
+    void factualWorkflowFailureDoesNotFallBackToGeneralLlm() {
+        when(crowdStatusWorkflow.hasPending(sessionId, caller)).thenReturn(false);
+        when(menuWorkflow.handle(any(), any(), anyList(), anyString()))
+                .thenReturn(new MenuWorkflow.WorkflowResult(false, null, false));
+
+        var response = newService().sendMessage(
+                new ChatMessageReq(sessionId, "오늘 학생회관 학식", null), caller);
+
+        org.assertj.core.api.Assertions.assertThat(response.reply())
+                .contains("캠퍼스 정보를 확인하지 못했어요");
+        verify(menuWorkflow).handle(any(), any(), anyList(), anyString());
+        verify(chatOrchestrator, never()).execute(anyString(), anyList(), anyString());
+        verify(chatOrchestrator, never()).executeGeneral(anyString(), anyList(), anyString());
+    }
+
     private ChatService newService() {
         return new ChatService(chatOrchestrator, memoryService, rateLimiter,
                 pendingRouteStateService, crowdStatusWorkflow, new ChatRequestRouter(),

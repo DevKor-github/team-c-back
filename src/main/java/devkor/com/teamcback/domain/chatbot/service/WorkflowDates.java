@@ -1,14 +1,19 @@
 package devkor.com.teamcback.domain.chatbot.service;
 
 import java.time.DayOfWeek;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 final class WorkflowDates {
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
+    private static final Pattern KOREAN_MONTH_DAY = Pattern.compile("^(\\d{1,2})월\\s*(\\d{1,2})일$");
+    private static final Pattern SLASH_MONTH_DAY = Pattern.compile("^(\\d{1,2})/(\\d{1,2})$");
     private WorkflowDates() {}
     static LocalDate menuDate(String expression) {
         LocalDate today = LocalDate.now(SEOUL);
@@ -22,9 +27,20 @@ final class WorkflowDates {
             case "일", "sun", "sunday" -> DayOfWeek.SUNDAY; default -> null;
         };
         if (day != null) return today.plusDays((day.getValue() - today.getDayOfWeek().getValue() + 7) % 7);
-        for (DateTimeFormatter format : new DateTimeFormatter[]{DateTimeFormatter.ISO_LOCAL_DATE, DateTimeFormatter.ofPattern("M월 d일"), DateTimeFormatter.ofPattern("M/d")}) {
-            try { LocalDate parsed = LocalDate.parse(value, format); return parsed.withYear(today.getYear()); }
-            catch (DateTimeParseException ignored) { }
+        try {
+            return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException ignored) {
+            Matcher korean = KOREAN_MONTH_DAY.matcher(value);
+            Matcher slash = SLASH_MONTH_DAY.matcher(value);
+            Matcher matcher = korean.matches() ? korean : slash;
+            if (matcher.matches()) {
+                try {
+                    return LocalDate.of(today.getYear(), Integer.parseInt(matcher.group(1)),
+                            Integer.parseInt(matcher.group(2)));
+                } catch (DateTimeException invalidDate) {
+                    throw new IllegalArgumentException("invalid date expression", invalidDate);
+                }
+            }
         }
         throw new IllegalArgumentException("invalid date expression");
     }

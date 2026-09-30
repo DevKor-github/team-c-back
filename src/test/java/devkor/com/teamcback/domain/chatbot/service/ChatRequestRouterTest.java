@@ -58,4 +58,22 @@ class ChatRequestRouterTest {
         assertThat(decision.route()).isEqualTo(Route.NEW_INTENT);
         assertThat(decision.workflowType()).isEqualTo(WorkflowType.CROWD);
     }
+
+    @Test
+    void routesNaturalLanguageDirectionsToRouteWorkflow() {
+        assertThat(router.route(PendingWorkflow.NONE, "중앙도서관에서 미래관까지 길 알려줘").workflowType())
+                .isEqualTo(WorkflowType.ROUTE);
+        assertThat(router.route(PendingWorkflow.NONE, "중앙도서관에서 미래관까지 어떻게 가").workflowType())
+                .isEqualTo(WorkflowType.ROUTE);
+        assertThat(router.route(PendingWorkflow.NONE, "길안내 창 띄워줘").workflowType())
+                .isEqualTo(WorkflowType.ROUTE);
+    }
+
+    @Test
+    void routesCampusStatusRequestToCampusStatusWorkflow() {
+        var decision = router.route(PendingWorkflow.NONE, "오늘 학교 상태");
+
+        assertThat(decision.route()).isEqualTo(Route.NEW_INTENT);
+        assertThat(decision.workflowType()).isEqualTo(WorkflowType.CAMPUS_STATUS);
+    }
 }

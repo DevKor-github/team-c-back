@@ -171,6 +171,11 @@ public class ChatService {
             RoomCourseWorkflow.WorkflowResult room = roomCourseWorkflow.handle(sessionId, caller, toGatewayHistory(history), request.message());
             if (room.handled()) return saveWorkflowReply(sessionId, caller, request.message(), room.reply());
         }
+        if (routing.workflowType() != ChatRequestRouter.WorkflowType.GENERAL_CHAT
+                && routing.workflowType() != ChatRequestRouter.WorkflowType.ROUTE) {
+            return saveWorkflowReply(sessionId, caller, request.message(),
+                    "캠퍼스 정보를 확인하지 못했어요. 장소나 요청 내용을 조금 더 구체적으로 알려주세요.");
+        }
         if (routing.route() == ChatRequestRouter.Route.CONTINUE_PENDING
                 && routing.workflowType() == ChatRequestRouter.WorkflowType.ROUTE) {
             pending = loadPending(sessionId, caller);

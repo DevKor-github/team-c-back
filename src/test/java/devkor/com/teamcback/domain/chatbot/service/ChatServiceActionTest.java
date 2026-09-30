@@ -267,7 +267,7 @@ class ChatServiceActionTest {
         ChatCaller caller = ChatCaller.from(null, "127.0.0.1");
         when(memoryService.load(sessionId, caller)).thenReturn(List.of());
 
-        var response = service.sendMessage(new ChatMessageReq(sessionId, "몇 분 걸려?", null), caller);
+        var response = service.sendMessage(new ChatMessageReq(sessionId, "경로 몇 분 걸려?", null), caller);
 
         assertThat(response.action()).isNull();
         assertThat(response.reply()).isEqualTo("start에서 end까지 경로를 찾았어요. 예상 소요 시간은 약 2분이에요. 길찾기 화면으로 안내할까요?");

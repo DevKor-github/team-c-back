@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.*;
         "cloud.aws.s3.bucket=test-bucket",
         "cloud.aws.credentials.access-key=test-access-key",
         "cloud.aws.credentials.secret-key=test-secret-key",
-        "cloud.aws.region.static=ap-northeast-2",
+        "cloud.aws.region.static=ap-southeast-2",
         "date.api.holiday.end-point=http://localhost",
         "date.api.holiday.encoded-key=test-encoded-key",
         "date.api.holiday.decoded-key=test-decoded-key",

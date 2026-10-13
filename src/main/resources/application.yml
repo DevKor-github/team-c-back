@@ -94,7 +94,7 @@ cloud:
       access-key: ${BUCKET_ACCESS_KEY}
       secret-key: ${BUCKET_SECRET_KEY}
     region:
-      static: ap-northeast-2
+      static: ap-southeast-2
 
 springdoc:
   api-docs:
@@ -114,27 +114,27 @@ springdoc:
 
 profile:
   image:
-    lv1-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv1.jpg
-    lv2-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv2.jpg
-    lv3-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv3.jpg
-    lv4-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv4.jpg
-    lv5-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/profile/lv5.jpg
+    lv1-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/profile/lv1.jpg
+    lv2-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/profile/lv2.jpg
+    lv3-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/profile/lv3.jpg
+    lv4-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/profile/lv4.jpg
+    lv5-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/profile/lv5.jpg
 
 character:
   image: # 캐릭터 이미지 (피그마 확정 이미지를 이 경로 규칙대로 S3에 업로드: {base-url}/{NN_slug}.png)
-    base-url: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/character
+    base-url: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/character
 
 place:
   default-image:
-    cafe: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFE.jpg
-    cafeteria: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CAFETERIA.jpg
-    convenience-store: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/CONVENIENCE_STORE.jpg
-    gym: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/GYM.jpg
-    lounge: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/LOUNGE.jpg
-    reading-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/READING_ROOM.jpg
-    shower-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/SHOWER_ROOM.jpg
-    sleeping-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/SLEEPING_ROOM.jpg
-    study-room: https://kodaero-ku.s3.ap-northeast-2.amazonaws.com/place/default_image/STUDY_ROOM.jpg
+    cafe: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/CAFE.jpg
+    cafeteria: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/CAFETERIA.jpg
+    convenience-store: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/CONVENIENCE_STORE.jpg
+    gym: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/GYM.jpg
+    lounge: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/LOUNGE.jpg
+    reading-room: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/READING_ROOM.jpg
+    shower-room: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/SHOWER_ROOM.jpg
+    sleeping-room: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/SLEEPING_ROOM.jpg
+    study-room: https://kodaero-images.s3.ap-southeast-2.amazonaws.com/place/default_image/STUDY_ROOM.jpg
 
 date:
   api:

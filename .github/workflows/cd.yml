@@ -79,5 +79,5 @@ jobs:
             docker pull ${{ secrets.DOCKER_USER }}/kodaero-app:latest
             cd infra
             chmod +x ./deploy-prod.sh
-            sudo ./deploy-prod.sh 14
+            sudo ./deploy-prod.sh 36
             docker image prune -f

@@ -3,6 +3,11 @@ name: CI/CD using github actions & docker
 on:
   workflow_dispatch:
     inputs:
+      rehome_phase:
+        description: Stage, activate, or verify the reviewed Neon project migration
+        type: choice
+        options: ['', prepare, apply, verify]
+        default: ''
       audit_only:
         description: Inspect backend versions and worker settings without deploying
         type: boolean
@@ -32,7 +37,7 @@ permissions:
 
 jobs:
   push_to_registry:
-    if: ${{ !inputs.audit_only && !inputs.publish_idle_revision && !inputs.image_revision }}
+    if: ${{ !inputs.audit_only && !inputs.publish_idle_revision && !inputs.image_revision && !inputs.rehome_phase }}
     name: Push to aws container registry
     runs-on: ubuntu-latest
     steps:
@@ -82,7 +87,7 @@ jobs:
           
           
   pull_from_registry:
-    if: ${{ !inputs.stage_only && !inputs.audit_only && !inputs.publish_idle_revision }}
+    if: ${{ !inputs.stage_only && !inputs.audit_only && !inputs.publish_idle_revision && !inputs.rehome_phase }}
     name: Connect server ssh and pull from container registry
     needs: push_to_registry
     runs-on: ubuntu-latest
@@ -131,6 +136,29 @@ jobs:
             trap 'rm -f "$counter_script"' EXIT
             curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/verify-push-idle.py' -o "$counter_script"
             sudo -n python3 "$counter_script"
+
+  rehome_neon:
+    if: ${{ inputs.rehome_phase }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Switch only the reviewed Neon connection on the existing immutable backend
+        uses: appleboy/ssh-action@master
+        env:
+          NEON_REHOME_PAYLOAD: ${{ secrets.NEON_REHOME_PAYLOAD }}
+          REHOME_PHASE: ${{ inputs.rehome_phase }}
+        with:
+          host: ${{ secrets.HOST_NAME }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          command_timeout: 15m
+          envs: NEON_REHOME_PAYLOAD,REHOME_PHASE
+          script: |
+            set -eu
+            rehome_script=$(mktemp)
+            trap 'rm -f "$rehome_script"' EXIT
+            curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/rehome-push-neon.py' -o "$rehome_script"
+            sudo -n --preserve-env=NEON_REHOME_PAYLOAD python3 "$rehome_script" "$REHOME_PHASE"
 
   rollout_idle_workers:
     if: ${{ always() && !cancelled() && inputs.rollout_idle && inputs.stage_only && !inputs.audit_only && (needs.push_to_registry.result == 'success' || (needs.push_to_registry.result == 'skipped' && inputs.image_revision)) }}

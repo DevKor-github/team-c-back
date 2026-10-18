@@ -7,6 +7,10 @@ on:
         description: Inspect backend versions and worker settings without deploying
         type: boolean
         default: false
+      rollout_idle:
+        description: Deploy the immutable wake-on-work image to dev, latest and stable (requires stage_only)
+        type: boolean
+        default: false
       stage_only:
         description: Build an immutable image without deploying
         type: boolean
@@ -34,7 +38,7 @@ jobs:
           distribution: 'corretto'
 
       - name: make application-prod.yml
-        if: contains(github.ref, 'develop') || contains(github.ref, 'main')
+        if: inputs.stage_only || contains(github.ref, 'develop') || contains(github.ref, 'main')
         run: |
           cd ./src/main/resources
           touch ./application-prod.yml
@@ -106,10 +110,12 @@ jobs:
             docker ps --format '{{.Names}} {{.Image}} {{.Status}}'
             docker inspect app-dev app-latest app-stable | python3 -c '
             import json,sys
-            allowed={"PUSH_STORAGE","PUSH_AUDIENCE","PUSH_WORKER_ENABLED","PUSH_RECEIPT_WORKER_ENABLED","PUSH_SURVEY_WORKER_ENABLED","PUSH_OUTBOX_ENABLED","PUSH_WORKER_FIXED_DELAY_MS","PUSH_RECEIPT_WORKER_FIXED_DELAY_MS","PUSH_SURVEY_POLL_INTERVAL_MS","PUSH_IDLE_NAMESPACE","PUSH_IDLE_RECONCILE_CRON"}
+            allowed={"PUSH_STORAGE","PUSH_AUDIENCE","PUSH_WORKER_ENABLED","PUSH_RECEIPT_WORKER_ENABLED","PUSH_SURVEY_WORKER_ENABLED","PUSH_OUTBOX_ENABLED","PUSH_WORKER_FIXED_DELAY_MS","PUSH_RECEIPT_WORKER_FIXED_DELAY_MS","PUSH_SURVEY_POLL_INTERVAL_MS","PUSH_IDLE_NAMESPACE","PUSH_IDLE_RECONCILE_CRON","SERVER_PORT","SPRING_PROFILES_ACTIVE"}
             for c in json.load(sys.stdin):
                 print(c["Name"], c["Config"]["Image"], c["Image"], c["State"]["Status"])
                 print("ports", c["NetworkSettings"]["Ports"])
+                print("network", c["HostConfig"]["NetworkMode"], "port arguments", [v for v in c["Config"].get("Cmd",[]) or [] if v.startswith("--server.port=")])
+                print("compose files", c["Config"].get("Labels",{}).get("com.docker.compose.project.config_files"))
                 print("worker settings", dict(v.split("=",1) for v in c["Config"]["Env"] if v.split("=",1)[0] in allowed))
                 print("configuration mounts", [(m["Source"],m["Destination"]) for m in c.get("Mounts",[]) if "yml" in m["Destination"] or "yaml" in m["Destination"]])
             '

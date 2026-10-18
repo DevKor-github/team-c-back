@@ -92,7 +92,8 @@ def main():
         env_file.unlink(missing_ok=True)
 
     compose_paths = originals["app-dev"]["Config"]["Labels"]["com.docker.compose.project.config_files"].split(",")
-    command = ["docker", "compose"]
+    # Compose reads root-owned production env files, as the standard deploy scripts do.
+    command = ["sudo", "-n", "docker", "compose"]
     for path in compose_paths:
         command.extend(["-f", path])
     override = backup / "compose.json"

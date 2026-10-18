@@ -11,6 +11,10 @@ on:
         description: Deploy the immutable wake-on-work image to dev, latest and stable (requires stage_only)
         type: boolean
         default: false
+      image_revision:
+        description: Reuse an already built immutable revision for rollout_idle
+        type: string
+        default: ''
       publish_idle_revision:
         description: Publish aliases for an immutable revision already verified on all three backends
         type: string
@@ -28,7 +32,7 @@ permissions:
 
 jobs:
   push_to_registry:
-    if: ${{ !inputs.audit_only && !inputs.publish_idle_revision }}
+    if: ${{ !inputs.audit_only && !inputs.publish_idle_revision && !inputs.image_revision }}
     name: Push to aws container registry
     runs-on: ubuntu-latest
     steps:
@@ -125,24 +129,27 @@ jobs:
             '
 
   rollout_idle_workers:
-    if: ${{ inputs.rollout_idle && inputs.stage_only && !inputs.audit_only }}
+    if: ${{ always() && !cancelled() && inputs.rollout_idle && inputs.stage_only && !inputs.audit_only && (needs.push_to_registry.result == 'success' || (needs.push_to_registry.result == 'skipped' && inputs.image_revision)) }}
     needs: push_to_registry
     runs-on: ubuntu-latest
     steps:
       - name: Roll out one verified image to every push worker
         uses: appleboy/ssh-action@master
+        env:
+          IMAGE_REVISION: ${{ inputs.image_revision || github.sha }}
         with:
           host: ${{ secrets.HOST_NAME }}
           username: ${{ secrets.USER_NAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
           command_timeout: 15m
+          envs: IMAGE_REVISION
           script: |
             set -eu
             rollout_script=$(mktemp)
             trap 'rm -f "$rollout_script"' EXIT
             curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/deploy-push-idle.py' -o "$rollout_script"
-            python3 "$rollout_script" '${{ secrets.DOCKER_USER }}/kodaero-app:neon-${{ github.sha }}' '${{ github.sha }}'
+            python3 "$rollout_script" "${{ secrets.DOCKER_USER }}/kodaero-app:neon-$IMAGE_REVISION" "$IMAGE_REVISION"
 
   publish_verified_idle_aliases:
     if: ${{ inputs.publish_idle_revision }}

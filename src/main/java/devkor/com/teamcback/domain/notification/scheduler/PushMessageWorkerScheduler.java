@@ -12,9 +12,10 @@ import org.springframework.stereotype.Component;
 public class PushMessageWorkerScheduler {
 
     private final PushMessageDispatchWorker pushMessageDispatchWorker;
+    private final PushIdleWorkerRunner runner;
 
     @Scheduled(fixedDelayString = "${push.worker.fixed-delay-ms:5000}")
     public void dispatchQueuedMessages() {
-        pushMessageDispatchWorker.dispatchPending();
+        runner.run(PushWorkSignals.Work.DISPATCH, pushMessageDispatchWorker::dispatchPending);
     }
 }

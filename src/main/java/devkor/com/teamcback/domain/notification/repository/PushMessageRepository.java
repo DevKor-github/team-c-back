@@ -14,6 +14,12 @@ import org.springframework.data.repository.query.Param;
 @devkor.com.teamcback.domain.notification.persistence.PushStore
 public interface PushMessageRepository extends JpaRepository<PushMessage, Long> {
 
+    @Query("select min(coalesce(m.nextRetryAt, m.createdAt)) from PushMessage m where m.status = devkor.com.teamcback.domain.notification.entity.type.PushMessageStatus.QUEUED")
+    LocalDateTime findNextQueuedAt();
+
+    @Query("select min(m.receiptAvailableAt) from PushMessage m where m.status = devkor.com.teamcback.domain.notification.entity.type.PushMessageStatus.RECEIPT_PENDING and m.expoTicketId is not null and m.expoTicketId <> ''")
+    LocalDateTime findNextReceiptAt();
+
     List<PushMessage> findAllByDispatch(
             PushDispatch dispatch
     );

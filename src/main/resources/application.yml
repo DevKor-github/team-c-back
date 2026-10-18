@@ -171,6 +171,11 @@ push:
       maximum-pool-size: 5
       minimum-idle: 0
       connection-timeout: 10000
+      idle-timeout: 60000
+      keepalive-time: 0
+  idle:
+    namespace: ${PUSH_IDLE_NAMESPACE:kodaero-push}
+    reconcile-cron: "${PUSH_IDLE_RECONCILE_CRON:0 0 * * * *}"
   outbox:
     enabled: ${PUSH_OUTBOX_ENABLED:false}
     poll-interval-ms: 1000

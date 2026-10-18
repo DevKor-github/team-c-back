@@ -29,7 +29,7 @@ class PushEventFlagServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PushEventFlagService(redisTemplate);
+        service = new PushEventFlagService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class), redisTemplate);
         ReflectionTestUtils.setField(service, "crowdDefaultEnabled", false);
         ReflectionTestUtils.setField(service, "reportDefaultEnabled", true);
         ReflectionTestUtils.setField(service, "characterDefaultEnabled", false);

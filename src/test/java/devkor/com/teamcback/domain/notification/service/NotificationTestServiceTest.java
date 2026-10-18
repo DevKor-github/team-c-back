@@ -135,7 +135,7 @@ class NotificationTestServiceTest {
     }
 
     private NotificationTestService service() {
-        return new NotificationTestService(
+        return new NotificationTestService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class),
                 pushInstallationRepository,
                 pushDispatchRepository,
                 pushMessageRepository,

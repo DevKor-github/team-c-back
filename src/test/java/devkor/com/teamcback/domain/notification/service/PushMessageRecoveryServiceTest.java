@@ -128,7 +128,7 @@ class PushMessageRecoveryServiceTest {
             long staleThresholdMinutes,
             int batchSize
     ) {
-        return new PushMessageRecoveryService(
+        return new PushMessageRecoveryService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class),
                 pushMessageRepository,
                 pushDispatchRepository,
                 new PushRecoveryWorkerProperties(true, "0 0 4 * * *", staleThresholdMinutes, batchSize),

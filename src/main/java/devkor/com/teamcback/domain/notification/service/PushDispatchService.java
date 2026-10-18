@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.dto.payload.PushPayload;
 import devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand;
 import devkor.com.teamcback.domain.notification.dto.response.PushDispatchEnqueueRes;
@@ -31,6 +32,7 @@ public class PushDispatchService {
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 160;
     private static final int MAX_SELECTED_TARGETS = 500;
 
+    private final PushWorkSignals workSignals;
     private final PushDispatchRepository pushDispatchRepository;
     private final PushMessageRepository pushMessageRepository;
     private final PushPayloadFactory pushPayloadFactory;
@@ -118,6 +120,7 @@ public class PushDispatchService {
 
         pushMessageRepository.saveAll(messages);
         dispatch.updateRecipientCount(messages.size());
+        workSignals.messagesChangedAfterCommit(messages);
 
         return new PushDispatchEnqueueRes(dispatch);
     }

@@ -112,7 +112,7 @@ class PushMessageClaimServiceTest {
     }
 
     private PushMessageClaimService service() {
-        return new PushMessageClaimService(
+        return new PushMessageClaimService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class),
                 pushMessageRepository,
                 pushInstallationRepository,
                 pushDispatchRepository,

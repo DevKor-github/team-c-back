@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +37,6 @@ public class SurveyPushScheduleWorker {
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchService pushDispatchService;
     private final PushEventFlagService pushEventFlagService;
-    @org.springframework.beans.factory.annotation.Value("${push.survey.worker-enabled:false}") private boolean scheduledWorkerEnabled;
     private final Clock clock;
     @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
     @org.springframework.beans.factory.annotation.Value("${push.audience:INTERNAL_TEST}") private String audience = "INTERNAL_TEST";
@@ -48,12 +46,7 @@ public class SurveyPushScheduleWorker {
     }
 
 
-    @Scheduled(fixedDelayString = "${push.survey.poll-interval-ms:60000}")
     @Transactional("pushTransactionManager")
-    public void processDueSchedules() {
-        if (scheduledWorkerEnabled) processDueSchedulesOnce();
-    }
-
     public int processDueSchedulesOnce() {
         if (!pushEventFlagService.isEnabled(PushEventType.SURVEY)) {
             return 0;

@@ -14,6 +14,9 @@ import org.springframework.data.repository.query.Param;
 @devkor.com.teamcback.domain.notification.persistence.PushStore
 public interface SurveyPushScheduleRepository extends JpaRepository<SurveyPushSchedule, Long> {
 
+    @Query("select min(s.scheduledAt) from SurveyPushSchedule s where s.status = devkor.com.teamcback.domain.notification.entity.type.SurveyPushScheduleStatus.PENDING and s.audience = :audience")
+    LocalDateTime findNextPendingAt(@Param("audience") devkor.com.teamcback.domain.notification.entity.type.PushAudience audience);
+
     Optional<SurveyPushSchedule> findByIdempotencyKey(String idempotencyKey);
 
     List<SurveyPushSchedule> findAllBySurveyKeyOrderByNotificationStageAscSurveyPushScheduleIdAsc(String surveyKey);

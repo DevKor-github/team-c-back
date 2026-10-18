@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.config.PushWorkerProperties;
 import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushRequest;
 import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushTicket;
@@ -36,6 +37,7 @@ public class PushMessageClaimService {
     private static final String RETRYABLE_TICKET_ERROR = "MessageRateExceeded";
     private static final String DEVICE_NOT_REGISTERED_ERROR = "DeviceNotRegistered";
 
+    private final PushWorkSignals workSignals;
     private final PushMessageRepository pushMessageRepository;
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchRepository pushDispatchRepository;
@@ -66,6 +68,7 @@ public class PushMessageClaimService {
                 .toList();
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messages);
         return sendItems;
     }
 
@@ -121,6 +124,7 @@ public class PushMessageClaimService {
         }
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messageMap.values());
     }
 
     @Transactional("pushTransactionManager")
@@ -154,6 +158,7 @@ public class PushMessageClaimService {
         });
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messageMap.values());
     }
 
     private PushSendItem createSendItem(

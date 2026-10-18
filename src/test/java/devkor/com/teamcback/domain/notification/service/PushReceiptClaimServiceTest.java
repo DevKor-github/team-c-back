@@ -201,7 +201,7 @@ class PushReceiptClaimServiceTest {
     }
 
     private PushReceiptClaimService service() {
-        return new PushReceiptClaimService(
+        return new PushReceiptClaimService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class),
                 pushMessageRepository,
                 pushInstallationRepository,
                 pushDispatchRepository,

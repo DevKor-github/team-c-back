@@ -12,9 +12,10 @@ import org.springframework.stereotype.Component;
 public class PushReceiptWorkerScheduler {
 
     private final PushReceiptWorker pushReceiptWorker;
+    private final PushIdleWorkerRunner runner;
 
     @Scheduled(fixedDelayString = "${push.receipt-worker.fixed-delay-ms:60000}")
     public void checkPendingReceipts() {
-        pushReceiptWorker.checkPendingReceipts();
+        runner.run(PushWorkSignals.Work.RECEIPT, pushReceiptWorker::checkPendingReceipts);
     }
 }

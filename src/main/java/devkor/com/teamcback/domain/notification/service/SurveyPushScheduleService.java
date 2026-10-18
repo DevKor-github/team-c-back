@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.dto.request.AdminSurveyPushScheduleReq;
 import devkor.com.teamcback.domain.notification.dto.response.AdminSurveyPushScheduleRes;
 import devkor.com.teamcback.domain.notification.dto.response.AdminSurveyPushScheduleStageRes;
@@ -33,6 +34,7 @@ public class SurveyPushScheduleService {
             SurveyNotificationStage.DEADLINE
     );
 
+    private final PushWorkSignals workSignals;
     private final SurveyPushScheduleRepository surveyPushScheduleRepository;
     private final Clock clock;
     @org.springframework.beans.factory.annotation.Value("${push.storage:mysql}") private String storage = "mysql";
@@ -156,6 +158,7 @@ public class SurveyPushScheduleService {
             LocalDateTime scheduledAt,
             int rewardPoint
     ) {
+        workSignals.wakeAfterCommit(PushWorkSignals.Work.SURVEY, scheduledAt);
         String idempotencyKey = idempotencyKey(surveyKey, stage, targetUserId);
         surveyPushScheduleRepository.findByIdempotencyKey(idempotencyKey, scope())
                 .ifPresentOrElse(
@@ -188,6 +191,7 @@ public class SurveyPushScheduleService {
         }
 
         existing.updatePendingSchedule(remindAt, rewardPoint);
+        workSignals.wakeAfterCommit(PushWorkSignals.Work.SURVEY, remindAt);
         return new SurveyReminderRes(
                 surveyKey,
                 true,
@@ -214,6 +218,7 @@ public class SurveyPushScheduleService {
                 LocalDateTime.now(clock)
         ).withAudience(scope()));
 
+        workSignals.wakeAfterCommit(PushWorkSignals.Work.SURVEY, saved.getScheduledAt());
         return new SurveyReminderRes(
                 surveyKey,
                 true,

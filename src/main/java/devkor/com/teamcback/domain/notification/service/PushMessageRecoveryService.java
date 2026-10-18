@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.config.PushRecoveryWorkerProperties;
 import devkor.com.teamcback.domain.notification.entity.PushDispatch;
 import devkor.com.teamcback.domain.notification.entity.PushMessage;
@@ -25,6 +26,7 @@ public class PushMessageRecoveryService {
 
     private static final String WORKER_INTERRUPTED = "worker_interrupted";
 
+    private final PushWorkSignals workSignals;
     private final PushMessageRepository pushMessageRepository;
     private final PushDispatchRepository pushDispatchRepository;
     private final PushRecoveryWorkerProperties pushRecoveryWorkerProperties;
@@ -54,6 +56,7 @@ public class PushMessageRecoveryService {
         });
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messages);
         return messages.size();
     }
 

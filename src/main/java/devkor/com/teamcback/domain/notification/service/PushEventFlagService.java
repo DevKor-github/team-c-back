@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.dto.response.AdminPushEventFlagRes;
 import devkor.com.teamcback.domain.notification.entity.type.AppVariant;
 import devkor.com.teamcback.domain.notification.entity.type.PushEventType;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PushEventFlagService {
 
+    private final PushWorkSignals workSignals;
     private final StringRedisTemplate redisTemplate;
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -91,6 +93,7 @@ public class PushEventFlagService {
             changes.save(new devkor.com.teamcback.domain.notification.entity.PushEventSettingChange(
                     audience + ":" + eventType.name(), enabled, authentication == null ? "SYSTEM" : authentication.getName()));
             settings.save(new devkor.com.teamcback.domain.notification.entity.PushEventSetting(audience + ":" + eventType.name(), enabled));
+            if (eventType == PushEventType.SURVEY) workSignals.wakeAfterCommit(PushWorkSignals.Work.SURVEY, java.time.LocalDateTime.now());
         } else {
             redisTemplate.opsForValue().set(eventType.redisKey(), Boolean.toString(enabled));
         }

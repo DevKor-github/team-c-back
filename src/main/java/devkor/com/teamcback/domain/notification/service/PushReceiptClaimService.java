@@ -1,5 +1,6 @@
 package devkor.com.teamcback.domain.notification.service;
 
+import devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals;
 import devkor.com.teamcback.domain.notification.config.PushReceiptWorkerProperties;
 import devkor.com.teamcback.domain.notification.dto.expo.ExpoPushReceipt;
 import devkor.com.teamcback.domain.notification.dto.worker.PushReceiptItem;
@@ -33,6 +34,7 @@ public class PushReceiptClaimService {
     private static final String CLIENT_ERROR_STATUS = "client_error";
     private static final String DEVICE_NOT_REGISTERED_ERROR = "DeviceNotRegistered";
 
+    private final PushWorkSignals workSignals;
     private final PushMessageRepository pushMessageRepository;
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchRepository pushDispatchRepository;
@@ -58,6 +60,7 @@ public class PushReceiptClaimService {
                 .toList();
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messages);
         return receiptItems;
     }
 
@@ -102,6 +105,7 @@ public class PushReceiptClaimService {
         }
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messageMap.values());
     }
 
     @Transactional("pushTransactionManager")
@@ -136,6 +140,7 @@ public class PushReceiptClaimService {
         });
 
         refreshDispatchStatuses(dispatchIds, now);
+        workSignals.messagesChangedAfterCommit(messageMap.values());
     }
 
     private PushReceiptItem claimMessage(

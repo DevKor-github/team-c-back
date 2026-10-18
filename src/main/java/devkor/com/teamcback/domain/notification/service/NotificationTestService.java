@@ -41,6 +41,7 @@ public class NotificationTestService {
     private static final String TEST_TITLE = "고대로 테스트 알림";
     private static final String TEST_BODY = "푸시 알림 연결이 정상적으로 동작합니다.";
 
+    private final devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals workSignals;
     private final PushInstallationRepository pushInstallationRepository;
     private final PushDispatchRepository pushDispatchRepository;
     private final PushMessageRepository pushMessageRepository;
@@ -110,6 +111,7 @@ public class NotificationTestService {
 
             dispatch.updateRecipientCount(1);
             pushDispatchRepository.save(dispatch);
+            workSignals.messagesChangedAfterCommit(List.of(message));
 
             return response(dispatch, message);
         } catch (DataIntegrityViolationException e) {

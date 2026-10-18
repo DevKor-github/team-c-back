@@ -47,7 +47,7 @@ class SurveyPushScheduleServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SurveyPushScheduleService(repository, FIXED_CLOCK);
+        service = new SurveyPushScheduleService(org.mockito.Mockito.mock(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.class), repository, FIXED_CLOCK);
     }
 
     @Test

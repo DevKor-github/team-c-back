@@ -3,6 +3,10 @@ name: CI/CD using github actions & docker
 on:
   workflow_dispatch:
     inputs:
+      audit_only:
+        description: Inspect backend versions and worker settings without deploying
+        type: boolean
+        default: false
       stage_only:
         description: Build an immutable image without deploying
         type: boolean
@@ -16,6 +20,7 @@ permissions:
 
 jobs:
   push_to_registry:
+    if: ${{ !inputs.audit_only }}
     name: Push to aws container registry
     runs-on: ubuntu-latest
     steps:
@@ -65,7 +70,7 @@ jobs:
           
           
   pull_from_registry:
-    if: ${{ !inputs.stage_only }}
+    if: ${{ !inputs.stage_only && !inputs.audit_only }}
     name: Connect server ssh and pull from container registry
     needs: push_to_registry
     runs-on: ubuntu-latest
@@ -84,3 +89,27 @@ jobs:
             chmod +x ./deploy-dev.sh
             sudo ./deploy-dev.sh
             docker image prune -f
+
+  audit_backends:
+    if: ${{ inputs.audit_only }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect deployed backends without printing credentials
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_NAME }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -eu
+            docker ps --format '{{.Names}} {{.Image}} {{.Status}}'
+            docker inspect app-dev app-latest app-stable | python3 -c '
+            import json,sys
+            allowed={"PUSH_STORAGE","PUSH_AUDIENCE","PUSH_WORKER_ENABLED","PUSH_RECEIPT_WORKER_ENABLED","PUSH_SURVEY_WORKER_ENABLED","PUSH_OUTBOX_ENABLED","PUSH_WORKER_FIXED_DELAY_MS","PUSH_RECEIPT_WORKER_FIXED_DELAY_MS","PUSH_SURVEY_POLL_INTERVAL_MS","PUSH_IDLE_NAMESPACE","PUSH_IDLE_RECONCILE_CRON"}
+            for c in json.load(sys.stdin):
+                print(c["Name"], c["Config"]["Image"], c["Image"], c["State"]["Status"])
+                print("ports", c["NetworkSettings"]["Ports"])
+                print("worker settings", dict(v.split("=",1) for v in c["Config"]["Env"] if v.split("=",1)[0] in allowed))
+                print("configuration mounts", [(m["Source"],m["Destination"]) for m in c.get("Mounts",[]) if "yml" in m["Destination"] or "yaml" in m["Destination"]])
+            '

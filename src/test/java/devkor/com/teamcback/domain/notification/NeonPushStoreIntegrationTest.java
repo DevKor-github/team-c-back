@@ -60,6 +60,7 @@ import static org.assertj.core.api.Assertions.*;
 })
 class NeonPushStoreIntegrationTest {
     @MockBean RedissonClient redissonClient;
+    @MockBean devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals workSignals;
     @Autowired UserRepository users;
     @Autowired PushInstallationRepository installations;
     @Autowired PushDispatchRepository dispatches;
@@ -126,6 +127,29 @@ class NeonPushStoreIntegrationTest {
                 "제목","내용",null,PushActionType.HOME,Map.of(),"forbidden-live",0L,false);
         assertThatThrownBy(() -> dispatchService.enqueue(command)).isInstanceOf(devkor.com.teamcback.global.exception.exception.GlobalException.class);
         assertThat(dispatches.count()).isZero();
+    }
+
+    @Test void wakeTimesFollowPendingWorkAndDisappearWhenCompleted() {
+        String suffix = UUID.randomUUID().toString();
+        var user = users.saveAndFlush(new User("wake-"+suffix, "wake-"+suffix+"@example.test", Role.ADMIN, Provider.GOOGLE));
+        installations.saveAndFlush(new PushInstallation(user.getUserId(), "wake-"+suffix, "ExponentPushToken["+suffix+"]", AppVariant.PRODUCTION));
+        dispatchService.enqueue(new devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand(
+                NotificationType.GENERAL, PushMode.ACTUAL, AppVariant.PRODUCTION, PushTargetType.USER, user.getUserId().toString(),
+                "제목", "내용", PushActionType.HOME, Map.of(), "wake-"+suffix, 0L));
+        assertThat(messages.findNextQueuedAt()).isNotNull();
+        assertThat(messages.findNextReceiptAt()).isNull();
+        var now = java.time.LocalDateTime.now().withNano(0);
+        new org.springframework.transaction.support.TransactionTemplate(tx).executeWithoutResult(status ->
+                messages.findAll().get(0).recordTicket("ok", "local-ticket", null, now));
+        assertThat(messages.findNextQueuedAt()).isNull();
+        assertThat(messages.findNextReceiptAt()).isEqualTo(now.plusMinutes(15));
+        new org.springframework.transaction.support.TransactionTemplate(tx).executeWithoutResult(status ->
+                messages.findAll().get(0).recordReceipt("ok", null, now.plusMinutes(15)));
+        assertThat(messages.findNextReceiptAt()).isNull();
+        schedules.saveAndFlush(new SurveyPushSchedule("wake-survey", SurveyNotificationStage.STARTED, null,
+                now.plusDays(3), 0, "wake-survey", now).withAudience(PushAudience.INTERNAL_TEST));
+        assertThat(schedules.findNextPendingAt(PushAudience.INTERNAL_TEST)).isEqualTo(now.plusDays(3));
+        assertThat(schedules.findNextPendingAt(PushAudience.LIVE)).isNull();
     }
 
     @Test void settingsAndSchedulesAreIsolatedByAudience() {

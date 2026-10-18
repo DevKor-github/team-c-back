@@ -26,6 +26,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "push.storage", havingValue = "neon")
 public class NeonPushStoreConfiguration {
+    /** Routine uptime probes must not execute validation queries against sleeping Neon. */
+    @Bean(name = "dbHealthContributor")
+    org.springframework.boot.actuate.health.HealthContributor serviceDatabaseHealth(
+            @Qualifier("dataSource") DataSource source) {
+        return new org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator(source);
+    }
+
     @Bean
     org.springframework.beans.factory.InitializingBean validatePushAudience(Environment env) {
         return () -> {

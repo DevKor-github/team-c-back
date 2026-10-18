@@ -12,24 +12,26 @@ import urllib.parse
 
 
 def main():
-    if importlib.util.find_spec("psycopg2") is None:
+    driver = next((name for name in ("psycopg", "psycopg2") if importlib.util.find_spec(name)), None)
+    if driver is None:
         # Reuse the migration's existing protected environment; install nothing on the host.
-        for candidate in Path("/home/yjlee/infra/neon-cutover-20260928").glob("**/bin/python*"):
-            result = subprocess.run([str(candidate), "-c", "import psycopg2"], capture_output=True)
+        for candidate in Path("/home/yjlee/infra/neon-cutover-20260928").glob("**/bin/python"):
+            result = subprocess.run([str(candidate), "-c", "import importlib.util; assert importlib.util.find_spec('psycopg') or importlib.util.find_spec('psycopg2')"], capture_output=True)
             if result.returncode == 0:
                 os.execv(str(candidate), [str(candidate), __file__])
         print("Postgres counter check unavailable: existing migration Python driver not found")
         return
-    import psycopg2
+    postgres = __import__(driver)
     container = json.loads(subprocess.check_output(["docker", "inspect", "app-latest"], text=True))[0]
     environment = dict(value.split("=", 1) for value in container["Config"]["Env"])
     url = urllib.parse.urlsplit(environment["PUSH_DATABASE_URL"].removeprefix("jdbc:"))
-    connection = psycopg2.connect(host=url.hostname, port=url.port or 5432, dbname=url.path.lstrip("/"),
+    connection = postgres.connect(host=url.hostname, port=url.port or 5432, dbname=url.path.lstrip("/"),
             user=environment.get("PUSH_DATABASE_USERNAME") or url.username,
             password=environment.get("PUSH_DATABASE_PASSWORD") or url.password,
             sslmode="require", connect_timeout=10)
     connection.autocommit = True
-    connection.set_session(readonly=True)
+    with connection.cursor() as cursor:
+        cursor.execute("SET default_transaction_read_only = on")
 
     def snapshot():
         with connection.cursor() as cursor:

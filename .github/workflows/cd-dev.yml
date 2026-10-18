@@ -130,7 +130,7 @@ jobs:
             counter_script=$(mktemp)
             trap 'rm -f "$counter_script"' EXIT
             curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/verify-push-idle.py' -o "$counter_script"
-            python3 "$counter_script"
+            sudo -n python3 "$counter_script"
 
   rollout_idle_workers:
     if: ${{ always() && !cancelled() && inputs.rollout_idle && inputs.stage_only && !inputs.audit_only && (needs.push_to_registry.result == 'success' || (needs.push_to_registry.result == 'skipped' && inputs.image_revision)) }}

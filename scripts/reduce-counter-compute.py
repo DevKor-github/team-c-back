@@ -72,6 +72,12 @@ def main():
         subprocess.run(['systemctl', 'start', 'kodaero-request-counter'], check=True)
         print('Collector updated; state, identity, ingest secret and offsets preserved', flush=True)
         print('backup', str(backup), 'code_sha256', hashlib.sha256(script.read_bytes()).hexdigest(), flush=True)
+    elif phase == 'checkpoint':
+        # One deployment validation checkpoint; the normal hourly schedule resumes immediately.
+        # Only aggregate log-counter writes are involved; no notification/provider calls.
+        with sqlite3.connect(ROOT / 'actions.sqlite') as db:
+            db.execute("DELETE FROM live_settings WHERE key='checkpoint_hour'")
+        time.sleep(5)
     elif phase != 'audit':
         raise ValueError('Unknown phase')
     print('service', subprocess.check_output(['systemctl', 'is-active', 'kodaero-request-counter'], text=True).strip(), flush=True)

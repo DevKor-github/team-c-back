@@ -6,7 +6,7 @@ on:
       counter_phase:
         description: Audit or apply the durable counter snapshot and hourly Neon checkpoint
         type: choice
-        options: ['', audit, apply]
+        options: ['', audit, apply, checkpoint]
         default: ''
       rehome_phase:
         description: Stage, activate, or verify the reviewed Neon project migration

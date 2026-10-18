@@ -119,3 +119,23 @@ jobs:
                 print("worker settings", dict(v.split("=",1) for v in c["Config"]["Env"] if v.split("=",1)[0] in allowed))
                 print("configuration mounts", [(m["Source"],m["Destination"]) for m in c.get("Mounts",[]) if "yml" in m["Destination"] or "yaml" in m["Destination"]])
             '
+
+  rollout_idle_workers:
+    if: ${{ inputs.rollout_idle && inputs.stage_only && !inputs.audit_only }}
+    needs: push_to_registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Roll out one verified image to every push worker
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_NAME }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          command_timeout: 15m
+          script: |
+            set -eu
+            rollout_script=$(mktemp)
+            trap 'rm -f "$rollout_script"' EXIT
+            curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/deploy-push-idle.py' -o "$rollout_script"
+            python3 "$rollout_script" '${{ secrets.DOCKER_USER }}/kodaero-app:neon-${{ github.sha }}' '${{ github.sha }}'

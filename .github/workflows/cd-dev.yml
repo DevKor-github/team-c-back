@@ -11,6 +11,10 @@ on:
         description: Deploy the immutable wake-on-work image to dev, latest and stable (requires stage_only)
         type: boolean
         default: false
+      publish_idle_revision:
+        description: Publish aliases for an immutable revision already verified on all three backends
+        type: string
+        default: ''
       stage_only:
         description: Build an immutable image without deploying
         type: boolean
@@ -24,7 +28,7 @@ permissions:
 
 jobs:
   push_to_registry:
-    if: ${{ !inputs.audit_only }}
+    if: ${{ !inputs.audit_only && !inputs.publish_idle_revision }}
     name: Push to aws container registry
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +78,7 @@ jobs:
           
           
   pull_from_registry:
-    if: ${{ !inputs.stage_only && !inputs.audit_only }}
+    if: ${{ !inputs.stage_only && !inputs.audit_only && !inputs.publish_idle_revision }}
     name: Connect server ssh and pull from container registry
     needs: push_to_registry
     runs-on: ubuntu-latest
@@ -139,3 +143,24 @@ jobs:
             trap 'rm -f "$rollout_script"' EXIT
             curl --fail --silent --show-error 'https://raw.githubusercontent.com/DevKor-github/team-c-back/${{ github.sha }}/scripts/deploy-push-idle.py' -o "$rollout_script"
             python3 "$rollout_script" '${{ secrets.DOCKER_USER }}/kodaero-app:neon-${{ github.sha }}' '${{ github.sha }}'
+
+  publish_verified_idle_aliases:
+    if: ${{ inputs.publish_idle_revision }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the verified immutable image for subsequent standard deployments
+        env:
+          REGISTRY_USER: ${{ secrets.DOCKER_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          REVISION: ${{ inputs.publish_idle_revision }}
+        run: |
+          set -eu
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          printf '%s' "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USER" --password-stdin
+          image="$REGISTRY_USER/kodaero-app:neon-$REVISION"
+          docker pull "$image"
+          test "$(docker inspect --format '{{ index .Config.Labels "com.kodaero.push-idle" }}' "$image")" = wake-v1
+          for alias in "$REGISTRY_USER/kodaero-app:latest" "$REGISTRY_USER/kodaero-app:stable" "$REGISTRY_USER/kodaero-dev:latest"; do
+            docker tag "$image" "$alias"
+            docker push "$alias"
+          done

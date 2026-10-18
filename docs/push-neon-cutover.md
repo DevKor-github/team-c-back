@@ -80,3 +80,17 @@ python3 scripts/test_migrate_push_neon.py
 - 검증용 실제 푸시는 발송하지 않았다.
 
 All three backend containers passed HTTP 200 health checks and maintenance was removed at 2026-09-28 01:27 KST.
+
+## 2026-10-18 유휴 컴퓨팅 절감
+
+발송/receipt/예약의 주기 실행은 먼저 Redis의 다음 작업 시각과 공유 lease만 확인한다. 신호가 없으면 Neon 트랜잭션에 진입하지 않는다. 발송 생성(앱의 테스트 알림 포함), 재시도, receipt 대기, 예약 생성/변경, 설문 활성화, 중단 작업 복구는 성공한 트랜잭션 커밋 뒤 다음 작업 시각을 알린다. 동시에 들어온 더 이른 신호는 덮어쓰지 않는다. 발송과 receipt는 동일 DB에 연결된 모든 서버가 공유하며 예약은 audience별로 구분한다.
+
+작업의 원본과 처리 상태는 계속 Neon에 보관한다. Redis는 작업 시각 힌트이므로 초기 기동 및 매시 정각에 한 번 원본과 대조한다. Redis 유실/프로세스 중단 때 누락된 힌트는 최대 한 시간 뒤 복구된다. Redis 장애 중에도 빈 Neon 조회를 5초마다 반복하지 않는다. SQL 실행 실패는 15분 뒤 재시도한다. 기존 MySQL 저장소 모드의 워커 동작은 유지한다.
+
+설문 워커의 트랜잭션은 실제 작업을 실행하는 별도 scheduler 바깥이 아니라 `processDueSchedulesOnce()`에 둔다. 최소 유휴 연결 0, 연결 유휴 제한 60초, Hikari keepalive 0을 사용한다. 일반 `/actuator/health`의 DB 검사는 기존 서비스 DB만 확인하며 잠든 Neon을 깨우지 않는다. Neon 연결은 실제 푸시 요청과 작업 실행으로 검증한다.
+
+`PUSH_IDLE_NAMESPACE`는 같은 Neon DB를 쓰는 모든 개발/운영/예비 인스턴스에서 같아야 한다. 다른 DB를 연결한다면 다른 namespace를 사용한다. `PUSH_IDLE_RECONCILE_CRON` 기본값은 `0 0 * * * *`다. 아무 작업이 없어도 복구 대조 때문에 매시 한 번 깨어날 수 있으며, 0.25 CU 및 5분 자동 중지 기준 월 약 15 CU-hours에 기동/실제 요청/작업 시간이 추가된다.
+
+검증: Java 전체 테스트, 전용 PostgreSQL(55439) 및 Redis(55440) 통합 테스트. `KODAERO_PUSH_PG_TEST=true KODAERO_PUSH_REDIS_TEST=true bash ./gradlew test bootJar`를 사용한다. 운영 DB로 테스트하지 않는다.
+
+배포는 기존 `cd-dev.yml`의 `stage_only=true`, `rollout_idle=true` 수동 실행으로 불변 이미지를 만든다. `scripts/deploy-push-idle.py`는 기존 컨테이너 설정과 이미지 백업을 권한 제한 디렉터리에 남기고, 워커를 끈 별도 canary에서 기동/DB validate/health를 통과한 뒤 `app-dev`, `app-latest`, `app-stable`을 순차 교체한다. 실패한 컨테이너는 이전 이미지로 복구한다. 모든 서버 확인 후에만 `publish_idle_revision=<검증한 SHA>`로 registry aliases를 동기화한다. DB 삭제/이전/과거 푸시 재발송은 수행하지 않는다.

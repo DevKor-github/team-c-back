@@ -32,9 +32,21 @@ def main():
     connection.autocommit = True
     with connection.cursor() as cursor:
         cursor.execute("SET default_transaction_read_only = on")
+        cursor.execute("SELECT to_regclass('pg_stat_statements')")
+        statements_available = cursor.fetchone()[0] is not None
+
+    mode = "statement_calls" if statements_available else "table_scans"
 
     def snapshot():
         with connection.cursor() as cursor:
+            if not statements_available:
+                cursor.execute("""SELECT relname, seq_scan + coalesce(idx_scan, 0)
+                        FROM pg_stat_user_tables WHERE relname = ANY(%s)""",
+                        (["tb_push_message", "tb_survey_push_schedule", "tb_push_event_setting"],))
+                scans = dict(cursor.fetchall())
+                if len(scans) != 3:
+                    raise RuntimeError("Push table statistics are incomplete")
+                return scans
             cursor.execute("""SELECT queryid, calls, query FROM pg_stat_statements
                     WHERE userid = (SELECT oid FROM pg_roles WHERE rolname = current_user)
                     AND (query ILIKE %s OR query ILIKE %s) AND query ILIKE %s""",
@@ -51,7 +63,7 @@ def main():
         started = datetime.datetime.now(datetime.timezone.utc).isoformat()
         time.sleep(30)
         second = snapshot()
-        print(json.dumps({"started_at": started, "interval_seconds": 30, "before": first, "after": second,
+        print(json.dumps({"mode": mode, "started_at": started, "interval_seconds": 30, "before": first, "after": second,
                           "delta": {key: second[key] - first[key] for key in first}}), flush=True)
     finally:
         connection.close()

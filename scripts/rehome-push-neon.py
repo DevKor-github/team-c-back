@@ -134,7 +134,9 @@ def main():
             environment = dict(v.split('=', 1) for v in c['Config']['Env'])
             if c['Image'] != EXPECTED_IMAGE or any(environment.get(k) != v for k, v in payload.items()):
                 raise RuntimeError('Container configuration mismatch: ' + name)
-            print(name, 'target config matches', 'health', health(name),
+            if not health(name):
+                raise RuntimeError('Container health failed: ' + name)
+            print(name, 'target config matches', 'health', 'UP',
                   'audience', environment.get('PUSH_AUDIENCE'), flush=True)
         print((DIRECTORY / 'receipt.json').read_text(), flush=True)
     else:

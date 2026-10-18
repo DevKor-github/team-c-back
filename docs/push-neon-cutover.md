@@ -105,3 +105,18 @@ All three backend containers passed HTTP 200 health checks and maintenance was r
 - 외부 운영 `/actuator/health` 및 관리자 `/health` HTTP 200 확인.
 - 12:52:29~12:52:59 KST 읽기 전용 실서버 검증: `pg_stat_user_tables`에서 `tb_push_event_setting` 87096→87096, `tb_push_message` 1015448→1015448, `tb_survey_push_schedule` 86998→86998. 세 테이블 모두 scan 증가 0. 이는 30초 유휴 샘플이며 실제 사용자 요청/예약 실행/정각 대조는 이후에도 DB를 사용할 수 있다. 해당 DB에 일반 `pg_stat_statements` 뷰가 없어 확장 설치 없이 테이블 scan 통계를 사용했다. [실서버 확인](https://github.com/DevKor-github/team-c-back/actions/runs/39095131436).
 - Neon 프로젝트·데이터·연결 정보는 보존했다. 컴퓨팅 기사용량은 초기화하지 않는다. 실제 검증용 푸시는 발송하지 않았다.
+
+## 2026-10-18 새 Neon 프로젝트로 이전
+
+13:04:16 KST, `app-dev`, `app-latest`, `app-stable`의 푸시 DB를 무료 프로젝트 `kodaero-push-20261018` (`lively-shape-96540511`)로 전환했다. 기존 `kodaero-push-images` (`still-unit-03369870`)는 삭제하지 않고 읽기 전용으로 보존하고 컴퓨팅 중지를 요청했다. 이전 프로젝트의 기사용량은 초기화하지 않는다.
+
+새 프로젝트는 기존과 같은 PostgreSQL 18, AWS us-east-1, 고정 0.25 CU다. suspend timeout의 `0`은 자동 중지 비활성화가 아니라 플랜 기본값을 뜻한다. Free의 유휴 자동 중지 기본값을 사용한다. Vercel 관리 조직이므로 새 프로젝트 생성은 기존 Neon integration의 `free_v3` 플랜으로 수행했다.
+
+- `pg_dump`/`pg_restore`는 direct 연결로 전체 DB를 복사했다. 시험 복사, 별도 백엔드 canary, Vercel 대상 DB 전용 이미지 canary를 통과한 뒤 기존 DB의 새 세션을 읽기 전용으로 설정하고 기존 세션을 종료했다. 최종 복사에서 모든 행의 정규화 JSON 체크섬을 비교했다.
+- 최종 데이터: `push_admin_images` 6, `tb_push_installation` 431, `tb_push_dispatch` 79, `tb_push_message` 3,676, `tb_survey_push_schedule` 1, `tb_push_event_setting` 8, `tb_push_event_setting_change` 8. 7개 테이블 모두 건수 및 SHA-256 일치. sequence는 dump/restore로 유지하고 제한된 runtime 역할의 테이블/sequence 권한을 재적용했다.
+- 최종 archive SHA-256: `35c1f7a3b2a19941e2c36d576b36de1866d6f8fffd709fd680ef0be29cc3d405`. Mac의 권한 제한 백업: `/Users/818jsy/.config/kodaero/neon-rehome-20261018/final.dump`; 같은 폴더에 테이블별 체크섬과 migration receipt를 저장했다. 연결 정보가 있는 파일은 출력/커밋하지 않는다.
+- 서버 설정 원본과 전환 receipt: `/home/yjlee/infra/neon-rehome-20261018`. 기존 `neon-push.env`에도 새 연결을 저장해 이후 일반 배포에 유지한다. Redis 힌트 namespace는 세 서버 모두 `kodaero-push-20261018`이다.
+- 앱 이미지는 앞서 검증한 idle 절감 이미지 그대로다. [대상 DB canary](https://github.com/DevKor-github/team-c-back/actions/runs/39095504591), [세 서버 전환](https://github.com/DevKor-github/team-c-back/actions/runs/39095687725).
+- 관리자 서비스는 기존 운영 배포의 소스를 재사용한 `dpl_HocSk15L6CrG2Arz8a2fskvT7N9N`을 검증 후 승격했다. `admin.kodaero.co.kr`의 이미지 URL을 유지했고 기존 이미지의 HTTP 200 및 바이트 일치를 확인했다. Vercel integration 연결, production/development DB 환경변수와 로컬 이미지 DB 설정도 새 프로젝트로 교체했다. 다른 로컬 미커밋 UI 변경은 배포에 포함하지 않았다.
+- [전환 후 실서버 확인](https://github.com/DevKor-github/team-c-back/actions/runs/39095828501): 세 서버 모두 새 연결 설정 일치, health UP 및 기존 audience 유지. 13:04:39~13:05:10 KST 유휴 샘플에서 설정/메시지/예약 테이블 scan 증가가 모두 0이었다. 외부 운영 health와 관리자 health도 HTTP 200을 확인했다. Neon API에서 이전 compute의 `idle` 상태를 확인했다. 일시적인 검증용 GitHub secret은 검증 후 삭제했다.
+- 새 DB 쓰기 시작 후 이전 연결로 단순 롤백하지 않는다. 이전 프로젝트를 복구 대상으로 사용하려면 새 쓰기를 먼저 중지하고 변경분을 별도 대조·복사해야 한다. 실제 검증용 푸시는 발송하지 않았다.

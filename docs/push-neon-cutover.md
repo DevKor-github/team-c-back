@@ -94,3 +94,14 @@ All three backend containers passed HTTP 200 health checks and maintenance was r
 검증: Java 전체 테스트, 전용 PostgreSQL(55439) 및 Redis(55440) 통합 테스트. `KODAERO_PUSH_PG_TEST=true KODAERO_PUSH_REDIS_TEST=true bash ./gradlew test bootJar`를 사용한다. 운영 DB로 테스트하지 않는다.
 
 배포는 기존 `cd-dev.yml`의 `stage_only=true`, `rollout_idle=true` 수동 실행으로 불변 이미지를 만든다. `scripts/deploy-push-idle.py`는 기존 컨테이너 설정과 이미지 백업을 권한 제한 디렉터리에 남기고, 워커를 끈 별도 canary에서 기동/DB validate/health를 통과한 뒤 `app-dev`, `app-latest`, `app-stable`을 순차 교체한다. 실패한 컨테이너는 이전 이미지로 복구한다. 모든 서버 확인 후에만 `publish_idle_revision=<검증한 SHA>`로 registry aliases를 동기화한다. DB 삭제/이전/과거 푸시 재발송은 수행하지 않는다.
+
+### 적용 확인
+
+- 2026-10-18 12:49:58 KST, 세 서버 모두 동일한 불변 이미지 `neon-3d731353acd7d4d36f6c656e8d19a11e1327d80c`로 교체 및 health UP 확인. [배포 실행](https://github.com/DevKor-github/team-c-back/actions/runs/39094832238).
+- 이미지 ID: `sha256:383f62278aa4be6717ff8f082d18002f916560e7ee7c439436cbf53955dae0ec`. registry digest: `sha256:3771a9d021f69fc95e4d8397c08c42c888682d7e2ff756617e2b11ba00ed754f`.
+- `kodaero-app:latest`, `kodaero-app:stable`, `kodaero-dev:latest` 모두 위 digest로 동기화. [태그 적용](https://github.com/DevKor-github/team-c-back/actions/runs/39095003561).
+- 백업/receipt: 서버 `/home/yjlee/infra/push-idle-rollouts/20261018T034716Z-3d731353acd7`. 최초 교체 시 보호된 env 파일의 읽기 권한 문제는 기존 배포와 동일한 sudo Compose 경로로 해결했다. 실패한 최초 시도에서는 기존 서버가 교체되지 않았다.
+- Java 전체 테스트 221개: 실패/오류 0, 2개 skip. 실제 PostgreSQL·Redis 테스트에는 유휴 1000 ticks, 커밋/롤백, 동시 신호/lease, 예약·receipt 시각, Redis 장애 시 재폴링 방지 검증이 포함됐다.
+- 외부 운영 `/actuator/health` 및 관리자 `/health` HTTP 200 확인.
+- 12:52:29~12:52:59 KST 읽기 전용 실서버 검증: `pg_stat_user_tables`에서 `tb_push_event_setting` 87096→87096, `tb_push_message` 1015448→1015448, `tb_survey_push_schedule` 86998→86998. 세 테이블 모두 scan 증가 0. 이는 30초 유휴 샘플이며 실제 사용자 요청/예약 실행/정각 대조는 이후에도 DB를 사용할 수 있다. 해당 DB에 일반 `pg_stat_statements` 뷰가 없어 확장 설치 없이 테이블 scan 통계를 사용했다. [실서버 확인](https://github.com/DevKor-github/team-c-back/actions/runs/39095131436).
+- Neon 프로젝트·데이터·연결 정보는 보존했다. 컴퓨팅 기사용량은 초기화하지 않는다. 실제 검증용 푸시는 발송하지 않았다.

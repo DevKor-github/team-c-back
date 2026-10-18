@@ -33,8 +33,9 @@ import static org.assertj.core.api.Assertions.*;
         "spring.sql.init.mode=never",
         "spring.cache.type=simple",
         "spring.data.redis.host=localhost",
-        "spring.data.redis.port=6379",
-        "spring.data.redis.password=test",
+        "spring.data.redis.port=55440",
+        "spring.data.redis.password=",
+        "push.idle.namespace=kodaero-local-pg-integration",
         "push.worker.enabled=false",
         "push.receipt-worker.enabled=false",
         "jwt.secret.key=MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
@@ -60,7 +61,8 @@ import static org.assertj.core.api.Assertions.*;
 })
 class NeonPushStoreIntegrationTest {
     @MockBean RedissonClient redissonClient;
-    @MockBean devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals workSignals;
+    @Autowired devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals workSignals;
+    @Autowired org.springframework.data.redis.connection.RedisConnectionFactory redisFactory;
     @Autowired UserRepository users;
     @Autowired PushInstallationRepository installations;
     @Autowired PushDispatchRepository dispatches;
@@ -96,6 +98,33 @@ class NeonPushStoreIntegrationTest {
 
     @org.junit.jupiter.api.BeforeEach void clearPushData() {
         messages.deleteAll(); dispatches.deleteAll(); installations.deleteAll(); settings.deleteAll(); schedules.deleteAll(); events.deleteAll();
+        if ("true".equals(System.getenv("KODAERO_PUSH_REDIS_TEST"))) {
+            var redis = new org.springframework.data.redis.core.StringRedisTemplate(redisFactory);
+            redis.delete(redis.keys("push:wake:v1:kodaero-local-pg-integration:*"));
+        }
+    }
+
+    @Test
+    @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named="KODAERO_PUSH_REDIS_TEST", matches="true")
+    void committedEnqueueWakesWorkerButRolledBackEnqueueDoesNot() {
+        String suffix = UUID.randomUUID().toString();
+        var user = users.saveAndFlush(new User("commit-"+suffix, "commit-"+suffix+"@example.test", Role.ADMIN, Provider.GOOGLE));
+        installations.saveAndFlush(new PushInstallation(user.getUserId(), "commit-"+suffix, "ExponentPushToken["+suffix+"]", AppVariant.PRODUCTION));
+        var command = new devkor.com.teamcback.domain.notification.dto.request.PushDispatchCommand(
+                NotificationType.GENERAL, PushMode.ACTUAL, AppVariant.PRODUCTION, PushTargetType.USER, user.getUserId().toString(),
+                "제목", "내용", PushActionType.HOME, Map.of(), "commit-"+suffix, 0L);
+        new org.springframework.transaction.support.TransactionTemplate(tx).executeWithoutResult(status -> {
+            dispatchService.enqueue(command);
+            status.setRollbackOnly();
+        });
+        assertThat(messages.count()).isZero();
+        assertThat(workSignals.claim(devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.Work.DISPATCH)).isNull();
+        dispatchService.enqueue(command);
+        assertThat(messages.count()).isEqualTo(1);
+        var work = devkor.com.teamcback.domain.notification.scheduler.PushWorkSignals.Work.DISPATCH;
+        String lease = workSignals.claim(work);
+        assertThat(lease).isNotNull();
+        workSignals.release(work, lease);
     }
 
     @Test void enqueueIsAtomicScopedAndIdempotentUnderConcurrentRetry() throws Exception {

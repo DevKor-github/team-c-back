@@ -1,5 +1,6 @@
 package devkor.com.teamcback.global.security;
 
+import devkor.com.teamcback.domain.apistatistics.service.ApiStatisticsService;
 import devkor.com.teamcback.global.exception.handler.CustomAccessDeniedHandler;
 import devkor.com.teamcback.global.exception.handler.CustomAuthenticationEntryPoint;
 import devkor.com.teamcback.global.exception.handler.ExceptionHandlerFilter;
@@ -33,6 +34,7 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RedisUtil redisUtil;
     private final UserDetailsService userDetailsService;
+    private final ApiStatisticsService apiStatisticsService;
     private final LogoutHandler logoutHandler;
     private final LogoutSuccessHandler logoutSuccessHandler;
 
@@ -68,7 +70,7 @@ public class SecurityConfig {
 
     @Bean
     public LoggingFilter loggingFilter() {
-        return new LoggingFilter();
+        return new LoggingFilter(apiStatisticsService);
     }
 
     @Bean

@@ -102,6 +102,86 @@ public interface ApiDailyStatisticRepository extends JpaRepository<ApiDailyStati
             """)
     LocalDate findCollectionStartDate(@Param("environment") String environment);
 
+    @Query("""
+            SELECT DISTINCT s.endpoint AS endpoint, s.method AS method
+            FROM ApiDailyStatistic s
+            WHERE s.environment = :environment
+            ORDER BY s.endpoint, s.method
+            """)
+    List<EndpointMethod> findEndpointMethods(@Param("environment") String environment);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.callCount), 0)
+            FROM ApiDailyStatistic s
+            WHERE s.statDate BETWEEN :startDate AND :endDate
+              AND s.environment = :environment
+              AND s.endpoint = :endpoint
+              AND s.method = :method
+            """)
+    Long sumBetweenByEndpointAndMethod(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("environment") String environment,
+            @Param("endpoint") String endpoint,
+            @Param("method") String method
+    );
+
+    @Query("""
+            SELECT s.statDate AS statDate, SUM(s.callCount) AS callCount
+            FROM ApiDailyStatistic s
+            WHERE s.statDate BETWEEN :startDate AND :endDate
+              AND s.environment = :environment
+              AND s.endpoint = :endpoint
+              AND s.method = :method
+            GROUP BY s.statDate
+            ORDER BY s.statDate
+            """)
+    List<DailyCount> findDailyCountsByEndpointAndMethod(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("environment") String environment,
+            @Param("endpoint") String endpoint,
+            @Param("method") String method
+    );
+
+    @Query(value = """
+            SELECT DATE_FORMAT(stat_date, '%Y-%m') AS period,
+                   SUM(call_count) AS callCount
+            FROM api_daily_statistics
+            WHERE stat_date BETWEEN :startDate AND :endDate
+              AND environment = :environment
+              AND endpoint = :endpoint
+              AND method = :method
+            GROUP BY DATE_FORMAT(stat_date, '%Y-%m')
+            ORDER BY period
+            """, nativeQuery = true)
+    List<MonthlyCount> findMonthlyCountsByEndpointAndMethod(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("environment") String environment,
+            @Param("endpoint") String endpoint,
+            @Param("method") String method
+    );
+
+    @Query("""
+            SELECT MIN(s.statDate)
+            FROM ApiDailyStatistic s
+            WHERE s.environment = :environment
+              AND s.endpoint = :endpoint
+              AND s.method = :method
+            """)
+    LocalDate findCollectionStartDateByEndpointAndMethod(
+            @Param("environment") String environment,
+            @Param("endpoint") String endpoint,
+            @Param("method") String method
+    );
+
+    interface EndpointMethod {
+        String getEndpoint();
+
+        String getMethod();
+    }
+
     interface DailyCount {
         LocalDate getStatDate();
 

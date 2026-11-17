@@ -1,10 +1,12 @@
 package devkor.com.teamcback.domain.apistatistics.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import devkor.com.teamcback.domain.apistatistics.repository.ApiDailyStatisticRepository.EndpointMethod;
 import devkor.com.teamcback.domain.apistatistics.repository.ApiDailyStatisticRepository;
 import devkor.com.teamcback.domain.apistatistics.repository.ApiDailyStatisticRepository.DailyCount;
 import devkor.com.teamcback.domain.apistatistics.repository.ApiDailyStatisticRepository.EndpointCount;
@@ -55,6 +57,56 @@ class ApiStatisticsServiceTest {
         });
     }
 
+    @Test
+    void returnsAllDistinctEndpointsForCurrentEnvironment() {
+        when(repository.findEndpointMethods("test")).thenReturn(List.of(
+                endpointMethod("/api/search", "GET"),
+                endpointMethod("/api/search", "POST")
+        ));
+
+        var response = service.getEndpoints();
+
+        assertThat(response).extracting("endpoint", "method")
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("/api/search", "GET"),
+                        org.assertj.core.groups.Tuple.tuple("/api/search", "POST"));
+    }
+
+    @Test
+    void returnsEndpointTrendWithZeroFilledDaysAndMonths() {
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+        when(repository.findEndpointMethods("test"))
+                .thenReturn(List.of(endpointMethod("/api/search", "GET")));
+        when(repository.findCollectionStartDateByEndpointAndMethod(
+                "test", "/api/search", "GET")).thenReturn(today.minusDays(40));
+        when(repository.sumBetweenByEndpointAndMethod(
+                any(LocalDate.class), any(LocalDate.class), anyString(), anyString(), anyString()))
+                .thenReturn(12L);
+        when(repository.findDailyCountsByEndpointAndMethod(
+                any(LocalDate.class), any(LocalDate.class), anyString(), anyString(), anyString()))
+                .thenReturn(List.of(dailyCount(today.minusDays(1), 4L)));
+        when(repository.findMonthlyCountsByEndpointAndMethod(
+                any(LocalDate.class), any(LocalDate.class), anyString(), anyString(), anyString()))
+                .thenReturn(List.of(monthlyCount(java.time.YearMonth.from(today).toString(), 8L)));
+
+        var response = service.getEndpointTrend("/api/search", "get");
+
+        assertThat(response.getMethod()).isEqualTo("GET");
+        assertThat(response.getLast30DaysCallCount()).isEqualTo(12L);
+        assertThat(response.getDailyCounts()).hasSize(30);
+        assertThat(response.getDailyCounts().get(28).getCallCount()).isEqualTo(4L);
+        assertThat(response.getMonthlyCounts()).hasSize(6);
+        assertThat(response.getCollectionStartDate()).isEqualTo(today.minusDays(40));
+    }
+
+    @Test
+    void rejectsUnregisteredEndpoint() {
+        when(repository.findEndpointMethods("test")).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.getEndpointTrend("/api/unknown", "GET"))
+                .isInstanceOf(RuntimeException.class);
+    }
+
     private DailyCount dailyCount(LocalDate date, Long count) {
         return new DailyCount() {
             @Override
@@ -98,6 +150,20 @@ class ApiStatisticsServiceTest {
             @Override
             public Long getCallCount() {
                 return count;
+            }
+        };
+    }
+
+    private EndpointMethod endpointMethod(String endpoint, String method) {
+        return new EndpointMethod() {
+            @Override
+            public String getEndpoint() {
+                return endpoint;
+            }
+
+            @Override
+            public String getMethod() {
+                return method;
             }
         };
     }

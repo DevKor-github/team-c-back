@@ -1,4 +1,7 @@
 spring:
+  ai:
+    model:
+      chat: none
   cache:
     type: none
   datasource:
@@ -99,3 +102,6 @@ management:
 
 staff:
   emails: test@test.com
+
+chatbot:
+  enabled: false
